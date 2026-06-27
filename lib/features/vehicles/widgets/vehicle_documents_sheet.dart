@@ -1,4 +1,5 @@
 import 'package:file_picker/file_picker.dart';
+import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';
 import 'package:open_filex/open_filex.dart';
 
@@ -111,7 +112,8 @@ class _VehicleDocumentsSheetState extends State<VehicleDocumentsSheet> {
                 itemBuilder: (context, index) {
                   final doc = vehicleDocumentTypes[index];
                   final path = _vehicle.documentPath(doc.key);
-                  final loading = _loadingKey == doc.key;
+                  final busy = _loadingKey != null;
+                  final loading = _loadingKey?.split(':').last == doc.key;
                   return Card(
                     elevation: 0,
                     color: Colors.white,
@@ -175,12 +177,14 @@ class _VehicleDocumentsSheetState extends State<VehicleDocumentsSheet> {
                               _ActionIcon(
                                 icon: Icons.visibility,
                                 color: AppColors.textSecondary,
-                                onTap: () => _open(path),
+                                enabled: !busy,
+                                onTap: () => _open(doc.key, path),
                               ),
                             if (path != null && path.isNotEmpty)
                               _ActionIcon(
                                 icon: Icons.download,
                                 color: AppColors.primary,
+                                enabled: !busy,
                                 onTap: () => _download(doc.key, path),
                               ),
                             if (widget.canManage)
@@ -191,6 +195,7 @@ class _VehicleDocumentsSheetState extends State<VehicleDocumentsSheet> {
                                 color: path == null || path.isEmpty
                                     ? AppColors.primary
                                     : AppColors.error,
+                                enabled: !busy,
                                 onTap: () => path == null || path.isEmpty
                                     ? _upload(doc.key)
                                     : _delete(doc.key, path),
@@ -256,7 +261,7 @@ class _VehicleDocumentsSheetState extends State<VehicleDocumentsSheet> {
     );
     final path = result?.files.single.path;
     if (path == null) return;
-    await _run(key, () async {
+    await _run('upload:$key', () async {
       final uploadedPath = await widget.repository.uploadDocument(
         vehicle: _vehicle,
         documentType: key,
@@ -267,7 +272,7 @@ class _VehicleDocumentsSheetState extends State<VehicleDocumentsSheet> {
           _vehicle = _vehicle.copyWithDocument(key, uploadedPath);
         });
       }
-    }, successMessage: 'Document uploaded. Updating vehicle documents...');
+    }, actionType: 'upload', successMessage: 'Document uploaded. Updating vehicle documents...');
   }
 
   Future<void> _delete(String key, String path) async {
@@ -286,12 +291,13 @@ class _VehicleDocumentsSheetState extends State<VehicleDocumentsSheet> {
     );
     if (confirmed != true) return;
     await _run(
-      key,
+      'delete:$key',
       () => widget.repository.deleteDocument(
         vehicleId: _vehicle.id,
         documentType: key,
         filePath: path,
       ),
+      actionType: 'delete',
       successMessage: 'Document removed. Updating vehicle documents...',
       onSuccess: () {
         setState(() {
@@ -301,20 +307,38 @@ class _VehicleDocumentsSheetState extends State<VehicleDocumentsSheet> {
     );
   }
 
-  Future<void> _open(String path) async {
-    await _run('view', () async {
+  Future<void> _open(String key, String path) async {
+    await _run('view:$key', () async {
       final localPath = await widget.repository.downloadDocument(path);
       await OpenFilex.open(localPath);
-    }, loadingMessage: 'Opening document...');
+    }, actionType: 'view', loadingMessage: 'Opening document...');
   }
 
   Future<void> _download(String key, String path) async {
-    await _run('download', () async {
-      await widget.repository.downloadDocument(
+    await _run('download:$key', () async {
+      final fileName = _downloadFileName(key, path);
+      final localPath = await widget.repository.downloadDocument(
         path,
-        fileName: _downloadFileName(key, path),
+        fileName: fileName,
       );
-    }, loadingMessage: 'Downloading document...');
+      final extension = fileName.split('.').last;
+      final baseName = fileName.substring(0, fileName.length - extension.length - 1);
+      final mime = _mimeFor(extension);
+      // Opens the native "Save As" dialog (Storage Access Framework on
+      // Android, document picker on iOS) so the user can actually pick a
+      // visible location like Downloads, instead of just opening a share sheet.
+      final savedPath = await FileSaver.instance.saveAs(
+        name: baseName,
+        filePath: localPath,
+        fileExtension: extension,
+        mimeType: mime.mimeType,
+        customMimeType: mime.customMimeType,
+      );
+      if (savedPath == null) {
+        // User backed out of the save dialog — not an error.
+        throw _ActionCancelled();
+      }
+    }, actionType: 'download', loadingMessage: 'Downloading document...');
   }
 
   String _downloadFileName(String key, String path) {
@@ -328,15 +352,40 @@ class _VehicleDocumentsSheetState extends State<VehicleDocumentsSheet> {
     return '${documentType}_$vehicleNumber.$extension';
   }
 
+  ({MimeType mimeType, String? customMimeType}) _mimeFor(String extension) {
+    switch (extension.toLowerCase()) {
+      case 'pdf':
+        return (mimeType: MimeType.pdf, customMimeType: null);
+      case 'png':
+        return (mimeType: MimeType.png, customMimeType: null);
+      case 'jpg':
+      case 'jpeg':
+        return (mimeType: MimeType.jpeg, customMimeType: null);
+      case 'webp':
+        return (mimeType: MimeType.webp, customMimeType: null);
+      case 'xlsx':
+        return (mimeType: MimeType.microsoftExcel, customMimeType: null);
+      case 'xls':
+        return (
+          mimeType: MimeType.custom,
+          customMimeType: 'application/vnd.ms-excel',
+        );
+      default:
+        return (mimeType: MimeType.other, customMimeType: null);
+    }
+  }
+
   Future<void> _run(
-    String key,
+    String loadingKey,
     Future<void> Function() action, {
+    required String actionType,
     String? loadingMessage,
     String? successMessage,
     VoidCallback? onSuccess,
   }) async {
+    if (_loadingKey != null) return; // another action is already in flight
     setState(() {
-      _loadingKey = key;
+      _loadingKey = loadingKey;
       _error = null;
       _statusMessage = loadingMessage;
       _isSuccess = false;
@@ -344,15 +393,15 @@ class _VehicleDocumentsSheetState extends State<VehicleDocumentsSheet> {
     try {
       await action();
       if (onSuccess != null && mounted) onSuccess();
-      if (key != 'view') {
-        final successText = key == 'download' ? 'Document downloaded successfully!' : (successMessage ?? 'Success!');
+      if (actionType != 'view') {
+        final successText = actionType == 'download' ? 'Document downloaded successfully!' : (successMessage ?? 'Success!');
         if (mounted) {
           setState(() {
             _statusMessage = successText;
             _isSuccess = true;
           });
         }
-        if (key != 'download') await widget.onChanged();
+        if (actionType != 'download') await widget.onChanged();
         
         // Hide success message after 2.5 seconds
         Future.delayed(const Duration(milliseconds: 2500), () {
@@ -368,7 +417,13 @@ class _VehicleDocumentsSheetState extends State<VehicleDocumentsSheet> {
         }
       }
     } catch (e) {
-      if (mounted) {
+      if (e is _ActionCancelled) {
+        if (mounted) {
+          setState(() {
+            _statusMessage = null;
+          });
+        }
+      } else if (mounted) {
         setState(() {
           _error = e.toString().replaceFirst('Exception: ', '');
           _statusMessage = null; // Clear status on error
@@ -385,33 +440,40 @@ class _VehicleDocumentsSheetState extends State<VehicleDocumentsSheet> {
   }
 }
 
+/// Thrown internally when the user backs out of the native save dialog.
+/// Not a real error — `_run` swallows it without showing the error banner.
+class _ActionCancelled implements Exception {}
+
 class _ActionIcon extends StatelessWidget {
   final IconData icon;
   final Color color;
   final VoidCallback onTap;
+  final bool enabled;
 
   const _ActionIcon({
     required this.icon,
     required this.color,
     required this.onTap,
+    this.enabled = true,
   });
 
   @override
   Widget build(BuildContext context) {
+    final effectiveColor = enabled ? color : color.withValues(alpha: 0.4);
     return InkWell(
-      onTap: onTap,
+      onTap: enabled ? onTap : null,
       borderRadius: BorderRadius.circular(10),
       child: Container(
         width: 36,
         height: 36,
         margin: const EdgeInsets.only(left: 8),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
+          color: effectiveColor.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: color.withValues(alpha: 0.2)),
+          border: Border.all(color: effectiveColor.withValues(alpha: 0.2)),
         ),
         child: Center(
-          child: Icon(icon, color: color, size: 18),
+          child: Icon(icon, color: effectiveColor, size: 18),
         ),
       ),
     );
