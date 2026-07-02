@@ -34,6 +34,7 @@ const allTiles = [
     iconColor: AppColors.tileVehiclesIcon,
     iconBgColor: AppColors.tileVehiclesBg,
     route: '/vehicles',
+    isMobileReady: true,
     allowedRoles: ['admin', 'staff'],
   ),
   DashboardTileData(
@@ -61,7 +62,7 @@ const allTiles = [
     iconColor: AppColors.tileDieselIcon,
     iconBgColor: AppColors.tileDieselBg,
     route: '/diesel-records',
-    isMobileReady: true,  // ← only fully implemented mobile feature
+    isMobileReady: true,
     allowedRoles: ['admin', 'staff', 'driver'],
   ),
   DashboardTileData(

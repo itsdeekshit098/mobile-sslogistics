@@ -11,13 +11,14 @@ class ApiConstants {
 
   // ── Auth ──────────────────────────────────────────────────────────────────
   static const String login = '/api/auth/login';
-  static const String logout = '/api/auth/logout';
+  static const String logout = '/api/auth/signout';
   static const String session = '/api/auth/session';
 
   // ── Resources ─────────────────────────────────────────────────────────────
   static const String vehicles = '/api/vehicles';
   static const String vehicleDocuments = '/api/vehicles/documents';
   static const String vehicleDocumentView = '/api/vehicles/documents/view';
+  static const String vehicleOwners = '/api/vehicle-owners';
   static const String drivers = '/api/drivers';
   static const String dieselRecords = '/api/diesel-records';
 }

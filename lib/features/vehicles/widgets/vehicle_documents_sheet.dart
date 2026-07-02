@@ -254,13 +254,23 @@ class _VehicleDocumentsSheetState extends State<VehicleDocumentsSheet> {
     );
   }
 
+  /// Matches MAX_FILE_SIZE in the backend documents route — checked here so
+  /// an oversized file fails fast instead of after a full upload.
+  static const _maxUploadBytes = 10 * 1024 * 1024;
+
   Future<void> _upload(String key) async {
+    if (_loadingKey != null) return;
     final result = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['pdf', 'png', 'jpg', 'jpeg', 'webp', 'xls', 'xlsx'],
     );
-    final path = result?.files.single.path;
-    if (path == null) return;
+    final file = result?.files.single;
+    final path = file?.path;
+    if (file == null || path == null) return;
+    if (file.size > _maxUploadBytes) {
+      setState(() => _error = 'File exceeds maximum size of 10 MB');
+      return;
+    }
     await _run('upload:$key', () async {
       final uploadedPath = await widget.repository.uploadDocument(
         vehicle: _vehicle,
@@ -276,6 +286,9 @@ class _VehicleDocumentsSheetState extends State<VehicleDocumentsSheet> {
   }
 
   Future<void> _delete(String key, String path) async {
+    // Otherwise the user could confirm the dialog and have _run silently
+    // drop the action because another one is still in flight.
+    if (_loadingKey != null) return;
     final docLabel = vehicleDocumentTypes
         .firstWhere((d) => d.key == key, orElse: () => VehicleDocumentType(key, key))
         .label;
@@ -310,7 +323,14 @@ class _VehicleDocumentsSheetState extends State<VehicleDocumentsSheet> {
   Future<void> _open(String key, String path) async {
     await _run('view:$key', () async {
       final localPath = await widget.repository.downloadDocument(path);
-      await OpenFilex.open(localPath);
+      final result = await OpenFilex.open(localPath);
+      if (result.type != ResultType.done) {
+        throw Exception(
+          result.type == ResultType.noAppToOpen
+              ? 'No app available to open this file type'
+              : 'Could not open document: ${result.message}',
+        );
+      }
     }, actionType: 'view', loadingMessage: 'Opening document...');
   }
 

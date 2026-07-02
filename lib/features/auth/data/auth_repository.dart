@@ -54,6 +54,14 @@ class AuthRepository {
     } catch (_) {
       // Even if the server call fails, clear local state
     }
+    await clearLocalSession();
+  }
+
+  /// Clears local session state only, without calling the server.
+  /// Used when the server has already invalidated the session itself
+  /// (e.g. the account was signed in elsewhere), so there's nothing to
+  /// revoke remotely.
+  Future<void> clearLocalSession() async {
     await DioClient.clearCookies();
     await SecureStorage.clearUser();
   }

@@ -80,17 +80,31 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
             ),
             _StatsRow(stats: state.stats),
             Expanded(
-              child: state.vehicles.isEmpty
-                  ? const Center(
-                      child: Text(
-                        'No vehicles found',
-                        style: TextStyle(color: AppColors.textSecondary),
-                      ),
-                    )
-                  : RefreshIndicator(
-                      onRefresh: () =>
-                          ref.read(vehiclesListProvider.notifier).refresh(),
-                      child: ListView.builder(
+              child: RefreshIndicator(
+                onRefresh: () =>
+                    ref.read(vehiclesListProvider.notifier).refresh(),
+                child: state.vehicles.isEmpty
+                    ? LayoutBuilder(
+                        // Empty state must still be scrollable, otherwise
+                        // pull-to-refresh is unavailable exactly when the
+                        // user most wants to re-check for data.
+                        builder: (context, constraints) =>
+                            SingleChildScrollView(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              child: SizedBox(
+                                height: constraints.maxHeight,
+                                child: const Center(
+                                  child: Text(
+                                    'No vehicles found',
+                                    style: TextStyle(
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                      )
+                    : ListView.builder(
                         padding: const EdgeInsets.only(top: 6, bottom: 90),
                         itemCount: state.vehicles.length,
                         itemBuilder: (context, index) {
@@ -123,7 +137,10 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
           ],
         ),
       ),
-      floatingActionButton: canWrite
+      // Hidden until the list actually loaded: if vehicles failed to load
+      // (network/server down), inviting a create that will fail too is
+      // misleading — the error state's Retry is the right affordance there.
+      floatingActionButton: canWrite && async.hasValue
           ? Transform.translate(
               offset: const Offset(0, 22),
               child: FloatingActionButton(
@@ -154,13 +171,24 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
     final result = await showModalBottomSheet<Map<String, String>>(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (_) =>
-          VehicleFilterSheet(type: state.type, status: state.status),
+      builder: (_) => VehicleFilterSheet(
+        type: state.type,
+        status: state.status,
+        ownerType: state.ownerType,
+        ownerName: state.ownerName,
+        fuelType: state.fuelType,
+      ),
     );
     if (result != null) {
       ref
           .read(vehiclesListProvider.notifier)
-          .applyFilters(type: result['type'], status: result['status']);
+          .applyFilters(
+            type: result['type'],
+            status: result['status'],
+            ownerType: result['ownerType'],
+            ownerName: result['ownerName'],
+            fuelType: result['fuelType'],
+          );
     }
   }
 
@@ -465,6 +493,18 @@ class _VehicleDetails extends StatelessWidget {
                 label: 'Status',
                 value: vehicle.status,
                 color: _vehicleStatusColor(vehicle.status),
+              ),
+              _Detail(
+                icon: AppIcons.user,
+                label: 'Owner Type',
+                value: vehicle.ownerType != null
+                    ? ownerTypeLabel(vehicle.ownerType!)
+                    : '-',
+              ),
+              _Detail(
+                icon: AppIcons.user,
+                label: 'Owner Name',
+                value: vehicle.ownerName ?? '-',
               ),
               _Detail(
                 icon: AppIcons.fuel,

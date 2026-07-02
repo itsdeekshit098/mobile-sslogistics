@@ -577,15 +577,30 @@ class _Section extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const labelStyle = TextStyle(
+      fontSize: 13,
+      fontWeight: FontWeight.w500,
+      color: AppColors.textPrimary,
+    );
+    final isRequired = label.endsWith(' *');
+    final baseLabel = isRequired
+        ? label.substring(0, label.length - 2)
+        : label;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
-            color: AppColors.textPrimary,
+        Text.rich(
+          TextSpan(
+            style: labelStyle,
+            children: [
+              TextSpan(text: baseLabel),
+              if (isRequired)
+                const TextSpan(
+                  text: ' *',
+                  style: TextStyle(color: AppColors.error),
+                ),
+            ],
           ),
         ),
         const SizedBox(height: 5),

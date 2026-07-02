@@ -16,6 +16,9 @@ class VehiclesState {
   final String search;
   final String type;
   final String status;
+  final String ownerType;
+  final String ownerName;
+  final String fuelType;
 
   const VehiclesState({
     required this.vehicles,
@@ -26,11 +29,19 @@ class VehiclesState {
     this.search = '',
     this.type = 'all',
     this.status = '',
+    this.ownerType = '',
+    this.ownerName = '',
+    this.fuelType = '',
   });
 
   int get totalPages => total == 0 ? 1 : (total / pageSize).ceil();
   bool get hasFilters =>
-      search.isNotEmpty || type != 'all' || status.isNotEmpty;
+      search.isNotEmpty ||
+      type != 'all' ||
+      status.isNotEmpty ||
+      ownerType.isNotEmpty ||
+      ownerName.isNotEmpty ||
+      fuelType.isNotEmpty;
 
   VehiclesState copyWith({
     List<FleetVehicle>? vehicles,
@@ -41,6 +52,9 @@ class VehiclesState {
     String? search,
     String? type,
     String? status,
+    String? ownerType,
+    String? ownerName,
+    String? fuelType,
   }) {
     return VehiclesState(
       vehicles: vehicles ?? this.vehicles,
@@ -51,16 +65,22 @@ class VehiclesState {
       search: search ?? this.search,
       type: type ?? this.type,
       status: status ?? this.status,
+      ownerType: ownerType ?? this.ownerType,
+      ownerName: ownerName ?? this.ownerName,
+      fuelType: fuelType ?? this.fuelType,
     );
   }
 }
 
+/// autoDispose so the cached list dies with its last listener — otherwise a
+/// logout/login as a different user would briefly show the previous user's
+/// vehicles (nothing invalidates feature providers on auth changes).
 final vehiclesListProvider =
-    AsyncNotifierProvider<VehiclesNotifier, VehiclesState>(
+    AsyncNotifierProvider.autoDispose<VehiclesNotifier, VehiclesState>(
       VehiclesNotifier.new,
     );
 
-class VehiclesNotifier extends AsyncNotifier<VehiclesState> {
+class VehiclesNotifier extends AutoDisposeAsyncNotifier<VehiclesState> {
   @override
   Future<VehiclesState> build() => _fetch();
 
@@ -70,8 +90,11 @@ class VehiclesNotifier extends AsyncNotifier<VehiclesState> {
     String search = '',
     String type = 'all',
     String status = '',
+    String ownerType = '',
+    String ownerName = '',
+    String fuelType = '',
   }) async {
-    final data = await ref
+    var data = await ref
         .read(vehicleRepositoryProvider)
         .getVehicles(
           page: page,
@@ -79,7 +102,28 @@ class VehiclesNotifier extends AsyncNotifier<VehiclesState> {
           search: search,
           type: type,
           status: status,
+          ownerType: ownerType,
+          ownerName: ownerName,
+          fuelType: fuelType,
         );
+    // The requested page can fall past the end (e.g. the last vehicle on the
+    // final page was just deleted) — clamp to the last non-empty page.
+    if (data.vehicles.isEmpty && data.total > 0 && page > 1) {
+      final lastPage = (data.total / pageSize).ceil();
+      page = lastPage < 1 ? 1 : lastPage;
+      data = await ref
+          .read(vehicleRepositoryProvider)
+          .getVehicles(
+            page: page,
+            pageSize: pageSize,
+            search: search,
+            type: type,
+            status: status,
+            ownerType: ownerType,
+            ownerName: ownerName,
+            fuelType: fuelType,
+          );
+    }
     return VehiclesState(
       vehicles: data.vehicles,
       total: data.total,
@@ -89,6 +133,9 @@ class VehiclesNotifier extends AsyncNotifier<VehiclesState> {
       search: search,
       type: type,
       status: status,
+      ownerType: ownerType,
+      ownerName: ownerName,
+      fuelType: fuelType,
     );
   }
 
@@ -102,6 +149,9 @@ class VehiclesNotifier extends AsyncNotifier<VehiclesState> {
         search: current?.search ?? '',
         type: current?.type ?? 'all',
         status: current?.status ?? '',
+        ownerType: current?.ownerType ?? '',
+        ownerName: current?.ownerName ?? '',
+        fuelType: current?.fuelType ?? '',
       ),
     );
   }
@@ -116,11 +166,20 @@ class VehiclesNotifier extends AsyncNotifier<VehiclesState> {
         search: value,
         type: current?.type ?? 'all',
         status: current?.status ?? '',
+        ownerType: current?.ownerType ?? '',
+        ownerName: current?.ownerName ?? '',
+        fuelType: current?.fuelType ?? '',
       ),
     );
   }
 
-  Future<void> applyFilters({String? type, String? status}) async {
+  Future<void> applyFilters({
+    String? type,
+    String? status,
+    String? ownerType,
+    String? ownerName,
+    String? fuelType,
+  }) async {
     final current = state.valueOrNull;
     state = const AsyncLoading();
     state = await AsyncValue.guard(
@@ -130,6 +189,9 @@ class VehiclesNotifier extends AsyncNotifier<VehiclesState> {
         search: current?.search ?? '',
         type: type ?? current?.type ?? 'all',
         status: status ?? current?.status ?? '',
+        ownerType: ownerType ?? current?.ownerType ?? '',
+        ownerName: ownerName ?? current?.ownerName ?? '',
+        fuelType: fuelType ?? current?.fuelType ?? '',
       ),
     );
   }
@@ -153,6 +215,9 @@ class VehiclesNotifier extends AsyncNotifier<VehiclesState> {
         search: current.search,
         type: current.type,
         status: current.status,
+        ownerType: current.ownerType,
+        ownerName: current.ownerName,
+        fuelType: current.fuelType,
       ),
     );
   }
@@ -167,6 +232,9 @@ class VehiclesNotifier extends AsyncNotifier<VehiclesState> {
         search: current?.search ?? '',
         type: current?.type ?? 'all',
         status: current?.status ?? '',
+        ownerType: current?.ownerType ?? '',
+        ownerName: current?.ownerName ?? '',
+        fuelType: current?.fuelType ?? '',
       ),
     );
   }

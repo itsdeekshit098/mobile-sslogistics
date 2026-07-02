@@ -29,7 +29,6 @@ class VehicleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final statusColor = _statusColor(vehicle.status);
     final typeColor = _typeColor(vehicle.vehicleType);
 
     return Card(
@@ -93,11 +92,13 @@ class VehicleCard extends StatelessWidget {
                                 ],
                               ),
                             ),
-                            const SizedBox(width: 8),
-                            _StatusBadge(
-                              label: vehicle.status,
-                              color: statusColor,
-                            ),
+                            if (vehicle.ownerType == 'EXTERNAL') ...[
+                              const SizedBox(width: 8),
+                              const _StatusBadge(
+                                label: 'External',
+                                color: AppColors.warning,
+                              ),
+                            ],
                           ],
                         ),
                         const SizedBox(height: 11),
@@ -189,19 +190,6 @@ class VehicleCard extends StatelessWidget {
         return true;
       default:
         return false;
-    }
-  }
-
-  static Color _statusColor(String status) {
-    switch (status) {
-      case 'Active':
-        return AppColors.success;
-      case 'Maintenance':
-        return AppColors.warning;
-      case 'Idle':
-        return AppColors.textSecondary;
-      default:
-        return AppColors.textMuted;
     }
   }
 

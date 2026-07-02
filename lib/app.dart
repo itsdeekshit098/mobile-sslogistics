@@ -2,12 +2,41 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/router/app_router.dart';
 import 'core/constants/app_colors.dart';
+import 'features/auth/providers/auth_provider.dart';
 
-class SSLogisticsApp extends ConsumerWidget {
+class SSLogisticsApp extends ConsumerStatefulWidget {
   const SSLogisticsApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SSLogisticsApp> createState() => _SSLogisticsAppState();
+}
+
+class _SSLogisticsAppState extends ConsumerState<SSLogisticsApp>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    debugPrint('App lifecycle: $state');
+    // Re-verify the session when the app returns to the foreground so a
+    // session revoked by a login elsewhere logs this device out immediately.
+    if (state == AppLifecycleState.resumed) {
+      ref.read(authProvider.notifier).verifySession();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final router = ref.watch(routerProvider);
 
     return MaterialApp.router(

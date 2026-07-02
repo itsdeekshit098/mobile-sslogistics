@@ -21,6 +21,8 @@ class FleetVehicle {
   final String? containerLength;
   final String? axleType;
   final String? containerBodyType;
+  final String? ownerType;
+  final String? ownerName;
   final String? createdAt;
   final String? updatedAt;
 
@@ -47,6 +49,8 @@ class FleetVehicle {
     this.containerLength,
     this.axleType,
     this.containerBodyType,
+    this.ownerType,
+    this.ownerName,
     this.createdAt,
     this.updatedAt,
   });
@@ -80,6 +84,8 @@ class FleetVehicle {
       containerLength: json['container_length'] as String?,
       axleType: json['axle_type'] as String?,
       containerBodyType: json['container_body_type'] as String?,
+      ownerType: json['owner_type'] as String?,
+      ownerName: json['owner_name'] as String?,
       createdAt: json['created_at'] as String?,
       updatedAt: json['updated_at'] as String?,
     );
@@ -127,6 +133,8 @@ class FleetVehicle {
       containerLength: containerLength,
       axleType: axleType,
       containerBodyType: containerBodyType,
+      ownerType: ownerType,
+      ownerName: ownerName,
       createdAt: createdAt,
       updatedAt: updatedAt,
     );
@@ -185,6 +193,8 @@ class VehiclePayload {
   final String? containerLength;
   final String? axleType;
   final String? containerBodyType;
+  final String ownerType;
+  final String ownerName;
 
   const VehiclePayload({
     this.id,
@@ -202,6 +212,8 @@ class VehiclePayload {
     this.containerLength,
     this.axleType,
     this.containerBodyType,
+    required this.ownerType,
+    required this.ownerName,
   });
 
   Map<String, dynamic> toJson() => {
@@ -220,7 +232,29 @@ class VehiclePayload {
     'container_length': containerLength,
     'axle_type': axleType,
     'container_body_type': containerBodyType,
+    'owner_type': ownerType,
+    'owner_name': ownerName.trim(),
   };
+}
+
+class VehicleOwner {
+  final int id;
+  final String name;
+  final String ownerType;
+
+  const VehicleOwner({
+    required this.id,
+    required this.name,
+    required this.ownerType,
+  });
+
+  factory VehicleOwner.fromJson(Map<String, dynamic> json) {
+    return VehicleOwner(
+      id: json['id'] as int,
+      name: json['name'] as String? ?? '',
+      ownerType: json['owner_type'] as String? ?? '',
+    );
+  }
 }
 
 class VehicleDocumentType {
@@ -276,6 +310,21 @@ const containerLengths = [
 ];
 const axleTypes = ['SINGLE_AXLE', 'MULTI_AXLE', 'TRAILER'];
 const containerBodyTypes = ['CLOSED', 'FLATBED_OPEN'];
+
+/// Matches the check constraint on `vehicles.owner_type` / `vehicle_owners.owner_type`.
+const ownerTypes = ['OWN', 'EXTERNAL'];
+
+/// Human-readable label for an owner type (e.g. "EXTERNAL" -> "External").
+String ownerTypeLabel(String value) {
+  switch (value) {
+    case 'OWN':
+      return 'Own';
+    case 'EXTERNAL':
+      return 'External';
+    default:
+      return value.isEmpty ? '-' : enumLabel(value);
+  }
+}
 
 /// Formats an uppercase enum value like "TEMPO_TRAVELLER" → "Tempo Traveller".
 String enumLabel(String value) {

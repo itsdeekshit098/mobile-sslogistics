@@ -50,6 +50,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     final isLoading = ref.watch(authProvider).isLoading;
 
+    ref.listen<String?>(forcedLogoutMessageProvider, (previous, next) {
+      if (next == null) return;
+      setState(() => _errorMessage = next);
+      ref.read(forcedLogoutMessageProvider.notifier).state = null;
+    });
+
     return Scaffold(
       backgroundColor: AppColors.pageBg,
       body: SafeArea(

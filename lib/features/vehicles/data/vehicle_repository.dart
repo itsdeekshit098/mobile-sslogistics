@@ -16,6 +16,9 @@ class VehicleRepository {
     String search = '',
     String type = 'all',
     String status = '',
+    String ownerType = '',
+    String ownerName = '',
+    String fuelType = '',
   }) async {
     final response = await _dio.get(
       ApiConstants.vehicles,
@@ -25,6 +28,9 @@ class VehicleRepository {
         if (search.trim().isNotEmpty) 'search': search.trim(),
         if (type != 'all') 'type': type,
         if (status.isNotEmpty) 'status': status,
+        if (ownerType.isNotEmpty) 'ownerType': ownerType,
+        if (ownerName.isNotEmpty) 'ownerName': ownerName,
+        if (fuelType.isNotEmpty) 'fuelType': fuelType,
       },
     );
 
@@ -68,6 +74,35 @@ class VehicleRepository {
     );
     if (response.statusCode == 200 && response.data['success'] == true) return;
     throw Exception(response.data['error'] ?? 'Failed to delete vehicle');
+  }
+
+  Future<List<VehicleOwner>> getOwners({String? ownerType}) async {
+    final response = await _dio.get(
+      ApiConstants.vehicleOwners,
+      queryParameters: {'owner_type': ?ownerType},
+    );
+    if (response.statusCode == 200 && response.data['success'] == true) {
+      final list = response.data['data'] as List? ?? const [];
+      return list
+          .map((item) => VehicleOwner.fromJson(item as Map<String, dynamic>))
+          .toList();
+    }
+    throw Exception(response.data['error'] ?? 'Failed to fetch owners');
+  }
+
+  Future<VehicleOwner> createOwner({
+    required String name,
+    required String ownerType,
+  }) async {
+    final response = await _dio.post(
+      ApiConstants.vehicleOwners,
+      data: {'name': name.trim(), 'owner_type': ownerType},
+    );
+    if (response.statusCode == 201 && response.data['success'] == true) {
+      final data = response.data['data'] as Map<String, dynamic>;
+      return VehicleOwner.fromJson(data['owner'] as Map<String, dynamic>);
+    }
+    throw Exception(response.data['error'] ?? 'Failed to add owner');
   }
 
   Future<String> uploadDocument({

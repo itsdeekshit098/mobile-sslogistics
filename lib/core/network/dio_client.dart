@@ -11,6 +11,12 @@ class DioClient {
   static Dio? _dio;
   static PersistCookieJar? _cookieJar;
 
+  /// Invoked whenever the backend reports the current session no longer
+  /// exists (e.g. it was revoked because the account signed in elsewhere).
+  /// Set by [AuthNotifier] so it can force a logout + login-screen redirect
+  /// instead of every screen just showing a dead-end "error + retry" state.
+  static void Function()? onSessionInvalidated;
+
   static Future<void> init() async {
     final appDocDir = await getApplicationDocumentsDirectory();
 
@@ -31,6 +37,22 @@ class DioClient {
     );
 
     _dio!.interceptors.add(CookieManager(_cookieJar!));
+
+    // Detect a session revoked server-side (e.g. by a login elsewhere) so
+    // callers don't have to special-case this in every repository.
+    _dio!.interceptors.add(
+      InterceptorsWrapper(
+        onResponse: (response, handler) {
+          final data = response.data;
+          if (response.statusCode == 401 &&
+              data is Map &&
+              data['code'] == 'SESSION_INVALID') {
+            onSessionInvalidated?.call();
+          }
+          return handler.next(response);
+        },
+      ),
+    );
 
     // Global error handler for friendly connection error messages
     _dio!.interceptors.add(
