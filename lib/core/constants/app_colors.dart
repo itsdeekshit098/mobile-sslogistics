@@ -65,6 +65,11 @@ class AppColors {
   static const Color cardBg = Color(0xFFFFFFFF);
   static const Color pageBg = Color(0xFFF8FAFC);        // slate-50
 
+  // Subtly blue-tinted page background — used directly beneath a glass
+  // gradient hero so the handoff from dark glass to light content isn't a
+  // hard cut (a plain neutral grey there reads as two different apps).
+  static const Color glassPageBg = Color(0xFFEEF2FA);
+
   // ── Dark neutral ─────────────────────────────────────────────────────────
   static const Color darkCardBg = Color(0xFF1E293B);    // slate-800
   static const Color darkPageBg = Color(0xFF0F172A);    // slate-900

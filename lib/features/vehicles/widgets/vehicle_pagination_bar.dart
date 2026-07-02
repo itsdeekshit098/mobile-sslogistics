@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
@@ -25,12 +27,26 @@ class VehiclePaginationBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final isFirst = page <= 1;
     final isLast = page >= totalPages;
-    return SafeArea(
-      top: false,
-      child: Container(
-        color: Colors.white,
-        padding: const EdgeInsets.fromLTRB(12, 8, 86, 10),
-        child: Row(
+    // The frosted background lives on the outermost Container so its color
+    // extends all the way to the physical bottom edge of the screen; SafeArea
+    // only insets the *content* away from the home-indicator area. Doing it
+    // the other way round (SafeArea outside) leaves an undecorated gap below
+    // the bar, which is what was showing as a plain strip under the pager.
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.55),
+            border: Border(
+              top: BorderSide(color: Colors.white.withValues(alpha: 0.6)),
+            ),
+          ),
+          child: SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 86, 10),
+              child: Row(
           children: [
             _NavButton(
               icon: AppIcons.chevronLeft,
@@ -67,9 +83,11 @@ class VehiclePaginationBar extends StatelessWidget {
                 width: 54,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: AppColors.pageBg,
+                  color: Colors.white.withValues(alpha: 0.55),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppColors.border),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.7),
+                  ),
                 ),
                 child: Text(
                   '$pageSize',
@@ -86,6 +104,9 @@ class VehiclePaginationBar extends StatelessWidget {
               onTap: isLast ? null : () => onPageChange(page + 1),
             ),
           ],
+              ),
+            ),
+          ),
         ),
       ),
     );

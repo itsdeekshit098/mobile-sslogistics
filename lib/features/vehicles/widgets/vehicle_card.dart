@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -31,25 +33,51 @@ class VehicleCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final typeColor = _typeColor(vehicle.vehicleType);
 
-    return Card(
+    return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
-      elevation: 0,
-      shadowColor: Colors.black.withValues(alpha: 0.06),
-      surfaceTintColor: Colors.transparent,
-      color: Colors.white,
-      shape: RoundedRectangleBorder(
+      decoration: BoxDecoration(
+        // Translucent rather than flat white — this is what actually makes
+        // the card "glass": the BackdropFilter below blurs whatever is
+        // behind it (the soft pastel blobs on the page), and this fill lets
+        // that blur show through instead of hiding behind solid white.
+        color: Colors.white.withValues(alpha: 0.58),
         borderRadius: BorderRadius.circular(18),
-        side: const BorderSide(color: AppColors.border),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.75)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
-      child: InkWell(
+      clipBehavior: Clip.antiAlias,
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+        child: Material(
+        color: Colors.transparent,
+        child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Colored top accent tying each card back to the brand/glass
+            // palette used in the hero above, instead of a flat white card
+            // that has nothing visually in common with it.
+            Container(
+              height: 3,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [typeColor, typeColor.withValues(alpha: 0.25)],
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _VehicleVisual(vehicle: vehicle, color: typeColor),
@@ -155,9 +183,13 @@ class VehicleCard extends StatelessWidget {
                   ],
                 ),
               ],
-            ],
-          ),
+                ],
+              ),
+            ),
+          ],
         ),
+      ),
+      ),
       ),
     );
   }
@@ -345,9 +377,11 @@ class _InfoChip extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
       decoration: BoxDecoration(
-        color: AppColors.pageBg,
+        // Translucent white rather than a flat pageBg patch, so it doesn't
+        // read as an opaque block sitting inside the glass card around it.
+        color: Colors.white.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.7)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.max,
@@ -390,9 +424,9 @@ class _DocumentsButton extends StatelessWidget {
         height: 44,
         padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: BoxDecoration(
-          color: AppColors.pageBg,
+          color: Colors.white.withValues(alpha: 0.55),
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: AppColors.border),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.7)),
         ),
         child: const Row(
           children: [

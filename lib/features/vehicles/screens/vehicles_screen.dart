@@ -46,7 +46,9 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
     final loadedState = async.valueOrNull;
 
     return Scaffold(
-      backgroundColor: AppColors.pageBg,
+      // Blue-tinted rather than neutral grey, so the page still reads as
+      // part of the same gradient world as the hero above it.
+      backgroundColor: AppColors.glassPageBg,
       drawer: const AppDrawer(currentPath: '/vehicles'),
       body: Column(
         children: [
@@ -62,89 +64,149 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
             hasFilters: loadedState?.hasFilters ?? false,
             stats: loadedState?.stats,
           ),
-          // The list body deliberately stays flat/opaque: it's dense,
-          // scrolling data — legibility and scan speed matter more here
-          // than translucency, and there's no colorful backdrop to blur
-          // against once you're off the hero.
-          Expanded(
-            child: async.when(
-              loading: () =>
-                  const LoadingSpinner(message: 'Loading vehicles...'),
-              error: (e, _) => ErrorState(
-                message: e.toString().replaceFirst('Exception: ', ''),
-                onRetry: () => ref.invalidate(vehiclesListProvider),
+          // Soft fade bridging the hero into the list below, so the switch
+          // from dark glass to light content isn't a hard seam.
+          Container(
+            height: 14,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  AppColors.primary.withOpacity(0.14),
+                  AppColors.glassPageBg.withOpacity(0),
+                ],
               ),
-              data: (state) => Column(
-                children: [
-                  Expanded(
-                    child: RefreshIndicator(
-                      onRefresh: () =>
-                          ref.read(vehiclesListProvider.notifier).refresh(),
-                      child: state.vehicles.isEmpty
-                          ? LayoutBuilder(
-                              // Empty state must still be scrollable, otherwise
-                              // pull-to-refresh is unavailable exactly when the
-                              // user most wants to re-check for data.
-                              builder: (context, constraints) =>
-                                  SingleChildScrollView(
-                                    physics:
-                                        const AlwaysScrollableScrollPhysics(),
-                                    child: SizedBox(
-                                      height: constraints.maxHeight,
-                                      child: const Center(
-                                        child: Text(
-                                          'No vehicles found',
-                                          style: TextStyle(
-                                            color: AppColors.textSecondary,
+            ),
+          ),
+          // The body now carries the glass language too: soft pastel blobs
+          // sit fixed behind the scroll content, and the cards/pagination
+          // bar above them are translucent + blurred, so they genuinely
+          // frost as the list scrolls rather than sitting on flat white.
+          Expanded(
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: Stack(
+                    children: [
+                      Positioned(
+                        top: -40,
+                        right: -60,
+                        child: _BodyBlob(
+                          size: 220,
+                          color: AppColors.primary.withOpacity(0.12),
+                        ),
+                      ),
+                      Positioned(
+                        top: 280,
+                        left: -70,
+                        child: _BodyBlob(
+                          size: 200,
+                          color: const Color(0xFF9333EA).withOpacity(0.09),
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 120,
+                        right: -50,
+                        child: _BodyBlob(
+                          size: 190,
+                          color: const Color(0xFF16A34A).withOpacity(0.09),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                async.when(
+                  loading: () =>
+                      const LoadingSpinner(message: 'Loading vehicles...'),
+                  error: (e, _) => ErrorState(
+                    message: e.toString().replaceFirst('Exception: ', ''),
+                    onRetry: () => ref.invalidate(vehiclesListProvider),
+                  ),
+                  data: (state) => Column(
+                    children: [
+                      Expanded(
+                        child: RefreshIndicator(
+                          onRefresh: () => ref
+                              .read(vehiclesListProvider.notifier)
+                              .refresh(),
+                          child: state.vehicles.isEmpty
+                              ? LayoutBuilder(
+                                  // Empty state must still be scrollable, otherwise
+                                  // pull-to-refresh is unavailable exactly when the
+                                  // user most wants to re-check for data.
+                                  builder: (context, constraints) =>
+                                      SingleChildScrollView(
+                                        physics:
+                                            const AlwaysScrollableScrollPhysics(),
+                                        child: SizedBox(
+                                          height: constraints.maxHeight,
+                                          child: const Center(
+                                            child: _GlassEmptyState(),
                                           ),
                                         ),
                                       ),
+                                )
+                              // Soft fade at the very top of the scroll
+                              // area: a card scrolled partway off simply
+                              // dissolves into the seam instead of being
+                              // hard-clipped into an odd, disconnected
+                              // fragment right under the hero.
+                              : ShaderMask(
+                                  shaderCallback: (rect) => const LinearGradient(
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                    colors: [Colors.transparent, Colors.black],
+                                    stops: [0.0, 0.06],
+                                  ).createShader(rect),
+                                  blendMode: BlendMode.dstIn,
+                                  child: ListView.builder(
+                                    padding: const EdgeInsets.only(
+                                      top: 6,
+                                      bottom: 90,
                                     ),
+                                    itemCount: state.vehicles.length,
+                                    itemBuilder: (context, index) {
+                                      final vehicle = state.vehicles[index];
+                                      return VehicleCard(
+                                        vehicle: vehicle,
+                                        canWrite: canWrite,
+                                        canDelete: canDelete,
+                                        onTap: () => _showDetails(
+                                          vehicle,
+                                          canWrite,
+                                          canDelete,
+                                        ),
+                                        onEdit: canWrite
+                                            ? () => _showForm(vehicle)
+                                            : null,
+                                        onDelete: canDelete
+                                            ? () => _delete(vehicle)
+                                            : null,
+                                        onDocuments: () =>
+                                            _showDocuments(vehicle, canWrite),
+                                      );
+                                    },
                                   ),
-                            )
-                          : ListView.builder(
-                              padding: const EdgeInsets.only(
-                                top: 6,
-                                bottom: 90,
-                              ),
-                              itemCount: state.vehicles.length,
-                              itemBuilder: (context, index) {
-                                final vehicle = state.vehicles[index];
-                                return VehicleCard(
-                                  vehicle: vehicle,
-                                  canWrite: canWrite,
-                                  canDelete: canDelete,
-                                  onTap: () => _showDetails(
-                                    vehicle,
-                                    canWrite,
-                                    canDelete,
-                                  ),
-                                  onEdit: canWrite
-                                      ? () => _showForm(vehicle)
-                                      : null,
-                                  onDelete: canDelete
-                                      ? () => _delete(vehicle)
-                                      : null,
-                                  onDocuments: () =>
-                                      _showDocuments(vehicle, canWrite),
-                                );
-                              },
-                            ),
-                    ),
+                                ),
+                        ),
+                      ),
+                      VehiclePaginationBar(
+                        page: state.page,
+                        totalPages: state.totalPages,
+                        total: state.total,
+                        pageSize: state.pageSize,
+                        onPageChange: ref
+                            .read(vehiclesListProvider.notifier)
+                            .changePage,
+                        onPageSizeChange: ref
+                            .read(vehiclesListProvider.notifier)
+                            .changePageSize,
+                      ),
+                    ],
                   ),
-                  VehiclePaginationBar(
-                    page: state.page,
-                    totalPages: state.totalPages,
-                    total: state.total,
-                    pageSize: state.pageSize,
-                    onPageChange:
-                        ref.read(vehiclesListProvider.notifier).changePage,
-                    onPageSizeChange: ref
-                        .read(vehiclesListProvider.notifier)
-                        .changePageSize,
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ],
@@ -693,6 +755,71 @@ class _GradientFab extends StatelessWidget {
               ),
               child: const Icon(AppIcons.plus, color: Colors.white),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Soft pastel color blob fixed behind the scrolling list — gives the
+/// translucent glass cards something colorful to blur, the same way the
+/// hero's gradient does for its own frosted elements.
+class _BodyBlob extends StatelessWidget {
+  final double size;
+  final Color color;
+
+  const _BodyBlob({required this.size, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: RadialGradient(
+          colors: [color, color.withOpacity(0)],
+          stops: const [0.0, 1.0],
+        ),
+      ),
+    );
+  }
+}
+
+class _GlassEmptyState extends StatelessWidget {
+  const _GlassEmptyState();
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(18),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 24),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.55),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: Colors.white.withOpacity(0.7)),
+          ),
+          child: const Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.directions_car_outlined,
+                size: 30,
+                color: AppColors.textMuted,
+              ),
+              SizedBox(height: 10),
+              Text(
+                'No vehicles found',
+                style: TextStyle(
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
           ),
         ),
       ),
