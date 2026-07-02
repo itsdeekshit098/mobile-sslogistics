@@ -153,98 +153,169 @@ class DashboardTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Opacity(
-      opacity: _isDisabled ? 0.50 : 1.0,
-      child: Card(
-        elevation: _isDisabled ? 0 : 2,
-        shadowColor: Colors.black26,
-        surfaceTintColor: Colors.transparent,
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
         color: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-          side: BorderSide(
-            color: _isDisabled ? AppColors.border : AppColors.border,
-            width: 0.8,
-          ),
-        ),
-        child: InkWell(
-          onTap: _isDisabled ? null : onTap,
-          borderRadius: BorderRadius.circular(14),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: _isDisabled
-                            ? AppColors.border
-                            : tile.iconBgColor,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(
-                        tile.icon,
-                        color: _isDisabled
-                            ? AppColors.textMuted
-                            : tile.iconColor,
-                        size: 22,
-                      ),
-                    ),
-                    if (_isDisabled)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 3,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.pageBg,
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(color: AppColors.border),
-                        ),
-                        child: Text(
-                          _badgeLabel,
-                          style: const TextStyle(
-                            fontSize: 9,
-                            color: AppColors.textMuted,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      )
-                    else
-                      Icon(
-                        AppIcons.arrowRight,
-                        size: 16,
-                        color: tile.iconColor,
-                      ),
-                  ],
+        boxShadow: _isDisabled
+            ? []
+            : [
+                BoxShadow(
+                  color: tile.iconColor.withOpacity(0.10),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
                 ),
-                const SizedBox(height: 12),
-                Text(
-                  tile.title,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: _isDisabled
-                        ? AppColors.textMuted
-                        : AppColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  tile.description,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: AppColors.textSecondary,
-                  ),
+                const BoxShadow(
+                  color: Color(0x0A0F172A),
+                  blurRadius: 4,
+                  offset: Offset(0, 1),
                 ),
               ],
+        border: Border.all(
+          color: _isDisabled ? AppColors.border : AppColors.border,
+          width: 1,
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(18),
+        child: Opacity(
+          opacity: _isDisabled ? 0.55 : 1.0,
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: _isDisabled ? null : onTap,
+              splashColor: tile.iconColor.withOpacity(0.08),
+              highlightColor: tile.iconColor.withOpacity(0.04),
+              child: Stack(
+                children: [
+                  // Accent gradient strip along the top edge.
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: Container(
+                      height: 3,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            _isDisabled
+                                ? AppColors.border
+                                : tile.iconColor,
+                            _isDisabled
+                                ? AppColors.border
+                                : tile.iconColor.withOpacity(0.25),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 18, 16, 14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Container(
+                              width: 44,
+                              height: 44,
+                              decoration: BoxDecoration(
+                                gradient: _isDisabled
+                                    ? null
+                                    : LinearGradient(
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                        colors: [
+                                          tile.iconBgColor,
+                                          tile.iconBgColor.withOpacity(0.55),
+                                        ],
+                                      ),
+                                color: _isDisabled ? AppColors.border : null,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Icon(
+                                tile.icon,
+                                color: _isDisabled
+                                    ? AppColors.textMuted
+                                    : tile.iconColor,
+                                size: 22,
+                              ),
+                            ),
+                            if (_isDisabled)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 7,
+                                  vertical: 3,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.pageBg,
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(color: AppColors.border),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(
+                                      AppIcons.lock,
+                                      size: 9,
+                                      color: AppColors.textMuted,
+                                    ),
+                                    const SizedBox(width: 3),
+                                    Text(
+                                      _badgeLabel,
+                                      style: const TextStyle(
+                                        fontSize: 9,
+                                        color: AppColors.textMuted,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            else
+                              Container(
+                                width: 26,
+                                height: 26,
+                                decoration: BoxDecoration(
+                                  color: tile.iconBgColor,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  AppIcons.arrowRight,
+                                  size: 13,
+                                  color: tile.iconColor,
+                                ),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          tile.title,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: _isDisabled
+                                ? AppColors.textMuted
+                                : AppColors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          tile.description,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: AppColors.textSecondary,
+                            height: 1.3,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
