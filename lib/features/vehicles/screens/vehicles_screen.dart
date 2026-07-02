@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -42,114 +43,117 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
     final user = ref.watch(authProvider).valueOrNull;
     final canWrite = user?.isAdmin == true || user?.isStaff == true;
     final canDelete = user?.isAdmin == true;
+    final loadedState = async.valueOrNull;
 
     return Scaffold(
       backgroundColor: AppColors.pageBg,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
-        elevation: 0,
-        leading: Builder(
-          builder: (ctx) => IconButton(
-            icon: const Icon(AppIcons.menu, color: AppColors.textPrimary),
-            onPressed: () => Scaffold.of(ctx).openDrawer(),
-          ),
-        ),
-        title: const Text(
-          'Vehicles',
-          style: TextStyle(
-            color: AppColors.textPrimary,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-      ),
       drawer: const AppDrawer(currentPath: '/vehicles'),
-      body: async.when(
-        loading: () => const LoadingSpinner(message: 'Loading vehicles...'),
-        error: (e, _) => ErrorState(
-          message: e.toString().replaceFirst('Exception: ', ''),
-          onRetry: () => ref.invalidate(vehiclesListProvider),
-        ),
-        data: (state) => Column(
-          children: [
-            _Toolbar(
-              state: state,
-              controller: _searchCtrl,
-              onSearch: _onSearch,
-              onFilter: () => _showFilters(state),
-            ),
-            _StatsRow(stats: state.stats),
-            Expanded(
-              child: RefreshIndicator(
-                onRefresh: () =>
-                    ref.read(vehiclesListProvider.notifier).refresh(),
-                child: state.vehicles.isEmpty
-                    ? LayoutBuilder(
-                        // Empty state must still be scrollable, otherwise
-                        // pull-to-refresh is unavailable exactly when the
-                        // user most wants to re-check for data.
-                        builder: (context, constraints) =>
-                            SingleChildScrollView(
-                              physics: const AlwaysScrollableScrollPhysics(),
-                              child: SizedBox(
-                                height: constraints.maxHeight,
-                                child: const Center(
-                                  child: Text(
-                                    'No vehicles found',
-                                    style: TextStyle(
-                                      color: AppColors.textSecondary,
+      body: Column(
+        children: [
+          // Glass hero: same gradient/frosted language as the dashboard and
+          // drawer. Search, filter, and live fleet stats live here since
+          // there's a colorful gradient behind them for the blur to read.
+          _VehiclesHero(
+            controller: _searchCtrl,
+            onSearch: _onSearch,
+            onFilter: loadedState == null
+                ? null
+                : () => _showFilters(loadedState),
+            hasFilters: loadedState?.hasFilters ?? false,
+            stats: loadedState?.stats,
+          ),
+          // The list body deliberately stays flat/opaque: it's dense,
+          // scrolling data — legibility and scan speed matter more here
+          // than translucency, and there's no colorful backdrop to blur
+          // against once you're off the hero.
+          Expanded(
+            child: async.when(
+              loading: () =>
+                  const LoadingSpinner(message: 'Loading vehicles...'),
+              error: (e, _) => ErrorState(
+                message: e.toString().replaceFirst('Exception: ', ''),
+                onRetry: () => ref.invalidate(vehiclesListProvider),
+              ),
+              data: (state) => Column(
+                children: [
+                  Expanded(
+                    child: RefreshIndicator(
+                      onRefresh: () =>
+                          ref.read(vehiclesListProvider.notifier).refresh(),
+                      child: state.vehicles.isEmpty
+                          ? LayoutBuilder(
+                              // Empty state must still be scrollable, otherwise
+                              // pull-to-refresh is unavailable exactly when the
+                              // user most wants to re-check for data.
+                              builder: (context, constraints) =>
+                                  SingleChildScrollView(
+                                    physics:
+                                        const AlwaysScrollableScrollPhysics(),
+                                    child: SizedBox(
+                                      height: constraints.maxHeight,
+                                      child: const Center(
+                                        child: Text(
+                                          'No vehicles found',
+                                          style: TextStyle(
+                                            color: AppColors.textSecondary,
+                                          ),
+                                        ),
+                                      ),
                                     ),
                                   ),
-                                ),
+                            )
+                          : ListView.builder(
+                              padding: const EdgeInsets.only(
+                                top: 6,
+                                bottom: 90,
                               ),
+                              itemCount: state.vehicles.length,
+                              itemBuilder: (context, index) {
+                                final vehicle = state.vehicles[index];
+                                return VehicleCard(
+                                  vehicle: vehicle,
+                                  canWrite: canWrite,
+                                  canDelete: canDelete,
+                                  onTap: () => _showDetails(
+                                    vehicle,
+                                    canWrite,
+                                    canDelete,
+                                  ),
+                                  onEdit: canWrite
+                                      ? () => _showForm(vehicle)
+                                      : null,
+                                  onDelete: canDelete
+                                      ? () => _delete(vehicle)
+                                      : null,
+                                  onDocuments: () =>
+                                      _showDocuments(vehicle, canWrite),
+                                );
+                              },
                             ),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.only(top: 6, bottom: 90),
-                        itemCount: state.vehicles.length,
-                        itemBuilder: (context, index) {
-                          final vehicle = state.vehicles[index];
-                          return VehicleCard(
-                            vehicle: vehicle,
-                            canWrite: canWrite,
-                            canDelete: canDelete,
-                            onTap: () =>
-                                _showDetails(vehicle, canWrite, canDelete),
-                            onEdit: canWrite ? () => _showForm(vehicle) : null,
-                            onDelete: canDelete ? () => _delete(vehicle) : null,
-                            onDocuments: () =>
-                                _showDocuments(vehicle, canWrite),
-                          );
-                        },
-                      ),
                     ),
+                  ),
+                  VehiclePaginationBar(
+                    page: state.page,
+                    totalPages: state.totalPages,
+                    total: state.total,
+                    pageSize: state.pageSize,
+                    onPageChange:
+                        ref.read(vehiclesListProvider.notifier).changePage,
+                    onPageSizeChange: ref
+                        .read(vehiclesListProvider.notifier)
+                        .changePageSize,
+                  ),
+                ],
+              ),
             ),
-            VehiclePaginationBar(
-              page: state.page,
-              totalPages: state.totalPages,
-              total: state.total,
-              pageSize: state.pageSize,
-              onPageChange: ref.read(vehiclesListProvider.notifier).changePage,
-              onPageSizeChange: ref
-                  .read(vehiclesListProvider.notifier)
-                  .changePageSize,
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
       // Hidden until the list actually loaded: if vehicles failed to load
       // (network/server down), inviting a create that will fail too is
       // misleading — the error state's Retry is the right affordance there.
       floatingActionButton: canWrite && async.hasValue
-          ? Transform.translate(
-              offset: const Offset(0, 22),
-              child: FloatingActionButton(
-                onPressed: () => _showForm(null),
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                child: const Icon(AppIcons.plus),
-              ),
-            )
+          ? _GradientFab(onPressed: () => _showForm(null))
           : null,
     );
   }
@@ -296,137 +300,404 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
   }
 }
 
-class _Toolbar extends StatelessWidget {
-  final VehiclesState state;
+/// Gradient hero header shared visual language with the dashboard/drawer/
+/// login screens: frosted menu button, glass search + filter row, and —
+/// once data has loaded — a horizontal strip of frosted stat chips.
+class _VehiclesHero extends StatelessWidget {
   final TextEditingController controller;
   final ValueChanged<String> onSearch;
-  final VoidCallback onFilter;
-  const _Toolbar({
-    required this.state,
+  final VoidCallback? onFilter;
+  final bool hasFilters;
+  final VehicleStats? stats;
+
+  const _VehiclesHero({
     required this.controller,
     required this.onSearch,
     required this.onFilter,
+    required this.hasFilters,
+    required this.stats,
   });
+
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
-    child: Row(
-      children: [
-        Expanded(
-          child: TextField(
-            controller: controller,
-            onChanged: onSearch,
-            decoration: InputDecoration(
-              hintText: 'Search vehicle number',
-              prefixIcon: const Icon(Icons.search),
-              filled: true,
-              fillColor: Colors.white,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: AppColors.border),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: AppColors.border),
-              ),
-            ),
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: const BorderRadius.only(
+        bottomLeft: Radius.circular(28),
+        bottomRight: Radius.circular(28),
+      ),
+      child: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              AppColors.sidebarBg,
+              Color(0xFF16305C),
+              AppColors.primary,
+            ],
           ),
         ),
-        const SizedBox(width: 8),
-        SizedBox(
-          width: 56,
-          height: 56,
-          child: Material(
-            color: AppColors.primary.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(12),
-            child: InkWell(
-              onTap: onFilter,
-              borderRadius: BorderRadius.circular(12),
-              child: Center(
-                child: Badge(
-                  isLabelVisible: state.hasFilters,
-                  child: const Icon(Icons.tune, color: AppColors.textPrimary),
+        child: Stack(
+          children: [
+            Positioned(
+              top: -60,
+              right: -40,
+              child: _HeroGlow(size: 170, opacity: 0.10),
+            ),
+            Positioned(
+              bottom: -60,
+              left: -40,
+              child: _HeroGlow(size: 150, opacity: 0.08),
+            ),
+            SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Builder(
+                          builder: (ctx) => _GlassIconButton(
+                            icon: AppIcons.menu,
+                            onTap: () => Scaffold.of(ctx).openDrawer(),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Text(
+                            'Vehicles',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _GlassSearchField(
+                            controller: controller,
+                            onChanged: onSearch,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        _GlassFilterButton(
+                          onTap: onFilter,
+                          active: hasFilters,
+                        ),
+                      ],
+                    ),
+                    if (stats != null) ...[
+                      const SizedBox(height: 14),
+                      SizedBox(
+                        height: 68,
+                        child: ListView(
+                          scrollDirection: Axis.horizontal,
+                          children: [
+                            _HeroStatChip(
+                              label: 'Total fleet',
+                              value: stats!.total,
+                              dotColor: Colors.white,
+                            ),
+                            const SizedBox(width: 10),
+                            _HeroStatChip(
+                              label: 'Active',
+                              value: stats!.active,
+                              dotColor: const Color(0xFF4ADE80),
+                            ),
+                            const SizedBox(width: 10),
+                            _HeroStatChip(
+                              label: 'In service',
+                              value: stats!.maintenance,
+                              dotColor: const Color(0xFFFACC15),
+                            ),
+                            const SizedBox(width: 10),
+                            _HeroStatChip(
+                              label: 'Idle',
+                              value: stats!.idle,
+                              dotColor: Colors.white70,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HeroGlow extends StatelessWidget {
+  final double size;
+  final double opacity;
+
+  const _HeroGlow({required this.size, required this.opacity});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: Colors.white.withOpacity(opacity),
+      ),
+    );
+  }
+}
+
+class _GlassIconButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback? onTap;
+
+  const _GlassIconButton({required this.icon, this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: Material(
+          color: Colors.white.withOpacity(0.14),
+          child: InkWell(
+            onTap: onTap,
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.white.withOpacity(0.20)),
+              ),
+              child: Icon(icon, color: Colors.white, size: 19),
+            ),
           ),
         ),
-      ],
-    ),
-  );
+      ),
+    );
+  }
 }
 
-class _StatsRow extends StatelessWidget {
-  final VehicleStats stats;
-  const _StatsRow({required this.stats});
+class _GlassSearchField extends StatelessWidget {
+  final TextEditingController controller;
+  final ValueChanged<String> onChanged;
+
+  const _GlassSearchField({required this.controller, required this.onChanged});
+
   @override
-  Widget build(BuildContext context) => SizedBox(
-    height: 94,
-    child: ListView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      children: [
-        _Stat('Total fleet', stats.total, AppColors.primary),
-        _Stat('Active now', stats.active, AppColors.success),
-        _Stat('In service', stats.maintenance, AppColors.warning),
-        _Stat('Idle', stats.idle, AppColors.textSecondary),
-      ],
-    ),
-  );
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          height: 46,
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.12),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.white.withOpacity(0.20)),
+          ),
+          child: TextField(
+            controller: controller,
+            onChanged: onChanged,
+            style: const TextStyle(color: Colors.white, fontSize: 14),
+            cursorColor: Colors.white,
+            decoration: InputDecoration(
+              isDense: true,
+              hintText: 'Search vehicle number',
+              hintStyle: TextStyle(
+                color: Colors.white.withOpacity(0.5),
+                fontSize: 14,
+              ),
+              prefixIcon: Icon(
+                Icons.search,
+                color: Colors.white.withOpacity(0.7),
+                size: 20,
+              ),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(vertical: 12),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
-class _Stat extends StatelessWidget {
+class _GlassFilterButton extends StatelessWidget {
+  final VoidCallback? onTap;
+  final bool active;
+
+  const _GlassFilterButton({required this.onTap, required this.active});
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Material(
+          color: Colors.white.withOpacity(0.12),
+          child: InkWell(
+            onTap: onTap,
+            child: Container(
+              width: 46,
+              height: 46,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.white.withOpacity(0.20)),
+              ),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  const Icon(Icons.tune, color: Colors.white, size: 20),
+                  if (active)
+                    Positioned(
+                      top: 9,
+                      right: 9,
+                      child: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFFACC15),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HeroStatChip extends StatelessWidget {
   final String label;
   final int value;
-  final Color color;
-  const _Stat(this.label, this.value, this.color);
+  final Color dotColor;
+
+  const _HeroStatChip({
+    required this.label,
+    required this.value,
+    required this.dotColor,
+  });
+
   @override
-  Widget build(BuildContext context) => Container(
-    width: 136,
-    margin: const EdgeInsets.only(right: 10, top: 6, bottom: 10),
-    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: AppColors.border),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withValues(alpha: 0.04),
-          blurRadius: 18,
-          offset: const Offset(0, 8),
-        ),
-      ],
-    ),
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          '$value',
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontSize: 25,
-            height: 1,
-            fontWeight: FontWeight.w900,
-            color: color,
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(14),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: Container(
+          width: 108,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.12),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: Colors.white.withOpacity(0.18)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 7,
+                    height: 7,
+                    decoration: BoxDecoration(
+                      color: dotColor,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    '$value',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      height: 1.0,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.72),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
           ),
         ),
-        const SizedBox(height: 7),
-        Text(
-          label,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            fontSize: 12,
-            height: 1.1,
-            color: AppColors.textSecondary,
-            fontWeight: FontWeight.w700,
+      ),
+    );
+  }
+}
+
+/// Brand-gradient FAB — same treatment as the login screen's CTA button,
+/// so the "primary action" affordance is consistent across the app.
+class _GradientFab extends StatelessWidget {
+  final VoidCallback onPressed;
+
+  const _GradientFab({required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    return Transform.translate(
+      offset: const Offset(0, 22),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(28),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onPressed,
+            customBorder: const CircleBorder(),
+            child: Ink(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [AppColors.primary, AppColors.primaryDark],
+                ),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withOpacity(0.4),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: const Icon(AppIcons.plus, color: Colors.white),
+            ),
           ),
         ),
-      ],
-    ),
-  );
+      ),
+    );
+  }
 }
 
 class _VehicleDetails extends StatelessWidget {
