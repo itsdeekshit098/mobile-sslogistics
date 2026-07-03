@@ -21,4 +21,7 @@ class ApiConstants {
   static const String vehicleOwners = '/api/vehicle-owners';
   static const String drivers = '/api/drivers';
   static const String dieselRecords = '/api/diesel-records';
+
+  // ── System ────────────────────────────────────────────────────────────────
+  static const String maintenanceStream = '/api/system/maintenance-stream';
 }

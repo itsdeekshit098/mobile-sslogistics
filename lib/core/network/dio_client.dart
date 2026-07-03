@@ -17,6 +17,13 @@ class DioClient {
   /// instead of every screen just showing a dead-end "error + retry" state.
   static void Function()? onSessionInvalidated;
 
+  /// Invoked whenever any request comes back blocked by maintenance mode.
+  /// This is a fallback alongside the maintenance SSE stream — it catches
+  /// the case where a user acts (taps something) before the stream has
+  /// pushed the change, or if the stream connection itself is blocked by a
+  /// restrictive network. Set by [MaintenanceNotifier].
+  static void Function(String? message)? onMaintenanceDetected;
+
   static Future<void> init() async {
     final appDocDir = await getApplicationDocumentsDirectory();
 
@@ -58,6 +65,14 @@ class DioClient {
     _dio!.interceptors.add(
       InterceptorsWrapper(
         onError: (DioException e, handler) {
+          // 503s exceed validateStatus's `< 500` threshold, so they surface
+          // here as an error rather than through onResponse above.
+          final data = e.response?.data;
+          if (e.response?.statusCode == 503 &&
+              data is Map &&
+              data['code'] == 'MAINTENANCE_MODE') {
+            onMaintenanceDetected?.call(data['error'] as String?);
+          }
           if (e.type == DioExceptionType.connectionError ||
               e.type == DioExceptionType.connectionTimeout ||
               e.type == DioExceptionType.receiveTimeout ||
