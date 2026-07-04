@@ -27,6 +27,7 @@ class VehiclePaginationBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final isFirst = page <= 1;
     final isLast = page >= totalPages;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     // The frosted background lives on the outermost Container so its color
     // extends all the way to the physical bottom edge of the screen; SafeArea
     // only insets the *content* away from the home-indicator area. Doing it
@@ -37,9 +38,15 @@ class VehiclePaginationBar extends StatelessWidget {
         filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.55),
+            color: isDark
+                ? AppColors.darkCardBg.withValues(alpha: 0.55)
+                : Colors.white.withValues(alpha: 0.55),
             border: Border(
-              top: BorderSide(color: Colors.white.withValues(alpha: 0.6)),
+              top: BorderSide(
+                color: isDark
+                    ? AppColors.darkBorder.withValues(alpha: 0.6)
+                    : Colors.white.withValues(alpha: 0.6),
+              ),
             ),
           ),
           child: SafeArea(
@@ -59,18 +66,22 @@ class VehiclePaginationBar extends StatelessWidget {
                 children: [
                   Text(
                     'Page $page / $totalPages',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w800,
-                      color: AppColors.textPrimary,
+                      color: isDark
+                          ? AppColors.darkTextPrimary
+                          : AppColors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     '$total vehicles',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 11,
-                      color: AppColors.textSecondary,
+                      color: isDark
+                          ? AppColors.darkTextSecondary
+                          : AppColors.textSecondary,
                     ),
                   ),
                 ],
@@ -83,17 +94,23 @@ class VehiclePaginationBar extends StatelessWidget {
                 width: 54,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.55),
+                  color: isDark
+                      ? AppColors.darkCardBg.withValues(alpha: 0.55)
+                      : Colors.white.withValues(alpha: 0.55),
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.7),
+                    color: isDark
+                        ? AppColors.darkBorder.withValues(alpha: 0.7)
+                        : Colors.white.withValues(alpha: 0.7),
                   ),
                 ),
                 child: Text(
                   '$pageSize',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
+                    color: isDark
+                        ? AppColors.darkTextPrimary
+                        : AppColors.textPrimary,
                   ),
                 ),
               ),
@@ -113,13 +130,14 @@ class VehiclePaginationBar extends StatelessWidget {
   }
 
   void _showPageSize(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (_) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.darkCardBg : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: SafeArea(
           top: false,
@@ -139,10 +157,14 @@ class VehiclePaginationBar extends StatelessWidget {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: selected
                             ? AppColors.primary
-                            : AppColors.pageBg,
+                            : (isDark
+                                ? AppColors.darkPageBg
+                                : AppColors.pageBg),
                         foregroundColor: selected
                             ? Colors.white
-                            : AppColors.textPrimary,
+                            : (isDark
+                                ? AppColors.darkTextPrimary
+                                : AppColors.textPrimary),
                         elevation: 0,
                       ),
                       child: Text('$size'),
@@ -167,6 +189,7 @@ class _NavButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final enabled = onTap != null;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
@@ -176,13 +199,16 @@ class _NavButton extends StatelessWidget {
         decoration: BoxDecoration(
           color: enabled
               ? AppColors.primary.withValues(alpha: 0.08)
-              : AppColors.border.withValues(alpha: 0.5),
+              : (isDark ? AppColors.darkBorder : AppColors.border)
+                  .withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Icon(
           icon,
           size: 18,
-          color: enabled ? AppColors.primary : AppColors.textMuted,
+          color: enabled
+              ? AppColors.primary
+              : (isDark ? AppColors.darkTextMuted : AppColors.textMuted),
         ),
       ),
     );

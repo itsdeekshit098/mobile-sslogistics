@@ -44,11 +44,12 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
     final canWrite = user?.isAdmin == true || user?.isStaff == true;
     final canDelete = user?.isAdmin == true;
     final loadedState = async.valueOrNull;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       // Blue-tinted rather than neutral grey, so the page still reads as
       // part of the same gradient world as the hero above it.
-      backgroundColor: AppColors.glassPageBg,
+      backgroundColor: isDark ? AppColors.darkPageBg : AppColors.glassPageBg,
       drawer: const AppDrawer(currentPath: '/vehicles'),
       body: Column(
         children: [
@@ -570,27 +571,45 @@ class _GlassSearchField extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: Colors.white.withOpacity(0.20)),
           ),
-          child: TextField(
-            controller: controller,
-            onChanged: onChanged,
-            style: const TextStyle(color: Colors.white, fontSize: 14),
-            cursorColor: Colors.white,
-            decoration: InputDecoration(
-              isDense: true,
-              filled: false,
-              hintText: 'Search vehicle number',
-              hintStyle: TextStyle(
-                color: Colors.white.withOpacity(0.5),
-                fontSize: 14,
-              ),
-              prefixIcon: Icon(
-                Icons.search,
-                color: Colors.white.withOpacity(0.7),
-                size: 20,
-              ),
-              border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(vertical: 12),
-            ),
+          child: ValueListenableBuilder<TextEditingValue>(
+            valueListenable: controller,
+            builder: (context, value, _) {
+              return TextField(
+                controller: controller,
+                onChanged: onChanged,
+                style: const TextStyle(color: Colors.white, fontSize: 14),
+                cursorColor: Colors.white,
+                decoration: InputDecoration(
+                  isDense: true,
+                  filled: false,
+                  hintText: 'Search vehicle number',
+                  hintStyle: TextStyle(
+                    color: Colors.white.withOpacity(0.5),
+                    fontSize: 14,
+                  ),
+                  prefixIcon: Icon(
+                    Icons.search,
+                    color: Colors.white.withOpacity(0.7),
+                    size: 20,
+                  ),
+                  suffixIcon: value.text.isEmpty
+                      ? null
+                      : IconButton(
+                          icon: Icon(
+                            Icons.close,
+                            color: Colors.white.withOpacity(0.7),
+                            size: 18,
+                          ),
+                          onPressed: () {
+                            controller.clear();
+                            onChanged('');
+                          },
+                        ),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+              );
+            },
           ),
         ),
       ),
@@ -794,6 +813,7 @@ class _GlassEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return ClipRRect(
       borderRadius: BorderRadius.circular(18),
       child: BackdropFilter(
@@ -801,23 +821,31 @@ class _GlassEmptyState extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 24),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.55),
+            color: isDark
+                ? AppColors.darkCardBg.withOpacity(0.55)
+                : Colors.white.withOpacity(0.55),
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: Colors.white.withOpacity(0.7)),
+            border: Border.all(
+              color: isDark
+                  ? AppColors.darkBorder.withOpacity(0.7)
+                  : Colors.white.withOpacity(0.7),
+            ),
           ),
-          child: const Column(
+          child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
                 Icons.directions_car_outlined,
                 size: 30,
-                color: AppColors.textMuted,
+                color: isDark ? AppColors.darkTextMuted : AppColors.textMuted,
               ),
-              SizedBox(height: 10),
+              const SizedBox(height: 10),
               Text(
                 'No vehicles found',
                 style: TextStyle(
-                  color: AppColors.textSecondary,
+                  color: isDark
+                      ? AppColors.darkTextSecondary
+                      : AppColors.textSecondary,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -845,42 +873,51 @@ class _VehicleDetails extends StatelessWidget {
     required this.onDocuments,
   });
   @override
-  Widget build(BuildContext context) => Container(
-    decoration: const BoxDecoration(
-      color: AppColors.pageBg,
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+    decoration: BoxDecoration(
+      color: isDark ? AppColors.darkPageBg : AppColors.pageBg,
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
     ),
     child: SafeArea(
       top: false,
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(14, 10, 14, 18),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Center(
             child: Container(
               width: 42,
               height: 4,
-              margin: const EdgeInsets.only(bottom: 18),
+              margin: const EdgeInsets.fromLTRB(0, 10, 0, 18),
               decoration: BoxDecoration(
-                color: AppColors.textMuted.withValues(alpha: 0.45),
+                color: (isDark ? AppColors.darkTextMuted : AppColors.textMuted)
+                    .withValues(alpha: 0.45),
                 borderRadius: BorderRadius.circular(99),
               ),
             ),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 2),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(
               vehicle.vehicleNumber,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 24,
                 height: 1.05,
                 fontWeight: FontWeight.w900,
-                color: AppColors.textPrimary,
+                color: isDark
+                    ? AppColors.darkTextPrimary
+                    : AppColors.textPrimary,
               ),
             ),
           ),
           const SizedBox(height: 14),
+          Flexible(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(14, 0, 14, 18),
+              children: [
           _DetailSection(
             children: [
               _Detail(
@@ -892,7 +929,7 @@ class _VehicleDetails extends StatelessWidget {
                 icon: AppIcons.checkCircle,
                 label: 'Status',
                 value: vehicle.status,
-                color: _vehicleStatusColor(vehicle.status),
+                color: _vehicleStatusColor(vehicle.status, isDark: isDark),
               ),
               _Detail(
                 icon: AppIcons.user,
@@ -993,22 +1030,26 @@ class _VehicleDetails extends StatelessWidget {
               label: 'Delete',
               destructive: true,
             ),
+              ],
+            ),
+          ),
         ],
       ),
     ),
   );
+  }
 }
 
-Color _vehicleStatusColor(String status) {
+Color _vehicleStatusColor(String status, {bool isDark = false}) {
   switch (status) {
     case 'Active':
       return AppColors.success;
     case 'Maintenance':
       return AppColors.warning;
     case 'Idle':
-      return AppColors.textSecondary;
+      return isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
     default:
-      return AppColors.textMuted;
+      return isDark ? AppColors.darkTextMuted : AppColors.textMuted;
   }
 }
 
@@ -1018,21 +1059,26 @@ class _DetailSection extends StatelessWidget {
   const _DetailSection({required this.children});
 
   @override
-  Widget build(BuildContext context) => Container(
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: AppColors.border),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withValues(alpha: 0.035),
-          blurRadius: 14,
-          offset: const Offset(0, 6),
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkCardBg : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark ? AppColors.darkBorder : AppColors.border,
         ),
-      ],
-    ),
-    child: Column(children: children),
-  );
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.035),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(children: children),
+    );
+  }
 }
 
 class _SheetActionButton extends StatelessWidget {
@@ -1049,7 +1095,9 @@ class _SheetActionButton extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => Padding(
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Padding(
     padding: const EdgeInsets.only(bottom: 10),
     child: OutlinedButton(
       onPressed: onPressed,
@@ -1058,7 +1106,7 @@ class _SheetActionButton extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16),
         backgroundColor: destructive
             ? AppColors.error.withValues(alpha: 0.04)
-            : Colors.white,
+            : (isDark ? AppColors.darkCardBg : Colors.white),
         foregroundColor: destructive ? AppColors.error : AppColors.primary,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         side: BorderSide(
@@ -1096,6 +1144,7 @@ class _SheetActionButton extends StatelessWidget {
       ),
     ),
   );
+  }
 }
 
 class _Detail extends StatelessWidget {
@@ -1125,6 +1174,7 @@ class _Detail extends StatelessWidget {
     final horizontalPadding = compact ? 14.0 : 18.0;
     final labelFontSize = compact ? 13.5 : 14.5;
     final valueFontSize = compact ? 13.5 : 14.5;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       constraints: BoxConstraints(minHeight: compact ? 62 : 68),
@@ -1132,8 +1182,12 @@ class _Detail extends StatelessWidget {
         horizontal: horizontalPadding,
         vertical: compact ? 10 : 12,
       ),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: AppColors.border)),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: isDark ? AppColors.darkBorder : AppColors.border,
+          ),
+        ),
       ),
       child: Row(
         children: [
@@ -1154,7 +1208,9 @@ class _Detail extends StatelessWidget {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                color: AppColors.textSecondary,
+                color: isDark
+                    ? AppColors.darkTextSecondary
+                    : AppColors.textSecondary,
                 fontSize: labelFontSize,
                 fontWeight: FontWeight.w700,
               ),
@@ -1172,7 +1228,9 @@ class _Detail extends StatelessWidget {
                     style: TextStyle(
                       fontSize: valueFontSize,
                       fontWeight: FontWeight.w900,
-                      color: AppColors.textPrimary,
+                      color: isDark
+                          ? AppColors.darkTextPrimary
+                          : AppColors.textPrimary,
                     ),
                   ),
                 )

@@ -6,7 +6,7 @@ class ApiConstants {
   static String get baseUrl {
     if (Platform.isAndroid) return 'http://10.0.2.2:3000';
     return 'http://localhost:3000';
-    // return 'https://sslogistics-hqs96351g-deekshiths-projects-eaba341b.vercel.app/';
+    // return 'https://sslogistics-g1ah5sby0-deekshiths-projects-eaba341b.vercel.app/';
   }
 
   // ── Auth ──────────────────────────────────────────────────────────────────

@@ -126,9 +126,10 @@ class _EditDieselSheetState extends ConsumerState<EditDieselSheet> {
     final r = widget.record;
     final fillDate = DateTime.tryParse(r.fillDate)?.toLocal();
     final dateFmt = DateFormat('dd MMM yyyy  HH:mm');
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Material(
-      color: Colors.white,
+      color: isDark ? AppColors.darkCardBg : Colors.white,
       borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -139,7 +140,7 @@ class _EditDieselSheetState extends ConsumerState<EditDieselSheet> {
               width: 36,
               height: 4,
               decoration: BoxDecoration(
-                color: AppColors.border,
+                color: isDark ? AppColors.darkBorder : AppColors.border,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -148,12 +149,14 @@ class _EditDieselSheetState extends ConsumerState<EditDieselSheet> {
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             child: Row(
               children: [
-                const Text(
+                Text(
                   'Edit Diesel Record',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
+                    color: isDark
+                        ? AppColors.darkTextPrimary
+                        : AppColors.textPrimary,
                   ),
                 ),
                 const Spacer(),
@@ -178,9 +181,13 @@ class _EditDieselSheetState extends ConsumerState<EditDieselSheet> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: AppColors.pageBg,
+                        color: isDark ? AppColors.darkPageBg : AppColors.pageBg,
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: AppColors.border),
+                        border: Border.all(
+                          color: isDark
+                              ? AppColors.darkBorder
+                              : AppColors.border,
+                        ),
                       ),
                       child: Column(
                         children: [
@@ -264,10 +271,12 @@ class _EditDieselSheetState extends ConsumerState<EditDieselSheet> {
                       alignment: Alignment.centerRight,
                       child: Text(
                         'Amount: ₹ ${NumberFormat('#,##0.00', 'en_IN').format(_amount)}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.textSecondary,
+                          color: isDark
+                              ? AppColors.darkTextSecondary
+                              : AppColors.textSecondary,
                         ),
                       ),
                     ),
@@ -351,23 +360,27 @@ class _EditDieselSheetState extends ConsumerState<EditDieselSheet> {
     );
   }
 
-  InputDecoration _inputDecor({String? hint}) => InputDecoration(
-    hintText: hint,
-    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-    isDense: true,
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(8),
-      borderSide: const BorderSide(color: AppColors.border),
-    ),
-    enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(8),
-      borderSide: const BorderSide(color: AppColors.border),
-    ),
-    focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(8),
-      borderSide: const BorderSide(color: AppColors.primary, width: 2),
-    ),
-  );
+  InputDecoration _inputDecor({String? hint}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final borderColor = isDark ? AppColors.darkBorder : AppColors.border;
+    return InputDecoration(
+      hintText: hint,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      isDense: true,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: BorderSide(color: borderColor),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: BorderSide(color: borderColor),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: const BorderSide(color: AppColors.primary, width: 2),
+      ),
+    );
+  }
 }
 
 class _ReadOnlyRow extends StatelessWidget {
@@ -377,6 +390,7 @@ class _ReadOnlyRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
@@ -385,16 +399,21 @@ class _ReadOnlyRow extends StatelessWidget {
             width: 80,
             child: Text(
               label,
-              style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+              style: TextStyle(
+                fontSize: 12,
+                color: isDark ? AppColors.darkTextMuted : AppColors.textMuted,
+              ),
             ),
           ),
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
+                color: isDark
+                    ? AppColors.darkTextPrimary
+                    : AppColors.textPrimary,
               ),
             ),
           ),
@@ -411,15 +430,16 @@ class _Section extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w500,
-            color: AppColors.textPrimary,
+            color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
           ),
         ),
         const SizedBox(height: 5),
@@ -444,18 +464,22 @@ class _TapField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final mutedColor = isDark ? AppColors.darkTextMuted : AppColors.textMuted;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
         decoration: BoxDecoration(
-          border: Border.all(color: AppColors.border),
+          border: Border.all(
+            color: isDark ? AppColors.darkBorder : AppColors.border,
+          ),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
           children: [
-            Icon(icon, size: 15, color: AppColors.textMuted),
+            Icon(icon, size: 15, color: mutedColor),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
@@ -464,14 +488,18 @@ class _TapField extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: 13,
-                  color: muted ? AppColors.textMuted : AppColors.textPrimary,
+                  color: muted
+                      ? mutedColor
+                      : (isDark
+                            ? AppColors.darkTextPrimary
+                            : AppColors.textPrimary),
                 ),
               ),
             ),
-            const Icon(
+            Icon(
               Icons.keyboard_arrow_down_rounded,
               size: 18,
-              color: AppColors.textMuted,
+              color: mutedColor,
             ),
           ],
         ),
@@ -495,8 +523,9 @@ class _OptionPickerSheet<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Material(
-      color: Colors.white,
+      color: isDark ? AppColors.darkCardBg : Colors.white,
       borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       child: SafeArea(
         top: false,
@@ -509,7 +538,7 @@ class _OptionPickerSheet<T> extends StatelessWidget {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.border,
+                  color: isDark ? AppColors.darkBorder : AppColors.border,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -520,10 +549,12 @@ class _OptionPickerSheet<T> extends StatelessWidget {
                     Expanded(
                       child: Text(
                         title,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w800,
-                          color: AppColors.textPrimary,
+                          color: isDark
+                              ? AppColors.darkTextPrimary
+                              : AppColors.textPrimary,
                         ),
                       ),
                     ),
@@ -547,12 +578,16 @@ class _OptionPickerSheet<T> extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: selected
                             ? AppColors.tileVehiclesBg
-                            : AppColors.pageBg,
+                            : (isDark
+                                  ? AppColors.darkPageBg
+                                  : AppColors.pageBg),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: selected
                               ? AppColors.primary
-                              : AppColors.border,
+                              : (isDark
+                                    ? AppColors.darkBorder
+                                    : AppColors.border),
                         ),
                       ),
                       child: Row(
@@ -564,7 +599,9 @@ class _OptionPickerSheet<T> extends StatelessWidget {
                                 fontWeight: FontWeight.w700,
                                 color: selected
                                     ? AppColors.primary
-                                    : AppColors.textPrimary,
+                                    : (isDark
+                                          ? AppColors.darkTextPrimary
+                                          : AppColors.textPrimary),
                               ),
                             ),
                           ),

@@ -4,6 +4,7 @@
     "project_id": "ogistics-dev",
     "storage_bucket": "ogistics-dev.firebasestorage.app"
   },
+
   "client": [
     {
       "client_info": {

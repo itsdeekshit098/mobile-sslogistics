@@ -4,11 +4,13 @@ import 'dart:io';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../network/dio_client.dart';
 import '../constants/api_constants.dart';
 import '../router/app_router.dart';
+import '../../features/notifications/providers/notification_provider.dart';
 import 'notification_routes.dart';
 
 /// Wraps Firebase Cloud Messaging setup: permission request, token
@@ -24,6 +26,10 @@ class PushService {
       FlutterLocalNotificationsPlugin();
   static String? _currentToken;
   static bool _initialized = false;
+
+  /// Must match the Android raw resource name (res/raw/notification.mp3,
+  /// no extension) and the backend's android.notification.channelId.
+  static const String _channelId = 'vehicle_alerts';
 
   static Future<void> init() async {
     if (_initialized) return;
@@ -49,6 +55,7 @@ class PushService {
         final payload = response.payload;
         if (payload == null) return;
         final data = jsonDecode(payload) as Map<String, dynamic>;
+        _markReadFromData(data);
         final type = data['type'] as String?;
         final route = type != null ? mobileRouteForNotification(type, data) : null;
         if (route != null) {
@@ -56,6 +63,21 @@ class PushService {
         }
       },
     );
+
+    // Android channel sound is fixed at creation time, so this must be a
+    // distinct channel id from the old default ('notifications') — existing
+    // installs otherwise keep their already-created, sound-less channel.
+    await _localNotifications
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(
+          const AndroidNotificationChannel(
+            _channelId,
+            'Vehicle Alerts',
+            importance: Importance.high,
+            sound: RawResourceAndroidNotificationSound('notification'),
+          ),
+        );
 
     final messaging = FirebaseMessaging.instance;
     await messaging.requestPermission(alert: true, badge: true, sound: true);
@@ -77,12 +99,13 @@ class PushService {
         notification.body,
         const NotificationDetails(
           android: AndroidNotificationDetails(
-            'notifications',
-            'Notifications',
+            _channelId,
+            'Vehicle Alerts',
             importance: Importance.high,
             priority: Priority.high,
+            sound: RawResourceAndroidNotificationSound('notification'),
           ),
-          iOS: DarwinNotificationDetails(),
+          iOS: DarwinNotificationDetails(sound: 'notification.caf'),
         ),
         payload: jsonEncode(message.data),
       );
@@ -90,6 +113,7 @@ class PushService {
 
     // Tapping a push while the app was backgrounded (not terminated).
     FirebaseMessaging.onMessageOpenedApp.listen((message) {
+      _markReadFromData(message.data);
       final type = message.data['type'] as String?;
       final route =
           type != null ? mobileRouteForNotification(type, message.data) : null;
@@ -97,6 +121,37 @@ class PushService {
         rootNavigatorKey.currentContext?.push(route);
       }
     });
+
+    // Tapping a push that launched the app from a fully terminated state.
+    final initialMessage = await messaging.getInitialMessage();
+    if (initialMessage != null) {
+      _markReadFromData(initialMessage.data);
+      final type = initialMessage.data['type'] as String?;
+      final route = type != null
+          ? mobileRouteForNotification(type, initialMessage.data)
+          : null;
+      if (route != null) {
+        rootNavigatorKey.currentContext?.push(route);
+      }
+    }
+  }
+
+  /// Marks the notification the user just tapped as read in-app, so the
+  /// list/badge reflect it immediately instead of waiting on the next SSE
+  /// reconnect. Best-effort: the backend only started sending
+  /// `notificationId` in the push payload once this landed, so older/queued
+  /// pushes may not carry it.
+  static void _markReadFromData(Map<String, dynamic> data) {
+    final idStr = data['notificationId'] as String?;
+    if (idStr == null) return;
+    final id = int.tryParse(idStr);
+    if (id == null) return;
+
+    final context = rootNavigatorKey.currentContext;
+    if (context == null) return;
+    ProviderScope.containerOf(context, listen: false)
+        .read(notificationListProvider.notifier)
+        .markRead(id);
   }
 
   /// Re-attempts registering the current device token — call after a

@@ -8,6 +8,7 @@ import 'package:mobile_sslogistics/core/constants/app_icons.dart';
 import '../../core/constants/app_colors.dart';
 import '../../features/auth/providers/auth_provider.dart';
 import '../../shared/models/app_user.dart';
+import '../../shared/widgets/sign_out_confirmation_dialog.dart';
 
 class _NavItem {
   final String title;
@@ -39,7 +40,7 @@ const _navItems = [
     title: 'Diesel Records',
     icon: AppIcons.fuel,
     path: '/diesel-records',
-    enabled: true,
+    enabled: false,
   ),
   _NavItem(
     title: 'Vehicles',
@@ -148,7 +149,7 @@ class AppDrawer extends ConsumerWidget {
                     _GlassDivider(),
                     Expanded(child: _buildNavList(context, user)),
                     _GlassDivider(),
-                    _buildFooter(context, ref, user),
+                    _buildFooter(context, user),
                   ],
                 ),
               ),
@@ -253,7 +254,7 @@ class AppDrawer extends ConsumerWidget {
     );
   }
 
-  Widget _buildFooter(BuildContext context, WidgetRef ref, AppUser? user) {
+  Widget _buildFooter(BuildContext context, AppUser? user) {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: ClipRRect(
@@ -322,9 +323,9 @@ class AppDrawer extends ConsumerWidget {
                 SizedBox(
                   width: double.infinity,
                   child: TextButton.icon(
-                    onPressed: () async {
+                    onPressed: () {
                       Navigator.pop(context);
-                      await ref.read(authProvider.notifier).logout();
+                      SignOutConfirmationDialog.show(context);
                     },
                     icon: const Icon(
                       AppIcons.logOut,

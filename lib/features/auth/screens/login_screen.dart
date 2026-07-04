@@ -212,6 +212,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                       const SizedBox(height: 6),
                                       TextFormField(
                                         controller: _emailCtrl,
+                                        enabled: !isLoading,
                                         keyboardType:
                                             TextInputType.emailAddress,
                                         autofillHints: const [
@@ -242,6 +243,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                       const SizedBox(height: 6),
                                       TextFormField(
                                         controller: _passwordCtrl,
+                                        enabled: !isLoading,
                                         obscureText: _obscurePassword,
                                         autofillHints: const [
                                           AutofillHints.password,

@@ -32,6 +32,7 @@ class DeleteConfirmationDialog extends StatelessWidget {
     final bodySize = veryCompact ? 13.5 : compact ? 14.5 : 15.5;
     final warningSize = veryCompact ? 12.5 : compact ? 13.0 : 13.5;
     final buttonHeight = veryCompact ? 48.0 : 52.0;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Dialog(
       insetPadding: EdgeInsets.symmetric(
@@ -50,7 +51,7 @@ class DeleteConfirmationDialog extends StatelessWidget {
             compact ? 18 : 22,
           ),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: isDark ? AppColors.darkCardBg : Colors.white,
             borderRadius: BorderRadius.circular(22),
             boxShadow: [
               BoxShadow(
@@ -91,7 +92,9 @@ class DeleteConfirmationDialog extends StatelessWidget {
                 title,
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: AppColors.textPrimary,
+                  color: isDark
+                      ? AppColors.darkTextPrimary
+                      : AppColors.textPrimary,
                   fontSize: titleSize,
                   height: 1.1,
                   fontWeight: FontWeight.w900,
@@ -102,7 +105,9 @@ class DeleteConfirmationDialog extends StatelessWidget {
                 textAlign: TextAlign.center,
                 text: TextSpan(
                   style: TextStyle(
-                    color: AppColors.textSecondary,
+                    color: isDark
+                        ? AppColors.darkTextSecondary
+                        : AppColors.textSecondary,
                     fontSize: bodySize,
                     height: 1.35,
                     fontWeight: FontWeight.w500,
@@ -111,8 +116,10 @@ class DeleteConfirmationDialog extends StatelessWidget {
                     const TextSpan(text: 'Are you sure you want to delete\n'),
                     TextSpan(
                       text: targetName,
-                      style: const TextStyle(
-                        color: AppColors.textSecondary,
+                      style: TextStyle(
+                        color: isDark
+                            ? AppColors.darkTextSecondary
+                            : AppColors.textSecondary,
                         fontWeight: FontWeight.w900,
                       ),
                     ),
@@ -128,7 +135,7 @@ class DeleteConfirmationDialog extends StatelessWidget {
                   vertical: compact ? 12 : 13,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: isDark ? AppColors.darkCardBg : Colors.white,
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
                     color: AppColors.primary.withValues(alpha: 0.14),
@@ -152,7 +159,9 @@ class DeleteConfirmationDialog extends StatelessWidget {
                           ],
                         ),
                         style: TextStyle(
-                          color: AppColors.textSecondary,
+                          color: isDark
+                              ? AppColors.darkTextSecondary
+                              : AppColors.textSecondary,
                           fontSize: warningSize,
                           height: 1.34,
                           fontWeight: FontWeight.w600,
@@ -218,17 +227,23 @@ class _CancelButton extends StatelessWidget {
   const _CancelButton({required this.height});
 
   @override
-  Widget build(BuildContext context) => OutlinedButton(
-    onPressed: () => Navigator.pop(context, false),
-    style: OutlinedButton.styleFrom(
-      minimumSize: Size.fromHeight(height),
-      foregroundColor: AppColors.textSecondary,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      side: const BorderSide(color: AppColors.border),
-      textStyle: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w700),
-    ),
-    child: const Text('Cancel'),
-  );
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return OutlinedButton(
+      onPressed: () => Navigator.pop(context, false),
+      style: OutlinedButton.styleFrom(
+        minimumSize: Size.fromHeight(height),
+        foregroundColor:
+            isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        side: BorderSide(
+          color: isDark ? AppColors.darkBorder : AppColors.border,
+        ),
+        textStyle: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w700),
+      ),
+      child: const Text('Cancel'),
+    );
+  }
 }
 
 class _DeleteButton extends StatelessWidget {

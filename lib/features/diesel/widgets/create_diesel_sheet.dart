@@ -172,9 +172,10 @@ class _CreateDieselSheetState extends ConsumerState<CreateDieselSheet> {
   Widget build(BuildContext context) {
     final vehiclesAsync = ref.watch(vehiclesProvider);
     final dateFmt = DateFormat('dd MMM yyyy');
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Material(
-      color: Colors.white,
+      color: isDark ? AppColors.darkCardBg : Colors.white,
       borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -186,7 +187,7 @@ class _CreateDieselSheetState extends ConsumerState<CreateDieselSheet> {
               width: 36,
               height: 4,
               decoration: BoxDecoration(
-                color: AppColors.border,
+                color: isDark ? AppColors.darkBorder : AppColors.border,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -198,12 +199,14 @@ class _CreateDieselSheetState extends ConsumerState<CreateDieselSheet> {
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             child: Row(
               children: [
-                const Text(
+                Text(
                   'Add Diesel Entry',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
+                    color: isDark
+                        ? AppColors.darkTextPrimary
+                        : AppColors.textPrimary,
                   ),
                 ),
                 const Spacer(),
@@ -335,12 +338,16 @@ class _CreateDieselSheetState extends ConsumerState<CreateDieselSheet> {
                                   decoration: BoxDecoration(
                                     color: isSelected
                                         ? AppColors.primary
-                                        : Colors.white,
+                                        : (isDark
+                                              ? AppColors.darkCardBg
+                                              : Colors.white),
                                     borderRadius: BorderRadius.circular(8),
                                     border: Border.all(
                                       color: isSelected
                                           ? AppColors.primary
-                                          : AppColors.border,
+                                          : (isDark
+                                                ? AppColors.darkBorder
+                                                : AppColors.border),
                                     ),
                                   ),
                                   child: Center(
@@ -350,7 +357,9 @@ class _CreateDieselSheetState extends ConsumerState<CreateDieselSheet> {
                                         fontWeight: FontWeight.w600,
                                         color: isSelected
                                             ? Colors.white
-                                            : AppColors.textSecondary,
+                                            : (isDark
+                                                  ? AppColors.darkTextSecondary
+                                                  : AppColors.textSecondary),
                                       ),
                                     ),
                                   ),
@@ -446,19 +455,27 @@ class _CreateDieselSheetState extends ConsumerState<CreateDieselSheet> {
                                 horizontal: 12,
                               ),
                               decoration: BoxDecoration(
-                                color: AppColors.pageBg,
+                                color: isDark
+                                    ? AppColors.darkPageBg
+                                    : AppColors.pageBg,
                                 borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: AppColors.border),
+                                border: Border.all(
+                                  color: isDark
+                                      ? AppColors.darkBorder
+                                      : AppColors.border,
+                                ),
                               ),
                               alignment: Alignment.centerLeft,
                               child: Text(
                                 _amount > 0
                                     ? '₹ ${NumberFormat('#,##0.00', 'en_IN').format(_amount)}'
                                     : '—',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
-                                  color: AppColors.textSecondary,
+                                  color: isDark
+                                      ? AppColors.darkTextSecondary
+                                      : AppColors.textSecondary,
                                 ),
                               ),
                             ),
@@ -551,23 +568,27 @@ class _CreateDieselSheetState extends ConsumerState<CreateDieselSheet> {
     );
   }
 
-  InputDecoration _inputDecor({String? hint}) => InputDecoration(
-    hintText: hint,
-    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-    isDense: true,
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(8),
-      borderSide: const BorderSide(color: AppColors.border),
-    ),
-    enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(8),
-      borderSide: const BorderSide(color: AppColors.border),
-    ),
-    focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(8),
-      borderSide: const BorderSide(color: AppColors.primary, width: 2),
-    ),
-  );
+  InputDecoration _inputDecor({String? hint}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final borderColor = isDark ? AppColors.darkBorder : AppColors.border;
+    return InputDecoration(
+      hintText: hint,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      isDense: true,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: BorderSide(color: borderColor),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: BorderSide(color: borderColor),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: const BorderSide(color: AppColors.primary, width: 2),
+      ),
+    );
+  }
 }
 
 class _Section extends StatelessWidget {
@@ -577,10 +598,11 @@ class _Section extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const labelStyle = TextStyle(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final labelStyle = TextStyle(
       fontSize: 13,
       fontWeight: FontWeight.w500,
-      color: AppColors.textPrimary,
+      color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
     );
     final isRequired = label.endsWith(' *');
     final baseLabel = isRequired
@@ -625,18 +647,22 @@ class _TapField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final mutedColor = isDark ? AppColors.darkTextMuted : AppColors.textMuted;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
         decoration: BoxDecoration(
-          border: Border.all(color: AppColors.border),
+          border: Border.all(
+            color: isDark ? AppColors.darkBorder : AppColors.border,
+          ),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
           children: [
-            Icon(icon, size: 15, color: AppColors.textMuted),
+            Icon(icon, size: 15, color: mutedColor),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
@@ -645,14 +671,18 @@ class _TapField extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: 13,
-                  color: muted ? AppColors.textMuted : AppColors.textPrimary,
+                  color: muted
+                      ? mutedColor
+                      : (isDark
+                            ? AppColors.darkTextPrimary
+                            : AppColors.textPrimary),
                 ),
               ),
             ),
-            const Icon(
+            Icon(
               Icons.keyboard_arrow_down_rounded,
               size: 18,
-              color: AppColors.textMuted,
+              color: mutedColor,
             ),
           ],
         ),
@@ -693,6 +723,9 @@ class _VehiclePickerSheetState extends State<_VehiclePickerSheet> {
     final media = MediaQuery.of(context);
     final keyboardHeight = media.viewInsets.bottom;
     final maxListHeight = (media.size.height - keyboardHeight) * 0.42;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final secondaryColor =
+        isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
     return _PickerShell(
       title: 'Select vehicle (${widget.vehicles.length})',
       child: Column(
@@ -703,7 +736,10 @@ class _VehiclePickerSheetState extends State<_VehiclePickerSheet> {
             child: TextField(
               autofocus: true,
               onChanged: (value) => setState(() => _query = value),
-              decoration: _searchDecor('Search vehicle number, make, model'),
+              decoration: _searchDecor(
+                context,
+                'Search vehicle number, make, model',
+              ),
             ),
           ),
           ConstrainedBox(
@@ -711,31 +747,31 @@ class _VehiclePickerSheetState extends State<_VehiclePickerSheet> {
               maxHeight: maxListHeight.clamp(160.0, 420.0),
             ),
             child: filtered.isEmpty
-                ? const Center(
+                ? Center(
                     child: Padding(
-                      padding: EdgeInsets.symmetric(vertical: 32),
+                      padding: const EdgeInsets.symmetric(vertical: 32),
                       child: Text(
                         'No vehicles found',
-                        style: TextStyle(color: AppColors.textSecondary),
+                        style: TextStyle(color: secondaryColor),
                       ),
                     ),
                   )
                 : ListView.separated(
                     shrinkWrap: true,
                     itemCount: filtered.length,
-                    separatorBuilder: (_, _) => const Divider(
+                    separatorBuilder: (_, _) => Divider(
                       height: 1,
                       indent: 16,
                       endIndent: 16,
-                      color: AppColors.border,
+                      color: isDark ? AppColors.darkBorder : AppColors.border,
                     ),
                     itemBuilder: (_, index) {
                       final vehicle = filtered[index];
                       final selected = widget.selectedVehicle?.id == vehicle.id;
                       return ListTile(
-                        leading: const Icon(
+                        leading: Icon(
                           AppIcons.truck,
-                          color: AppColors.textSecondary,
+                          color: secondaryColor,
                         ),
                         title: Text(
                           vehicle.plateNumber,
@@ -745,7 +781,9 @@ class _VehiclePickerSheetState extends State<_VehiclePickerSheet> {
                                 : FontWeight.w600,
                             color: selected
                                 ? AppColors.primary
-                                : AppColors.textPrimary,
+                                : (isDark
+                                      ? AppColors.darkTextPrimary
+                                      : AppColors.textPrimary),
                           ),
                         ),
                         subtitle:
@@ -792,6 +830,7 @@ class _OptionPickerSheet<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return _PickerShell(
       title: title,
       child: Padding(
@@ -811,10 +850,12 @@ class _OptionPickerSheet<T> extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: selected
                         ? AppColors.tileVehiclesBg
-                        : AppColors.pageBg,
+                        : (isDark ? AppColors.darkPageBg : AppColors.pageBg),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: selected ? AppColors.primary : AppColors.border,
+                      color: selected
+                          ? AppColors.primary
+                          : (isDark ? AppColors.darkBorder : AppColors.border),
                     ),
                   ),
                   child: Row(
@@ -826,7 +867,9 @@ class _OptionPickerSheet<T> extends StatelessWidget {
                             fontWeight: FontWeight.w700,
                             color: selected
                                 ? AppColors.primary
-                                : AppColors.textPrimary,
+                                : (isDark
+                                      ? AppColors.darkTextPrimary
+                                      : AppColors.textPrimary),
                           ),
                         ),
                       ),
@@ -856,12 +899,13 @@ class _PickerShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return AnimatedPadding(
       duration: const Duration(milliseconds: 180),
       curve: Curves.easeOut,
       padding: EdgeInsets.only(bottom: keyboardHeight),
       child: Material(
-        color: Colors.white,
+        color: isDark ? AppColors.darkCardBg : Colors.white,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         child: SafeArea(
           top: false,
@@ -873,7 +917,7 @@ class _PickerShell extends StatelessWidget {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.border,
+                  color: isDark ? AppColors.darkBorder : AppColors.border,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -884,10 +928,12 @@ class _PickerShell extends StatelessWidget {
                     Expanded(
                       child: Text(
                         title,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w800,
-                          color: AppColors.textPrimary,
+                          color: isDark
+                              ? AppColors.darkTextPrimary
+                              : AppColors.textPrimary,
                         ),
                       ),
                     ),
@@ -907,26 +953,30 @@ class _PickerShell extends StatelessWidget {
   }
 }
 
-InputDecoration _searchDecor(String hint) => InputDecoration(
-  hintText: hint,
-  prefixIcon: const Icon(Icons.search_rounded, size: 20),
-  isDense: true,
-  filled: true,
-  fillColor: AppColors.pageBg,
-  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-  border: OutlineInputBorder(
-    borderRadius: BorderRadius.circular(12),
-    borderSide: const BorderSide(color: AppColors.border),
-  ),
-  enabledBorder: OutlineInputBorder(
-    borderRadius: BorderRadius.circular(12),
-    borderSide: const BorderSide(color: AppColors.border),
-  ),
-  focusedBorder: OutlineInputBorder(
-    borderRadius: BorderRadius.circular(12),
-    borderSide: const BorderSide(color: AppColors.primary, width: 1.4),
-  ),
-);
+InputDecoration _searchDecor(BuildContext context, String hint) {
+  final isDark = Theme.of(context).brightness == Brightness.dark;
+  final borderColor = isDark ? AppColors.darkBorder : AppColors.border;
+  return InputDecoration(
+    hintText: hint,
+    prefixIcon: const Icon(Icons.search_rounded, size: 20),
+    isDense: true,
+    filled: true,
+    fillColor: isDark ? AppColors.darkPageBg : AppColors.pageBg,
+    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide(color: borderColor),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide(color: borderColor),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: AppColors.primary, width: 1.4),
+    ),
+  );
+}
 
 class _HintChip extends StatelessWidget {
   final String label;
@@ -935,6 +985,7 @@ class _HintChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -947,10 +998,10 @@ class _HintChip extends StatelessWidget {
         ),
         Text(
           value,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
+            color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
           ),
         ),
       ],

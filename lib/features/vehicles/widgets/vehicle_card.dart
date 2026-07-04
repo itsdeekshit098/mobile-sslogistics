@@ -32,6 +32,7 @@ class VehicleCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final typeColor = _typeColor(vehicle.vehicleType);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
@@ -40,9 +41,15 @@ class VehicleCard extends StatelessWidget {
         // the card "glass": the BackdropFilter below blurs whatever is
         // behind it (the soft pastel blobs on the page), and this fill lets
         // that blur show through instead of hiding behind solid white.
-        color: Colors.white.withValues(alpha: 0.58),
+        color: isDark
+            ? AppColors.darkCardBg.withValues(alpha: 0.58)
+            : Colors.white.withValues(alpha: 0.58),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.75)),
+        border: Border.all(
+          color: isDark
+              ? AppColors.darkBorder.withValues(alpha: 0.75)
+              : Colors.white.withValues(alpha: 0.75),
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.06),
@@ -97,11 +104,13 @@ class VehicleCard extends StatelessWidget {
                                     vehicle.vehicleNumber,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 18,
                                       height: 1.12,
                                       fontWeight: FontWeight.w800,
-                                      color: AppColors.textPrimary,
+                                      color: isDark
+                                          ? AppColors.darkTextPrimary
+                                          : AppColors.textPrimary,
                                     ),
                                   ),
                                   const SizedBox(height: 6),
@@ -145,9 +154,9 @@ class VehicleCard extends StatelessWidget {
                 const SizedBox(height: 9),
                 Text(
                   'Last service: ${_formatDate(vehicle.lastServiceDate)}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
-                    color: AppColors.textMuted,
+                    color: isDark ? AppColors.darkTextMuted : AppColors.textMuted,
                   ),
                 ),
               ],
@@ -226,7 +235,7 @@ class VehicleCard extends StatelessWidget {
       case 'CONTAINER':
         return AppColors.tileDieselIcon;
       default:
-        return AppColors.textSecondary;
+        return AppColors.textMuted;
     }
   }
 }
@@ -407,15 +416,22 @@ class _InfoChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
       decoration: BoxDecoration(
         // Translucent white rather than a flat pageBg patch, so it doesn't
         // read as an opaque block sitting inside the glass card around it.
-        color: Colors.white.withValues(alpha: 0.55),
+        color: isDark
+            ? AppColors.darkCardBg.withValues(alpha: 0.55)
+            : Colors.white.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.7)),
+        border: Border.all(
+          color: isDark
+              ? AppColors.darkBorder.withValues(alpha: 0.7)
+              : Colors.white.withValues(alpha: 0.7),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.max,
@@ -428,10 +444,12 @@ class _InfoChip extends StatelessWidget {
               maxLines: 2,
               overflow: TextOverflow.fade,
               softWrap: true,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11.5,
                 height: 1.12,
-                color: AppColors.textSecondary,
+                color: isDark
+                    ? AppColors.darkTextSecondary
+                    : AppColors.textSecondary,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -450,6 +468,7 @@ class _DocumentsButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(10),
@@ -457,30 +476,38 @@ class _DocumentsButton extends StatelessWidget {
         height: 44,
         padding: const EdgeInsets.symmetric(horizontal: 10),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.55),
+          color: isDark
+              ? AppColors.darkCardBg.withValues(alpha: 0.55)
+              : Colors.white.withValues(alpha: 0.55),
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.7)),
+          border: Border.all(
+            color: isDark
+                ? AppColors.darkBorder.withValues(alpha: 0.7)
+                : Colors.white.withValues(alpha: 0.7),
+          ),
         ),
         child: Row(
           children: [
             _IconSquare(icon: AppIcons.fileText, color: color),
             const SizedBox(width: 8),
-            const Expanded(
+            Expanded(
               child: Text(
                 'Documents',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: 13,
-                  color: AppColors.textSecondary,
+                  color: isDark
+                      ? AppColors.darkTextSecondary
+                      : AppColors.textSecondary,
                   fontWeight: FontWeight.w800,
                 ),
               ),
             ),
-            const Icon(
+            Icon(
               AppIcons.chevronRight,
               size: 19,
-              color: AppColors.textMuted,
+              color: isDark ? AppColors.darkTextMuted : AppColors.textMuted,
             ),
           ],
         ),

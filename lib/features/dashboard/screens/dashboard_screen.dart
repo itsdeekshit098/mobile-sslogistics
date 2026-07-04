@@ -27,15 +27,18 @@ class DashboardScreen extends ConsumerWidget {
     final user = ref.watch(authProvider).valueOrNull;
     if (user == null) return const SizedBox.shrink();
 
-    final unreadCount =
-        ref.watch(notificationListProvider).valueOrNull?.unreadCount ?? 0;
+    final notificationsAsync = ref.watch(notificationListProvider);
+    final unreadCount = notificationsAsync.valueOrNull?.unreadCount ?? 0;
+    final notificationsLoading =
+        notificationsAsync.isLoading && !notificationsAsync.hasValue;
 
     final visibleTiles = allTiles
         .where((t) => t.allowedRoles.contains(user.role))
         .toList();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: AppColors.pageBg,
+      backgroundColor: isDark ? AppColors.darkPageBg : AppColors.pageBg,
       drawer: AppDrawer(currentPath: '/dashboard'),
       body: CustomScrollView(
         slivers: [
@@ -44,6 +47,7 @@ class DashboardScreen extends ConsumerWidget {
               greeting: _greeting,
               user: user,
               unreadCount: unreadCount,
+              notificationsLoading: notificationsLoading,
             ),
           ),
           SliverPadding(
@@ -60,10 +64,12 @@ class DashboardScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  const Text(
+                  Text(
                     'Quick Access',
                     style: TextStyle(
-                      color: AppColors.textPrimary,
+                      color: isDark
+                          ? AppColors.darkTextPrimary
+                          : AppColors.textPrimary,
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
                     ),
@@ -75,19 +81,16 @@ class DashboardScreen extends ConsumerWidget {
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
             sliver: SliverGrid(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final tile = visibleTiles[index];
-                  return _AnimatedTileEntry(
-                    index: index,
-                    child: DashboardTile(
-                      tile: tile,
-                      onTap: () => _onTileTap(context, tile),
-                    ),
-                  );
-                },
-                childCount: visibleTiles.length,
-              ),
+              delegate: SliverChildBuilderDelegate((context, index) {
+                final tile = visibleTiles[index];
+                return _AnimatedTileEntry(
+                  index: index,
+                  child: DashboardTile(
+                    tile: tile,
+                    onTap: () => _onTileTap(context, tile),
+                  ),
+                );
+              }, childCount: visibleTiles.length),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
                 crossAxisSpacing: 12,
@@ -102,7 +105,8 @@ class DashboardScreen extends ConsumerWidget {
   }
 
   void _onTileTap(BuildContext context, DashboardTileData tile) {
-    if (!tile.isMobileReady) return; // tile is already visually disabled, but guard anyway
+    if (!tile.isMobileReady)
+      return; // tile is already visually disabled, but guard anyway
     if (tile.route != null) context.go(tile.route!);
   }
 }
@@ -114,11 +118,13 @@ class _DashboardHero extends StatelessWidget {
   final String greeting;
   final AppUser user;
   final int unreadCount;
+  final bool notificationsLoading;
 
   const _DashboardHero({
     required this.greeting,
     required this.user,
     this.unreadCount = 0,
+    this.notificationsLoading = false,
   });
 
   @override
@@ -133,11 +139,7 @@ class _DashboardHero extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              AppColors.sidebarBg,
-              Color(0xFF16305C),
-              AppColors.primary,
-            ],
+            colors: [AppColors.sidebarBg, Color(0xFF16305C), AppColors.primary],
           ),
         ),
         child: Stack(
@@ -174,7 +176,10 @@ class _DashboardHero extends StatelessWidget {
                             _GlassIconButton(
                               icon: AppIcons.bell,
                               badgeCount: unreadCount,
-                              onTap: () => context.push('/notifications'),
+                              dimmed: notificationsLoading,
+                              onTap: notificationsLoading
+                                  ? null
+                                  : () => context.push('/notifications'),
                             ),
                             const SizedBox(width: 10),
                             _GlassAvatar(initials: user.initials),
@@ -238,11 +243,13 @@ class _GlassIconButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback? onTap;
   final int badgeCount;
+  final bool dimmed;
 
   const _GlassIconButton({
     required this.icon,
     this.onTap,
     this.badgeCount = 0,
+    this.dimmed = false,
   });
 
   @override
@@ -250,22 +257,26 @@ class _GlassIconButton extends StatelessWidget {
     return Stack(
       clipBehavior: Clip.none,
       children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-            child: Material(
-              color: Colors.white.withOpacity(0.14),
-              child: InkWell(
-                onTap: onTap,
-                child: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.white.withOpacity(0.20)),
+        AnimatedOpacity(
+          opacity: dimmed ? 0.45 : 1.0,
+          duration: const Duration(milliseconds: 200),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+              child: Material(
+                color: Colors.white.withOpacity(0.14),
+                child: InkWell(
+                  onTap: onTap,
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.white.withOpacity(0.20)),
+                    ),
+                    child: Icon(icon, color: Colors.white, size: 19),
                   ),
-                  child: Icon(icon, color: Colors.white, size: 19),
                 ),
               ),
             ),

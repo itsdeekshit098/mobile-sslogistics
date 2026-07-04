@@ -170,7 +170,14 @@ class FleetVehicle {
     );
   }
 
+  /// Updates the document path for [key]. When the document is being removed
+  /// (`path == null`) for insurance/FC, the paired validity dates are cleared
+  /// too — an uploaded-then-deleted document shouldn't leave a stale expiry
+  /// date behind (mirrors the server, which clears the same columns on
+  /// `DELETE /api/vehicles/documents`).
   FleetVehicle copyWithDocument(String key, String? path) {
+    final clearInsuranceDates = path == null && key == 'insurance_url';
+    final clearFcDates = path == null && key == 'fc_url';
     return FleetVehicle(
       id: id,
       vehicleNumber: vehicleNumber,
@@ -186,10 +193,10 @@ class FleetVehicle {
       permitUrl: key == 'permit_url' ? path : permitUrl,
       pollutionUrl: key == 'pollution_url' ? path : pollutionUrl,
       taxUrl: key == 'tax_url' ? path : taxUrl,
-      insuranceStartDate: insuranceStartDate,
-      insuranceEndDate: insuranceEndDate,
-      fcStartDate: fcStartDate,
-      fcEndDate: fcEndDate,
+      insuranceStartDate: clearInsuranceDates ? null : insuranceStartDate,
+      insuranceEndDate: clearInsuranceDates ? null : insuranceEndDate,
+      fcStartDate: clearFcDates ? null : fcStartDate,
+      fcEndDate: clearFcDates ? null : fcEndDate,
       expectedKml: expectedKml,
       tankCapacity: tankCapacity,
       fuelType: fuelType,

@@ -56,7 +56,19 @@ class NotificationListNotifier extends AsyncNotifier<NotificationListState> {
       },
     );
 
-    return _fetch();
+    return _fetchWithRetry();
+  }
+
+  /// The very first fetch can race the auth session settling right after
+  /// login (cookie not yet propagated), causing a spurious error. Retry
+  /// once after a short delay before surfacing it to the UI.
+  Future<NotificationListState> _fetchWithRetry() async {
+    try {
+      return await _fetch();
+    } catch (_) {
+      await Future.delayed(const Duration(milliseconds: 800));
+      return _fetch();
+    }
   }
 
   Future<NotificationListState> _fetch() async {

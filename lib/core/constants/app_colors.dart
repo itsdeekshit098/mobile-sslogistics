@@ -76,4 +76,6 @@ class AppColors {
   static const Color darkBorder = Color(0xFF334155);    // slate-700
   static const Color darkTextPrimary = Color(0xFFF1F5F9);   // slate-100
   static const Color darkTextSecondary = Color(0xFF94A3B8); // slate-400
+  static const Color darkTextMuted = Color(0xFF64748B);     // slate-500
+  static const Color darkErrorBg = Color(0xFF450A0A);       // red-950
 }

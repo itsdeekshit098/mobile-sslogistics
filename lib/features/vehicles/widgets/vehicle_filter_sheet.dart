@@ -76,10 +76,16 @@ class _VehicleFilterSheetState extends State<VehicleFilterSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final labelStyle = TextStyle(
+      fontSize: 13,
+      fontWeight: FontWeight.w700,
+      color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+    );
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkCardBg : Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: SafeArea(
         top: false,
@@ -95,22 +101,24 @@ class _VehicleFilterSheetState extends State<VehicleFilterSheet> {
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: AppColors.border,
+                      color: isDark ? AppColors.darkBorder : AppColors.border,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Text(
+                Text(
                   'Filter Vehicles',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
+                    color: isDark
+                        ? AppColors.darkTextPrimary
+                        : AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Text('Type', style: _labelStyle),
+                Text('Type', style: labelStyle),
                 const SizedBox(height: 8),
                 _ChoiceWrap(
                   values: const ['all', ...vehicleTypes],
@@ -120,7 +128,7 @@ class _VehicleFilterSheetState extends State<VehicleFilterSheet> {
                   onSelected: (value) => setState(() => _type = value),
                 ),
                 const SizedBox(height: 18),
-                const Text('Status', style: _labelStyle),
+                Text('Status', style: labelStyle),
                 const SizedBox(height: 8),
                 _ChoiceWrap(
                   values: const ['', ...vehicleStatuses],
@@ -129,7 +137,7 @@ class _VehicleFilterSheetState extends State<VehicleFilterSheet> {
                   onSelected: (value) => setState(() => _status = value),
                 ),
                 const SizedBox(height: 18),
-                const Text('Fuel', style: _labelStyle),
+                Text('Fuel', style: labelStyle),
                 const SizedBox(height: 8),
                 _ChoiceWrap(
                   values: const ['', ...fuelTypes],
@@ -138,7 +146,7 @@ class _VehicleFilterSheetState extends State<VehicleFilterSheet> {
                   onSelected: (value) => setState(() => _fuelType = value),
                 ),
                 const SizedBox(height: 18),
-                const Text('Owner Type', style: _labelStyle),
+                Text('Owner Type', style: labelStyle),
                 const SizedBox(height: 8),
                 _ChoiceWrap(
                   values: const ['', ...ownerTypes],
@@ -150,9 +158,9 @@ class _VehicleFilterSheetState extends State<VehicleFilterSheet> {
                   }),
                 ),
                 const SizedBox(height: 18),
-                const Text('Owner Name', style: _labelStyle),
+                Text('Owner Name', style: labelStyle),
                 const SizedBox(height: 8),
-                _buildOwnerNameControl(),
+                _buildOwnerNameControl(isDark),
                 const SizedBox(height: 20),
                 Row(
                   children: [
@@ -191,18 +199,16 @@ class _VehicleFilterSheetState extends State<VehicleFilterSheet> {
     );
   }
 
-  Widget _buildOwnerNameControl() {
+  Widget _buildOwnerNameControl(bool isDark) {
+    final mutedStyle = TextStyle(
+      fontSize: 12.5,
+      color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+    );
     if (_ownerType.isEmpty) {
-      return const Text(
-        'Select an owner type first',
-        style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary),
-      );
+      return Text('Select an owner type first', style: mutedStyle);
     }
     if (_loadingOwners) {
-      return const Text(
-        'Loading owners...',
-        style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary),
-      );
+      return Text('Loading owners...', style: mutedStyle);
     }
     if (_ownersFailed) {
       return Row(
@@ -243,12 +249,6 @@ class _VehicleFilterSheetState extends State<VehicleFilterSheet> {
   }
 }
 
-const _labelStyle = TextStyle(
-  fontSize: 13,
-  fontWeight: FontWeight.w700,
-  color: AppColors.textPrimary,
-);
-
 class _ChoiceWrap extends StatelessWidget {
   final List<String> values;
   final String selected;
@@ -264,6 +264,7 @@ class _ChoiceWrap extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Wrap(
       spacing: 8,
       runSpacing: 8,
@@ -275,13 +276,19 @@ class _ChoiceWrap extends StatelessWidget {
           onSelected: (_) => onSelected(value),
           selectedColor: AppColors.primary.withValues(alpha: 0.12),
           labelStyle: TextStyle(
-            color: active ? AppColors.primary : AppColors.textSecondary,
+            color: active
+                ? AppColors.primary
+                : (isDark
+                    ? AppColors.darkTextSecondary
+                    : AppColors.textSecondary),
             fontWeight: active ? FontWeight.w800 : FontWeight.w600,
           ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
             side: BorderSide(
-              color: active ? AppColors.primary : AppColors.border,
+              color: active
+                  ? AppColors.primary
+                  : (isDark ? AppColors.darkBorder : AppColors.border),
             ),
           ),
         );

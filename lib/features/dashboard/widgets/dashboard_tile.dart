@@ -10,7 +10,7 @@ class DashboardTileData {
   final Color iconBgColor;
   final String? route; // null = coming soon
   final bool isWebComingSoon; // greyed out — not in web yet
-  final bool isMobileReady;   // false = coming soon in mobile app
+  final bool isMobileReady; // false = coming soon in mobile app
   final List<String> allowedRoles;
 
   const DashboardTileData({
@@ -62,7 +62,7 @@ const allTiles = [
     iconColor: AppColors.tileDieselIcon,
     iconBgColor: AppColors.tileDieselBg,
     route: '/diesel-records',
-    isMobileReady: true,
+    isMobileReady: false,
     allowedRoles: ['admin', 'staff', 'driver'],
   ),
   DashboardTileData(
@@ -149,14 +149,17 @@ class DashboardTile extends StatelessWidget {
   bool get _isDisabled => tile.isWebComingSoon || !tile.isMobileReady;
 
   // Web-not-built vs Mobile-not-built need different badge labels
-  String get _badgeLabel => tile.isWebComingSoon ? 'Coming Soon' : 'Mobile Soon';
+  String get _badgeLabel =>
+      tile.isWebComingSoon ? 'Coming Soon' : 'Mobile Soon';
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final borderColor = isDark ? AppColors.darkBorder : AppColors.border;
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(18),
-        color: Colors.white,
+        color: isDark ? AppColors.darkCardBg : Colors.white,
         boxShadow: _isDisabled
             ? []
             : [
@@ -171,10 +174,7 @@ class DashboardTile extends StatelessWidget {
                   offset: Offset(0, 1),
                 ),
               ],
-        border: Border.all(
-          color: _isDisabled ? AppColors.border : AppColors.border,
-          width: 1,
-        ),
+        border: Border.all(color: borderColor, width: 1),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(18),
@@ -198,11 +198,9 @@ class DashboardTile extends StatelessWidget {
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
+                            _isDisabled ? borderColor : tile.iconColor,
                             _isDisabled
-                                ? AppColors.border
-                                : tile.iconColor,
-                            _isDisabled
-                                ? AppColors.border
+                                ? borderColor
                                 : tile.iconColor.withOpacity(0.25),
                           ],
                         ),
@@ -231,46 +229,60 @@ class DashboardTile extends StatelessWidget {
                                           tile.iconBgColor.withOpacity(0.55),
                                         ],
                                       ),
-                                color: _isDisabled ? AppColors.border : null,
+                                color: _isDisabled ? borderColor : null,
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Icon(
                                 tile.icon,
                                 color: _isDisabled
-                                    ? AppColors.textMuted
+                                    ? (isDark
+                                          ? AppColors.darkTextMuted
+                                          : AppColors.textMuted)
                                     : tile.iconColor,
                                 size: 22,
                               ),
                             ),
                             if (_isDisabled)
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 7,
-                                  vertical: 3,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppColors.pageBg,
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(color: AppColors.border),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(
-                                      AppIcons.lock,
-                                      size: 9,
-                                      color: AppColors.textMuted,
-                                    ),
-                                    const SizedBox(width: 3),
-                                    Text(
-                                      _badgeLabel,
-                                      style: const TextStyle(
-                                        fontSize: 9,
-                                        color: AppColors.textMuted,
-                                        fontWeight: FontWeight.w600,
+                              Flexible(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 7,
+                                    vertical: 3,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: isDark
+                                        ? AppColors.darkPageBg
+                                        : AppColors.pageBg,
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(color: borderColor),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        AppIcons.lock,
+                                        size: 9,
+                                        color: isDark
+                                            ? AppColors.darkTextMuted
+                                            : AppColors.textMuted,
                                       ),
-                                    ),
-                                  ],
+                                      const SizedBox(width: 3),
+                                      Flexible(
+                                        child: Text(
+                                          _badgeLabel,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            fontSize: 9,
+                                            color: isDark
+                                                ? AppColors.darkTextMuted
+                                                : AppColors.textMuted,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               )
                             else
@@ -296,8 +308,12 @@ class DashboardTile extends StatelessWidget {
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
                             color: _isDisabled
-                                ? AppColors.textMuted
-                                : AppColors.textPrimary,
+                                ? (isDark
+                                      ? AppColors.darkTextMuted
+                                      : AppColors.textMuted)
+                                : (isDark
+                                      ? AppColors.darkTextPrimary
+                                      : AppColors.textPrimary),
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -305,9 +321,11 @@ class DashboardTile extends StatelessWidget {
                           tile.description,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 11,
-                            color: AppColors.textSecondary,
+                            color: isDark
+                                ? AppColors.darkTextSecondary
+                                : AppColors.textSecondary,
                             height: 1.3,
                           ),
                         ),

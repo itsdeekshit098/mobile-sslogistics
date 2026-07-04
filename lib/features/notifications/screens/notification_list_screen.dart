@@ -16,17 +16,26 @@ class NotificationListScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final listAsync = ref.watch(notificationListProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: AppColors.pageBg,
+      backgroundColor: isDark ? AppColors.darkPageBg : AppColors.pageBg,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: isDark ? AppColors.darkCardBg : Colors.white,
         elevation: 0,
-        surfaceTintColor: Colors.white,
-        title: const Text(
+        surfaceTintColor: isDark ? AppColors.darkCardBg : Colors.white,
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back_rounded,
+            color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+            weight: 700,
+          ),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: Text(
           'Notifications',
           style: TextStyle(
-            color: AppColors.textPrimary,
+            color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
             fontSize: 18,
             fontWeight: FontWeight.w700,
           ),
@@ -41,24 +50,30 @@ class NotificationListScreen extends ConsumerWidget {
         ],
       ),
       body: listAsync.when(
-        loading: () => const LoadingSpinner(message: 'Loading notifications...'),
+        loading: () =>
+            const LoadingSpinner(message: 'Loading notifications...'),
         error: (e, _) => ErrorState(
           message: e.toString().replaceFirst('Exception: ', ''),
           onRetry: () => ref.read(notificationListProvider.notifier).refresh(),
         ),
         data: (state) {
           if (state.items.isEmpty) {
-            return const Center(
+            return Center(
               child: Text(
                 'No notifications yet',
-                style: TextStyle(color: AppColors.textSecondary),
+                style: TextStyle(
+                  color: isDark
+                      ? AppColors.darkTextSecondary
+                      : AppColors.textSecondary,
+                ),
               ),
             );
           }
 
           return RefreshIndicator(
             color: AppColors.primary,
-            onRefresh: () => ref.read(notificationListProvider.notifier).refresh(),
+            onRefresh: () =>
+                ref.read(notificationListProvider.notifier).refresh(),
             child: ListView.separated(
               padding: const EdgeInsets.all(12),
               itemCount: state.items.length,
@@ -80,6 +95,7 @@ class _NotificationTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return InkWell(
       borderRadius: BorderRadius.circular(12),
       onTap: () {
@@ -94,9 +110,13 @@ class _NotificationTile extends ConsumerWidget {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: item.isRead ? Colors.white : AppColors.primary.withOpacity(0.06),
+          color: item.isRead
+              ? (isDark ? AppColors.darkCardBg : Colors.white)
+              : AppColors.primary.withOpacity(0.06),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.border),
+          border: Border.all(
+            color: isDark ? AppColors.darkBorder : AppColors.border,
+          ),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -119,30 +139,42 @@ class _NotificationTile extends ConsumerWidget {
                 children: [
                   Text(
                     item.title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.w700,
                       fontSize: 14,
-                      color: AppColors.textPrimary,
+                      color: isDark
+                          ? AppColors.darkTextPrimary
+                          : AppColors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 3),
                   Text(
                     item.body,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
-                      color: AppColors.textSecondary,
+                      color: isDark
+                          ? AppColors.darkTextSecondary
+                          : AppColors.textSecondary,
                     ),
                   ),
                   const SizedBox(height: 6),
                   Row(
                     children: [
-                      const Icon(AppIcons.clock, size: 12, color: AppColors.textMuted),
+                      Icon(
+                        AppIcons.clock,
+                        size: 12,
+                        color: isDark
+                            ? AppColors.darkTextMuted
+                            : AppColors.textMuted,
+                      ),
                       const SizedBox(width: 4),
                       Text(
                         item.createdAt,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11,
-                          color: AppColors.textMuted,
+                          color: isDark
+                              ? AppColors.darkTextMuted
+                              : AppColors.textMuted,
                         ),
                       ),
                     ],

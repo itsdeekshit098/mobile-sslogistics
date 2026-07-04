@@ -186,14 +186,15 @@ class _VehicleFormSheetState extends State<VehicleFormSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return PopScope(
       // Blocks back button / barrier tap while the save request is in
       // flight, so the result (error banner or auto-close) isn't lost.
       canPop: !_saving,
       child: Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.darkCardBg : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: SafeArea(
           top: false,
@@ -204,7 +205,7 @@ class _VehicleFormSheetState extends State<VehicleFormSheet> {
                 width: 38,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.border,
+                  color: isDark ? AppColors.darkBorder : AppColors.border,
                   borderRadius: BorderRadius.circular(99),
                 ),
               ),
@@ -214,10 +215,12 @@ class _VehicleFormSheetState extends State<VehicleFormSheet> {
                   children: [
                     Text(
                       widget.vehicle == null ? 'Add Vehicle' : 'Edit Vehicle',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w800,
-                        color: AppColors.textPrimary,
+                        color: isDark
+                            ? AppColors.darkTextPrimary
+                            : AppColors.textPrimary,
                       ),
                     ),
                     const Spacer(),
@@ -238,9 +241,13 @@ class _VehicleFormSheetState extends State<VehicleFormSheet> {
                     vertical: 10,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFEF2F2),
+                    color: isDark ? AppColors.darkErrorBg : AppColors.errorBg,
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: const Color(0xFFFCA5A5)),
+                    border: Border.all(
+                      color: isDark
+                          ? AppColors.error.withOpacity(0.5)
+                          : const Color(0xFFFCA5A5),
+                    ),
                   ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -248,14 +255,14 @@ class _VehicleFormSheetState extends State<VehicleFormSheet> {
                       const Icon(
                         Icons.error_outline,
                         size: 18,
-                        color: Color(0xFFDC2626),
+                        color: AppColors.error,
                       ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           _error!,
                           style: const TextStyle(
-                            color: Color(0xFFDC2626),
+                            color: AppColors.error,
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
                           ),
@@ -615,15 +622,21 @@ class _VehicleFormSheetState extends State<VehicleFormSheet> {
                                     horizontal: 12,
                                   ),
                                   decoration: BoxDecoration(
-                                    border: Border.all(color: AppColors.border),
+                                    border: Border.all(
+                                      color: isDark
+                                          ? AppColors.darkBorder
+                                          : AppColors.border,
+                                    ),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Row(
                                     children: [
-                                      const Icon(
+                                      Icon(
                                         AppIcons.calendar,
                                         size: 16,
-                                        color: AppColors.textMuted,
+                                        color: isDark
+                                            ? AppColors.darkTextMuted
+                                            : AppColors.textMuted,
                                       ),
                                       const SizedBox(width: 8),
                                       Text(
@@ -635,8 +648,12 @@ class _VehicleFormSheetState extends State<VehicleFormSheet> {
                                                   .first,
                                         style: TextStyle(
                                           color: _lastServiceDate == null
-                                              ? AppColors.textMuted
-                                              : AppColors.textPrimary,
+                                              ? (isDark
+                                                    ? AppColors.darkTextMuted
+                                                    : AppColors.textMuted)
+                                              : (isDark
+                                                    ? AppColors.darkTextPrimary
+                                                    : AppColors.textPrimary),
                                         ),
                                       ),
                                     ],
@@ -710,22 +727,26 @@ class _VehicleFormSheetState extends State<VehicleFormSheet> {
 
   String? _emptyToNull(String value) =>
       value.trim().isEmpty ? null : value.trim();
-  InputDecoration _decor(String hint) => InputDecoration(
-    hintText: hint,
-    isDense: true,
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(8),
-      borderSide: const BorderSide(color: AppColors.border),
-    ),
-    enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(8),
-      borderSide: const BorderSide(color: AppColors.border),
-    ),
-    focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(8),
-      borderSide: const BorderSide(color: AppColors.primary, width: 2),
-    ),
-  );
+  InputDecoration _decor(String hint) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final borderColor = isDark ? AppColors.darkBorder : AppColors.border;
+    return InputDecoration(
+      hintText: hint,
+      isDense: true,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: BorderSide(color: borderColor),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: BorderSide(color: borderColor),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: const BorderSide(color: AppColors.primary, width: 2),
+      ),
+    );
+  }
 }
 
 class _Field extends StatelessWidget {
@@ -734,10 +755,11 @@ class _Field extends StatelessWidget {
   const _Field({required this.label, required this.child});
   @override
   Widget build(BuildContext context) {
-    const labelStyle = TextStyle(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final labelStyle = TextStyle(
       fontSize: 13,
       fontWeight: FontWeight.w700,
-      color: AppColors.textPrimary,
+      color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
     );
     final isRequired = label.endsWith(' *');
     final baseLabel = isRequired ? label.substring(0, label.length - 2) : label;
@@ -786,6 +808,10 @@ class _Picker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final borderColor = isDark ? AppColors.darkBorder : AppColors.border;
+    final textColor = isDark ? AppColors.darkTextPrimary : AppColors.textPrimary;
+    final mutedColor = isDark ? AppColors.darkTextMuted : AppColors.textMuted;
     final tapper = InkWell(
       onTap: () => _show(context),
       borderRadius: BorderRadius.circular(8),
@@ -793,7 +819,7 @@ class _Picker extends StatelessWidget {
         height: 48,
         padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: BoxDecoration(
-          border: Border.all(color: AppColors.border),
+          border: Border.all(color: borderColor),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
@@ -801,12 +827,12 @@ class _Picker extends StatelessWidget {
             Expanded(
               child: Text(
                 _label(value),
-                style: const TextStyle(fontWeight: FontWeight.w700),
+                style: TextStyle(fontWeight: FontWeight.w700, color: textColor),
               ),
             ),
-            const Icon(
+            Icon(
               Icons.keyboard_arrow_down_rounded,
-              color: AppColors.textMuted,
+              color: mutedColor,
             ),
           ],
         ),
@@ -830,7 +856,7 @@ class _Picker extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 12),
               decoration: BoxDecoration(
                 border: Border.all(
-                  color: state.hasError ? AppColors.error : AppColors.border,
+                  color: state.hasError ? AppColors.error : borderColor,
                 ),
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -844,15 +870,13 @@ class _Picker extends StatelessWidget {
                         _label(value),
                         style: TextStyle(
                           fontWeight: FontWeight.w700,
-                          color: state.hasError
-                              ? AppColors.error
-                              : AppColors.textPrimary,
+                          color: state.hasError ? AppColors.error : textColor,
                         ),
                       ),
                     ),
-                    const Icon(
+                    Icon(
                       Icons.keyboard_arrow_down_rounded,
-                      color: AppColors.textMuted,
+                      color: mutedColor,
                     ),
                   ],
                 ),
@@ -873,13 +897,14 @@ class _Picker extends StatelessWidget {
   }
 
   void _show(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (_) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.darkCardBg : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: SafeArea(
           top: false,
@@ -891,7 +916,14 @@ class _Picker extends StatelessWidget {
                 children: values
                     .map(
                       (v) => ListTile(
-                        title: Text(_label(v)),
+                        title: Text(
+                          _label(v),
+                          style: TextStyle(
+                            color: isDark
+                                ? AppColors.darkTextPrimary
+                                : AppColors.textPrimary,
+                          ),
+                        ),
                         trailing: v == value
                             ? const Icon(Icons.check, color: AppColors.primary)
                             : null,
@@ -966,14 +998,15 @@ class _AddOwnerSheetState extends State<_AddOwnerSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
       child: Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.darkCardBg : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: SafeArea(
           top: false,
@@ -991,17 +1024,19 @@ class _AddOwnerSheetState extends State<_AddOwnerSheet> {
                       height: 4,
                       margin: const EdgeInsets.only(bottom: 14),
                       decoration: BoxDecoration(
-                        color: AppColors.border,
+                        color: isDark ? AppColors.darkBorder : AppColors.border,
                         borderRadius: BorderRadius.circular(99),
                       ),
                     ),
                   ),
-                  const Text(
+                  Text(
                     'Add New Owner',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
-                      color: AppColors.textPrimary,
+                      color: isDark
+                          ? AppColors.darkTextPrimary
+                          : AppColors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 16),
