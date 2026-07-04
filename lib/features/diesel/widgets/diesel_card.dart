@@ -482,7 +482,7 @@ class _CycleSummaryBand extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
       decoration: BoxDecoration(
         color: AppColors.successBg.withValues(alpha: 0.45),
         borderRadius: BorderRadius.circular(8),
@@ -499,7 +499,7 @@ class _CycleSummaryBand extends StatelessWidget {
                 label: 'Total Fuel',
               ),
             ),
-            const VerticalDivider(color: AppColors.border, width: 18),
+            const VerticalDivider(color: AppColors.border, width: 12),
             Expanded(
               child: _SummaryItem(
                 icon: Icons.route_outlined,
@@ -509,7 +509,7 @@ class _CycleSummaryBand extends StatelessWidget {
               ),
             ),
             if (mileage != null) ...[
-              const VerticalDivider(color: AppColors.border, width: 18),
+              const VerticalDivider(color: AppColors.border, width: 12),
               Expanded(
                 child: _SummaryItem(
                   icon: AppIcons.trendingUp,
@@ -543,32 +543,37 @@ class _SummaryItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Icon(icon, size: 24, color: iconColor),
-        const SizedBox(width: 8),
+        Icon(icon, size: 18, color: iconColor),
+        const SizedBox(width: 6),
         Flexible(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                value,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
-                  color: iconColor == AppColors.textSecondary
-                      ? AppColors.success
-                      : iconColor,
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  value,
+                  maxLines: 1,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                    color: iconColor == AppColors.textSecondary
+                        ? AppColors.success
+                        : iconColor,
+                  ),
                 ),
               ),
               Text(
                 label,
-                maxLines: 1,
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                  fontSize: 11,
+                  fontSize: 10.5,
+                  height: 1.15,
                   color: AppColors.textSecondary,
                 ),
               ),

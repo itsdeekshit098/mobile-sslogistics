@@ -7,6 +7,7 @@ import 'package:mobile_sslogistics/core/constants/app_icons.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../features/auth/providers/auth_provider.dart';
+import '../../../features/notifications/providers/notification_provider.dart';
 import '../../../shared/models/app_user.dart';
 import '../../../shared/widgets/app_drawer.dart';
 import '../widgets/dashboard_tile.dart';
@@ -26,6 +27,9 @@ class DashboardScreen extends ConsumerWidget {
     final user = ref.watch(authProvider).valueOrNull;
     if (user == null) return const SizedBox.shrink();
 
+    final unreadCount =
+        ref.watch(notificationListProvider).valueOrNull?.unreadCount ?? 0;
+
     final visibleTiles = allTiles
         .where((t) => t.allowedRoles.contains(user.role))
         .toList();
@@ -36,7 +40,11 @@ class DashboardScreen extends ConsumerWidget {
       body: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
-            child: _DashboardHero(greeting: _greeting, user: user),
+            child: _DashboardHero(
+              greeting: _greeting,
+              user: user,
+              unreadCount: unreadCount,
+            ),
           ),
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(20, 22, 20, 8),
@@ -105,8 +113,13 @@ class DashboardScreen extends ConsumerWidget {
 class _DashboardHero extends StatelessWidget {
   final String greeting;
   final AppUser user;
+  final int unreadCount;
 
-  const _DashboardHero({required this.greeting, required this.user});
+  const _DashboardHero({
+    required this.greeting,
+    required this.user,
+    this.unreadCount = 0,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -158,7 +171,11 @@ class _DashboardHero extends StatelessWidget {
                         ),
                         Row(
                           children: [
-                            const _GlassIconButton(icon: AppIcons.bell),
+                            _GlassIconButton(
+                              icon: AppIcons.bell,
+                              badgeCount: unreadCount,
+                              onTap: () => context.push('/notifications'),
+                            ),
                             const SizedBox(width: 10),
                             _GlassAvatar(initials: user.initials),
                           ],
@@ -176,7 +193,7 @@ class _DashboardHero extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      user.email,
+                      user.displayName,
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 20,
@@ -220,31 +237,64 @@ class _GlowCircle extends StatelessWidget {
 class _GlassIconButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback? onTap;
+  final int badgeCount;
 
-  const _GlassIconButton({required this.icon, this.onTap});
+  const _GlassIconButton({
+    required this.icon,
+    this.onTap,
+    this.badgeCount = 0,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-        child: Material(
-          color: Colors.white.withOpacity(0.14),
-          child: InkWell(
-            onTap: onTap,
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.white.withOpacity(0.20)),
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            child: Material(
+              color: Colors.white.withOpacity(0.14),
+              child: InkWell(
+                onTap: onTap,
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.white.withOpacity(0.20)),
+                  ),
+                  child: Icon(icon, color: Colors.white, size: 19),
+                ),
               ),
-              child: Icon(icon, color: Colors.white, size: 19),
             ),
           ),
         ),
-      ),
+        if (badgeCount > 0)
+          Positioned(
+            top: -4,
+            right: -4,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+              constraints: const BoxConstraints(minWidth: 16),
+              decoration: BoxDecoration(
+                color: Colors.red,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.white, width: 1.5),
+              ),
+              child: Text(
+                badgeCount > 99 ? '99+' : '$badgeCount',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 9,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

@@ -22,6 +22,15 @@ class ApiConstants {
   static const String drivers = '/api/drivers';
   static const String dieselRecords = '/api/diesel-records';
 
+  // ── Notifications ─────────────────────────────────────────────────────────
+  static const String notifications = '/api/notifications';
+  static const String notificationsMarkRead = '/api/notifications/mark-read';
+  static const String notificationsMarkAllRead =
+      '/api/notifications/mark-all-read';
+  static const String notificationsRegisterDevice =
+      '/api/notifications/register-device';
+  static const String notificationsStream = '/api/notifications/stream';
+
   // ── System ────────────────────────────────────────────────────────────────
   static const String maintenanceStream = '/api/system/maintenance-stream';
 }

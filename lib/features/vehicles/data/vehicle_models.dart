@@ -13,6 +13,10 @@ class FleetVehicle {
   final String? permitUrl;
   final String? pollutionUrl;
   final String? taxUrl;
+  final String? insuranceStartDate;
+  final String? insuranceEndDate;
+  final String? fcStartDate;
+  final String? fcEndDate;
   final double? expectedKml;
   final double? tankCapacity;
   final String? fuelType;
@@ -41,6 +45,10 @@ class FleetVehicle {
     this.permitUrl,
     this.pollutionUrl,
     this.taxUrl,
+    this.insuranceStartDate,
+    this.insuranceEndDate,
+    this.fcStartDate,
+    this.fcEndDate,
     this.expectedKml,
     this.tankCapacity,
     this.fuelType,
@@ -71,6 +79,10 @@ class FleetVehicle {
       permitUrl: json['permit_url'] as String?,
       pollutionUrl: json['pollution_url'] as String?,
       taxUrl: json['tax_url'] as String?,
+      insuranceStartDate: json['insurance_start_date'] as String?,
+      insuranceEndDate: json['insurance_end_date'] as String?,
+      fcStartDate: json['fc_start_date'] as String?,
+      fcEndDate: json['fc_end_date'] as String?,
       expectedKml: (json['expected_kml'] as num?)?.toDouble(),
       tankCapacity: (json['tank_capacity'] as num?)?.toDouble(),
       fuelType: json['fuel_type'] as String?,
@@ -109,6 +121,55 @@ class FleetVehicle {
     return null;
   }
 
+  String? dateFieldValue(String key) {
+    switch (key) {
+      case 'insurance_start_date':
+        return insuranceStartDate;
+      case 'insurance_end_date':
+        return insuranceEndDate;
+      case 'fc_start_date':
+        return fcStartDate;
+      case 'fc_end_date':
+        return fcEndDate;
+    }
+    return null;
+  }
+
+  FleetVehicle copyWithDate(String key, String? value) {
+    return FleetVehicle(
+      id: id,
+      vehicleNumber: vehicleNumber,
+      vehicleType: vehicleType,
+      seatingCapacity: seatingCapacity,
+      company: company,
+      model: model,
+      status: status,
+      lastServiceDate: lastServiceDate,
+      rcUrl: rcUrl,
+      insuranceUrl: insuranceUrl,
+      fcUrl: fcUrl,
+      permitUrl: permitUrl,
+      pollutionUrl: pollutionUrl,
+      taxUrl: taxUrl,
+      insuranceStartDate: key == 'insurance_start_date' ? value : insuranceStartDate,
+      insuranceEndDate: key == 'insurance_end_date' ? value : insuranceEndDate,
+      fcStartDate: key == 'fc_start_date' ? value : fcStartDate,
+      fcEndDate: key == 'fc_end_date' ? value : fcEndDate,
+      expectedKml: expectedKml,
+      tankCapacity: tankCapacity,
+      fuelType: fuelType,
+      logoUrl: logoUrl,
+      truckType: truckType,
+      containerLength: containerLength,
+      axleType: axleType,
+      containerBodyType: containerBodyType,
+      ownerType: ownerType,
+      ownerName: ownerName,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+    );
+  }
+
   FleetVehicle copyWithDocument(String key, String? path) {
     return FleetVehicle(
       id: id,
@@ -125,6 +186,10 @@ class FleetVehicle {
       permitUrl: key == 'permit_url' ? path : permitUrl,
       pollutionUrl: key == 'pollution_url' ? path : pollutionUrl,
       taxUrl: key == 'tax_url' ? path : taxUrl,
+      insuranceStartDate: insuranceStartDate,
+      insuranceEndDate: insuranceEndDate,
+      fcStartDate: fcStartDate,
+      fcEndDate: fcEndDate,
       expectedKml: expectedKml,
       tankCapacity: tankCapacity,
       fuelType: fuelType,
@@ -257,11 +322,21 @@ class VehicleOwner {
   }
 }
 
+/// Optional start/end date field keys associated with a document type
+/// (e.g. Insurance and FC have validity periods; other documents don't).
+class DocumentDateFields {
+  final String startKey;
+  final String endKey;
+
+  const DocumentDateFields({required this.startKey, required this.endKey});
+}
+
 class VehicleDocumentType {
   final String key;
   final String label;
+  final DocumentDateFields? dateFields;
 
-  const VehicleDocumentType(this.key, this.label);
+  const VehicleDocumentType(this.key, this.label, {this.dateFields});
 }
 
 const vehicleTypes = ['CAR', 'BUS', 'TEMPO_TRAVELLER', 'TRUCK', 'CONTAINER'];
@@ -439,8 +514,22 @@ String vehicleSubDetail(FleetVehicle v) {
 }
 const vehicleDocumentTypes = [
   VehicleDocumentType('rc_url', 'Registration (RC)'),
-  VehicleDocumentType('fc_url', 'Fitness Certificate (FC)'),
-  VehicleDocumentType('insurance_url', 'Insurance'),
+  VehicleDocumentType(
+    'fc_url',
+    'Fitness Certificate (FC)',
+    dateFields: DocumentDateFields(
+      startKey: 'fc_start_date',
+      endKey: 'fc_end_date',
+    ),
+  ),
+  VehicleDocumentType(
+    'insurance_url',
+    'Insurance',
+    dateFields: DocumentDateFields(
+      startKey: 'insurance_start_date',
+      endKey: 'insurance_end_date',
+    ),
+  ),
   VehicleDocumentType('permit_url', 'Permit'),
   VehicleDocumentType('pollution_url', 'Pollution (PUC)'),
   VehicleDocumentType('tax_url', 'Road Tax'),

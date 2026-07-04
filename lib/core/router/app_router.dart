@@ -6,6 +6,7 @@ import '../../features/auth/providers/auth_provider.dart';
 import '../../features/auth/screens/login_screen.dart';
 import '../../features/dashboard/screens/dashboard_screen.dart';
 import '../../features/diesel/screens/diesel_list_screen.dart';
+import '../../features/notifications/screens/notification_list_screen.dart';
 import '../../features/system/providers/maintenance_provider.dart';
 import '../../features/system/screens/maintenance_screen.dart';
 import '../../features/vehicles/screens/vehicles_screen.dart';
@@ -19,10 +20,16 @@ class _AppStateListener extends ChangeNotifier {
   }
 }
 
+/// Exposed so [PushService] can navigate to a notification's deep link from
+/// a background/terminated push tap, where no BuildContext is otherwise
+/// available.
+final rootNavigatorKey = GlobalKey<NavigatorState>();
+
 final routerProvider = Provider<GoRouter>((ref) {
   final listener = _AppStateListener(ref);
 
   return GoRouter(
+    navigatorKey: rootNavigatorKey,
     initialLocation: '/dashboard',
     refreshListenable: listener,
     redirect: (context, state) {
@@ -63,11 +70,20 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/diesel-records',
-        builder: (context, state) => const DieselListScreen(),
+        builder: (context, state) {
+          final vehicleId = int.tryParse(
+            state.uri.queryParameters['vehicle_id'] ?? '',
+          );
+          return DieselListScreen(initialVehicleId: vehicleId);
+        },
       ),
       GoRoute(
         path: '/vehicles',
         builder: (context, state) => const VehiclesScreen(),
+      ),
+      GoRoute(
+        path: '/notifications',
+        builder: (context, state) => const NotificationListScreen(),
       ),
     ],
   );

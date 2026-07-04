@@ -124,82 +124,121 @@ class _VehicleDocumentsSheetState extends State<VehicleDocumentsSheet> {
                     ),
                     child: Padding(
                       padding: const EdgeInsets.all(12),
-                      child: Row(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Container(
-                            width: 38,
-                            height: 38,
-                            decoration: BoxDecoration(
-                              color: AppColors.tileVehiclesBg,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: const Icon(
-                              AppIcons.fileText,
-                              color: AppColors.primary,
-                              size: 18,
-                            ),
+                          Row(
+                            children: [
+                              Container(
+                                width: 38,
+                                height: 38,
+                                decoration: BoxDecoration(
+                                  color: AppColors.tileVehiclesBg,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Icon(
+                                  AppIcons.fileText,
+                                  color: AppColors.primary,
+                                  size: 18,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      doc.label,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w800,
+                                        color: AppColors.textPrimary,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      path == null || path.isEmpty
+                                          ? 'Not uploaded'
+                                          : path.split('/').last,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        color: AppColors.textSecondary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              if (loading)
+                                const SizedBox(
+                                  width: 22,
+                                  height: 22,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              else ...[
+                                if (path != null && path.isNotEmpty)
+                                  _ActionIcon(
+                                    icon: Icons.visibility,
+                                    color: AppColors.textSecondary,
+                                    enabled: !busy,
+                                    onTap: () => _open(doc.key, path),
+                                  ),
+                                if (path != null && path.isNotEmpty)
+                                  _ActionIcon(
+                                    icon: Icons.download,
+                                    color: AppColors.primary,
+                                    enabled: !busy,
+                                    onTap: () => _download(doc.key, path),
+                                  ),
+                                if (widget.canManage)
+                                  _ActionIcon(
+                                    icon: path == null || path.isEmpty
+                                        ? Icons.upload_file
+                                        : Icons.delete,
+                                    color: path == null || path.isEmpty
+                                        ? AppColors.primary
+                                        : AppColors.error,
+                                    enabled: !busy,
+                                    onTap: () => path == null || path.isEmpty
+                                        ? _upload(doc.key)
+                                        : _delete(doc.key, path),
+                                  ),
+                              ],
+                            ],
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                          if (doc.dateFields != null) ...[
+                            const SizedBox(height: 10),
+                            Row(
                               children: [
-                                Text(
-                                  doc.label,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w800,
-                                    color: AppColors.textPrimary,
+                                Expanded(
+                                  child: _DateField(
+                                    label: 'Start Date',
+                                    value: _vehicle.dateFieldValue(
+                                      doc.dateFields!.startKey,
+                                    ),
+                                    enabled: widget.canManage && !busy,
+                                    loading:
+                                        _loadingKey ==
+                                        'date:${doc.dateFields!.startKey}',
+                                    onTap: () => _pickDate(doc, isStart: true),
                                   ),
                                 ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  path == null || path.isEmpty
-                                      ? 'Not uploaded'
-                                      : path.split('/').last,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: AppColors.textSecondary,
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: _DateField(
+                                    label: 'End Date',
+                                    value: _vehicle.dateFieldValue(
+                                      doc.dateFields!.endKey,
+                                    ),
+                                    enabled: widget.canManage && !busy,
+                                    loading:
+                                        _loadingKey ==
+                                        'date:${doc.dateFields!.endKey}',
+                                    onTap: () => _pickDate(doc, isStart: false),
                                   ),
                                 ),
                               ],
                             ),
-                          ),
-                          if (loading)
-                            const SizedBox(
-                              width: 22,
-                              height: 22,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          else ...[
-                            if (path != null && path.isNotEmpty)
-                              _ActionIcon(
-                                icon: Icons.visibility,
-                                color: AppColors.textSecondary,
-                                enabled: !busy,
-                                onTap: () => _open(doc.key, path),
-                              ),
-                            if (path != null && path.isNotEmpty)
-                              _ActionIcon(
-                                icon: Icons.download,
-                                color: AppColors.primary,
-                                enabled: !busy,
-                                onTap: () => _download(doc.key, path),
-                              ),
-                            if (widget.canManage)
-                              _ActionIcon(
-                                icon: path == null || path.isEmpty
-                                    ? Icons.upload_file
-                                    : Icons.delete,
-                                color: path == null || path.isEmpty
-                                    ? AppColors.primary
-                                    : AppColors.error,
-                                enabled: !busy,
-                                onTap: () => path == null || path.isEmpty
-                                    ? _upload(doc.key)
-                                    : _delete(doc.key, path),
-                              ),
                           ],
                         ],
                       ),
@@ -283,6 +322,49 @@ class _VehicleDocumentsSheetState extends State<VehicleDocumentsSheet> {
         });
       }
     }, actionType: 'upload', successMessage: 'Document uploaded. Updating vehicle documents...');
+  }
+
+  Future<void> _pickDate(VehicleDocumentType doc, {required bool isStart}) async {
+    if (_loadingKey != null) return;
+    final fields = doc.dateFields!;
+    final key = isStart ? fields.startKey : fields.endKey;
+    final currentValue = _vehicle.dateFieldValue(key);
+    final initialDate = currentValue != null && currentValue.isNotEmpty
+        ? DateTime.tryParse(currentValue) ?? DateTime.now()
+        : DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+    );
+    if (picked == null) return;
+    final isoDate = picked.toIso8601String().split('T').first;
+
+    final startValue = isStart ? isoDate : _vehicle.dateFieldValue(fields.startKey);
+    final endValue = isStart ? _vehicle.dateFieldValue(fields.endKey) : isoDate;
+    if (startValue != null &&
+        startValue.isNotEmpty &&
+        endValue != null &&
+        endValue.isNotEmpty &&
+        DateTime.parse(endValue).isBefore(DateTime.parse(startValue))) {
+      setState(() {
+        _error = '${doc.label} end date must be on or after the start date';
+      });
+      return;
+    }
+
+    await _run(
+      'date:$key',
+      () => widget.repository.updateVehicleField(_vehicle.id, key, isoDate),
+      actionType: 'date',
+      successMessage: '${doc.label} date updated.',
+      onSuccess: () {
+        setState(() {
+          _vehicle = _vehicle.copyWithDate(key, isoDate);
+        });
+      },
+    );
   }
 
   Future<void> _delete(String key, String path) async {
@@ -463,6 +545,84 @@ class _VehicleDocumentsSheetState extends State<VehicleDocumentsSheet> {
 /// Thrown internally when the user backs out of the native save dialog.
 /// Not a real error — `_run` swallows it without showing the error banner.
 class _ActionCancelled implements Exception {}
+
+class _DateField extends StatelessWidget {
+  final String label;
+  final String? value;
+  final bool enabled;
+  final bool loading;
+  final VoidCallback onTap;
+
+  const _DateField({
+    required this.label,
+    required this.value,
+    required this.enabled,
+    required this.onTap,
+    this.loading = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // Dim the whole field while it (or a sibling action) is in flight, same
+    // treatment _ActionIcon gets so busy state reads consistently row-to-row.
+    final dimmed = !enabled || loading;
+    final borderColor = dimmed
+        ? AppColors.border.withValues(alpha: 0.5)
+        : AppColors.border;
+    final mutedColor = dimmed
+        ? AppColors.textMuted.withValues(alpha: 0.5)
+        : AppColors.textMuted;
+    final valueColor = value == null || value!.isEmpty
+        ? mutedColor
+        : (dimmed
+              ? AppColors.textPrimary.withValues(alpha: 0.5)
+              : AppColors.textPrimary);
+
+    return InkWell(
+      onTap: enabled && !loading ? onTap : null,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          border: Border.all(color: borderColor),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          children: [
+            if (loading)
+              const SizedBox(
+                width: 14,
+                height: 14,
+                child: CircularProgressIndicator(strokeWidth: 1.5),
+              )
+            else
+              Icon(Icons.calendar_today, size: 14, color: mutedColor),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(fontSize: 10, color: mutedColor),
+                  ),
+                  Text(
+                    value == null || value!.isEmpty ? 'Not set' : value!,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: valueColor,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class _ActionIcon extends StatelessWidget {
   final IconData icon;

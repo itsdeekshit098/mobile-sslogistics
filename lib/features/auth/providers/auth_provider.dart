@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/auth_repository.dart';
 import '../../../core/network/dio_client.dart';
+import '../../../core/notifications/push_service.dart';
 import '../../../shared/models/app_user.dart';
 
 final authRepositoryProvider = Provider<AuthRepository>(
@@ -23,7 +24,12 @@ class AuthNotifier extends AsyncNotifier<AppUser?> {
   Future<AppUser?> build() async {
     DioClient.onSessionInvalidated = _handleSessionInvalidated;
     try {
-      return await ref.read(authRepositoryProvider).getSession();
+      final user = await ref.read(authRepositoryProvider).getSession();
+      // Restoring an already-valid session on cold start — the token
+      // registration attempted inside PushService.init() may have run
+      // before cookies were confirmed valid, so retry here too.
+      await PushService.registerCurrentToken();
+      return user;
     } catch (_) {
       return null;
     }
@@ -34,9 +40,20 @@ class AuthNotifier extends AsyncNotifier<AppUser?> {
     state = await AsyncValue.guard(() async {
       return ref.read(authRepositoryProvider).login(email, password);
     });
+
+    if (state.hasValue && state.value != null) {
+      // The initial registration attempt in PushService.init() may have
+      // run (and silently failed) before this login completed — retry now
+      // that the session cookie is valid.
+      await PushService.registerCurrentToken();
+    }
   }
 
   Future<void> logout() async {
+    // Unregister while the session cookie is still valid — a forced
+    // logout (session revoked elsewhere) can't do this since the session
+    // is already dead by the time it's detected.
+    await PushService.unregister();
     await ref.read(authRepositoryProvider).logout();
     state = const AsyncData(null);
   }

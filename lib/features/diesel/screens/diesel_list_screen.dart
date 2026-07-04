@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mobile_sslogistics/core/constants/app_icons.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../features/auth/providers/auth_provider.dart';
+import '../../../features/notifications/providers/notification_provider.dart';
 import '../../../shared/widgets/app_drawer.dart';
 import '../../../shared/widgets/loading_spinner.dart';
 import '../../../shared/widgets/error_state.dart';
@@ -18,14 +20,36 @@ import '../widgets/edit_diesel_sheet.dart';
 import '../widgets/delete_confirm_dialog.dart';
 import '../data/diesel_models.dart';
 
-class DieselListScreen extends ConsumerWidget {
-  const DieselListScreen({super.key});
+class DieselListScreen extends ConsumerStatefulWidget {
+  /// Pre-selects a vehicle (e.g. arriving from a notification's deep
+  /// link) instead of requiring the user to pick one from the filter bar.
+  final int? initialVehicleId;
+
+  const DieselListScreen({super.key, this.initialVehicleId});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DieselListScreen> createState() => _DieselListScreenState();
+}
+
+class _DieselListScreenState extends ConsumerState<DieselListScreen> {
+  @override
+  void initState() {
+    super.initState();
+    final vehicleId = widget.initialVehicleId;
+    if (vehicleId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(dieselListProvider.notifier).filterByVehicle(vehicleId);
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final user = ref.watch(authProvider).valueOrNull;
     final listAsync = ref.watch(dieselListProvider);
     final selectedVehicleId = listAsync.valueOrNull?.selectedVehicleId;
+    final unreadCount =
+        ref.watch(notificationListProvider).valueOrNull?.unreadCount ?? 0;
 
     return Scaffold(
       backgroundColor: AppColors.pageBg,
@@ -47,10 +71,41 @@ class DieselListScreen extends ConsumerWidget {
             fontWeight: FontWeight.w700,
           ),
         ),
-        actions: const [
+        actions: [
           Padding(
-            padding: EdgeInsets.only(right: 16),
-            child: Icon(AppIcons.bell, color: AppColors.textPrimary),
+            padding: const EdgeInsets.only(right: 8),
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                IconButton(
+                  icon: const Icon(AppIcons.bell, color: AppColors.textPrimary),
+                  onPressed: () => context.push('/notifications'),
+                ),
+                if (unreadCount > 0)
+                  Positioned(
+                    top: 6,
+                    right: 6,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                      constraints: const BoxConstraints(minWidth: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.white, width: 1.5),
+                      ),
+                      child: Text(
+                        unreadCount > 99 ? '99+' : '$unreadCount',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ],
       ),

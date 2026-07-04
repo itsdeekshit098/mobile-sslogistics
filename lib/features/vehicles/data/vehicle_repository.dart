@@ -67,6 +67,15 @@ class VehicleRepository {
     throw Exception(response.data['error'] ?? 'Failed to update vehicle');
   }
 
+  Future<void> updateVehicleField(int id, String field, String? value) async {
+    final response = await _dio.put(
+      ApiConstants.vehicles,
+      data: {'id': id, field: value},
+    );
+    if (response.statusCode == 200 && response.data['success'] == true) return;
+    throw Exception(response.data['error'] ?? 'Failed to update vehicle');
+  }
+
   Future<void> deleteVehicle(int id) async {
     final response = await _dio.delete(
       ApiConstants.vehicles,

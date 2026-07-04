@@ -104,18 +104,12 @@ class VehicleCard extends StatelessWidget {
                                       color: AppColors.textPrimary,
                                     ),
                                   ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    vehicle.vehicleType.isEmpty
+                                  const SizedBox(height: 6),
+                                  _TypePill(
+                                    label: vehicle.vehicleType.isEmpty
                                         ? '-'
                                         : vehicleTypeLabel(vehicle.vehicleType),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: typeColor,
-                                      fontWeight: FontWeight.w800,
-                                    ),
+                                    color: typeColor,
                                   ),
                                 ],
                               ),
@@ -136,7 +130,7 @@ class VehicleCard extends StatelessWidget {
                           children: [
                             _InfoChip(
                               icon: _subDetailIcon(vehicle.vehicleType),
-                              showIcon: _showSubDetailIcon(vehicle.vehicleType),
+                              color: typeColor,
                               label: vehicleSubDetail(vehicle),
                             ),
                           ],
@@ -162,12 +156,17 @@ class VehicleCard extends StatelessWidget {
                 Row(
                   children: [
                     if (onDocuments != null)
-                      Expanded(child: _DocumentsButton(onTap: onDocuments)),
+                      Expanded(
+                        child: _DocumentsButton(
+                          color: typeColor,
+                          onTap: onDocuments,
+                        ),
+                      ),
                     if (canWrite) ...[
                       if (onDocuments != null) const SizedBox(width: 10),
-                      _IconActionButton(
+                      _SolidIconButton(
                         icon: AppIcons.pencil,
-                        color: AppColors.primary,
+                        color: typeColor,
                         onTap: onEdit,
                       ),
                     ],
@@ -208,27 +207,16 @@ class VehicleCard extends StatelessWidget {
       case 'TRUCK':
         return AppIcons.truck;
       case 'CONTAINER':
-        return AppIcons.truck;
+        return Icons.inventory_2_outlined;
       default:
         return Icons.info_outline;
-    }
-  }
-
-  static bool _showSubDetailIcon(String type) {
-    switch (type.toUpperCase()) {
-      case 'CAR':
-      case 'BUS':
-      case 'TEMPO_TRAVELLER':
-        return true;
-      default:
-        return false;
     }
   }
 
   static Color _typeColor(String type) {
     switch (type.toUpperCase()) {
       case 'TRUCK':
-        return AppColors.success;
+        return AppColors.tileDieselIcon;
       case 'CAR':
         return AppColors.tileDieselIcon;
       case 'BUS':
@@ -236,7 +224,7 @@ class VehicleCard extends StatelessWidget {
       case 'TEMPO_TRAVELLER':
         return AppColors.primary;
       case 'CONTAINER':
-        return AppColors.warning;
+        return AppColors.tileDieselIcon;
       default:
         return AppColors.textSecondary;
     }
@@ -325,6 +313,7 @@ class _VehicleFallback extends StatelessWidget {
       case 'TEMPO_TRAVELLER':
         return Icons.airport_shuttle;
       case 'CONTAINER':
+        return Icons.inventory_2_outlined;
       case 'TRUCK':
         return AppIcons.truck;
       default:
@@ -360,14 +349,59 @@ class _StatusBadge extends StatelessWidget {
   }
 }
 
+class _TypePill extends StatelessWidget {
+  final String label;
+  final Color color;
+
+  const _TypePill({required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        label,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: color),
+      ),
+    );
+  }
+}
+
+class _IconSquare extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+
+  const _IconSquare({required this.icon, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 32,
+      height: 32,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Icon(icon, size: 17, color: color),
+    );
+  }
+}
+
 class _InfoChip extends StatelessWidget {
   final IconData icon;
-  final bool showIcon;
+  final Color color;
   final String label;
 
   const _InfoChip({
     required this.icon,
-    required this.showIcon,
+    required this.color,
     required this.label,
   });
 
@@ -386,10 +420,8 @@ class _InfoChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.max,
         children: [
-          if (showIcon) ...[
-            Icon(icon, size: 14, color: AppColors.textMuted),
-            const SizedBox(width: 5),
-          ],
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 5),
           Flexible(
             child: Text(
               label,
@@ -411,9 +443,10 @@ class _InfoChip extends StatelessWidget {
 }
 
 class _DocumentsButton extends StatelessWidget {
+  final Color color;
   final VoidCallback? onTap;
 
-  const _DocumentsButton({this.onTap});
+  const _DocumentsButton({required this.color, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -422,17 +455,17 @@ class _DocumentsButton extends StatelessWidget {
       borderRadius: BorderRadius.circular(10),
       child: Container(
         height: 44,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 10),
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.55),
           borderRadius: BorderRadius.circular(10),
           border: Border.all(color: Colors.white.withValues(alpha: 0.7)),
         ),
-        child: const Row(
+        child: Row(
           children: [
-            Icon(AppIcons.fileText, size: 17, color: AppColors.textSecondary),
-            SizedBox(width: 8),
-            Expanded(
+            _IconSquare(icon: AppIcons.fileText, color: color),
+            const SizedBox(width: 8),
+            const Expanded(
               child: Text(
                 'Documents',
                 maxLines: 1,
@@ -444,7 +477,11 @@ class _DocumentsButton extends StatelessWidget {
                 ),
               ),
             ),
-            Icon(AppIcons.chevronRight, size: 19, color: AppColors.textMuted),
+            const Icon(
+              AppIcons.chevronRight,
+              size: 19,
+              color: AppColors.textMuted,
+            ),
           ],
         ),
       ),
@@ -477,6 +514,35 @@ class _IconActionButton extends StatelessWidget {
           border: Border.all(color: color.withValues(alpha: 0.25)),
         ),
         child: Icon(icon, color: color, size: 20),
+      ),
+    );
+  }
+}
+
+class _SolidIconButton extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final VoidCallback? onTap;
+
+  const _SolidIconButton({
+    required this.icon,
+    required this.color,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        width: 46,
+        height: 44,
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Icon(icon, color: Colors.white, size: 20),
       ),
     );
   }

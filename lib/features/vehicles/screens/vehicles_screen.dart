@@ -577,6 +577,7 @@ class _GlassSearchField extends StatelessWidget {
             cursorColor: Colors.white,
             decoration: InputDecoration(
               isDense: true,
+              filled: false,
               hintText: 'Search vehicle number',
               hintStyle: TextStyle(
                 color: Colors.white.withOpacity(0.5),
@@ -662,6 +663,7 @@ class _HeroStatChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(14),
+      clipBehavior: Clip.antiAliasWithSaveLayer,
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
         child: Container(
