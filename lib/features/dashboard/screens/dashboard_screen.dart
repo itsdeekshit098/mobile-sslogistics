@@ -10,6 +10,7 @@ import '../../../features/auth/providers/auth_provider.dart';
 import '../../../features/notifications/providers/notification_provider.dart';
 import '../../../shared/models/app_user.dart';
 import '../../../shared/widgets/app_drawer.dart';
+import '../../../shared/widgets/app_splash.dart';
 import '../widgets/dashboard_tile.dart';
 
 class DashboardScreen extends ConsumerWidget {
@@ -24,8 +25,11 @@ class DashboardScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(authProvider).valueOrNull;
-    if (user == null) return const SizedBox.shrink();
+    final authState = ref.watch(authProvider);
+    final user = authState.valueOrNull;
+    if (user == null) {
+      return authState.isLoading ? const AppSplash() : const SizedBox.shrink();
+    }
 
     final notificationsAsync = ref.watch(notificationListProvider);
     final unreadCount = notificationsAsync.valueOrNull?.unreadCount ?? 0;

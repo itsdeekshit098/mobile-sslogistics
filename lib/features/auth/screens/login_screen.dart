@@ -94,40 +94,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         // ── Brand mark ────────────────────────────────────
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(20),
-                          child: BackdropFilter(
-                            filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-                            child: Container(
-                              width: 72,
-                              height: 72,
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.16),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: Colors.white.withOpacity(0.24),
-                                ),
-                              ),
-                              child: const Icon(
-                                AppIcons.truck,
-                                color: Colors.white,
-                                size: 34,
-                              ),
-                            ),
-                          ),
+                        Image.asset(
+                          'assets/images/sslogo.png',
+                          height: 56,
+                          fit: BoxFit.contain,
                         ),
-                        const SizedBox(height: 20),
-                        Text(
-                          'SS Logistics',
-                          style: Theme.of(context)
-                              .textTheme
-                              .headlineSmall
-                              ?.copyWith(
-                                fontWeight: FontWeight.w800,
-                                color: Colors.white,
-                              ),
-                        ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 16),
                         Text(
                           'Sign in to your account',
                           style: TextStyle(

@@ -165,21 +165,10 @@ class AppDrawer extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
       child: Row(
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-              child: Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.16),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.white.withOpacity(0.22)),
-                ),
-                child: const Icon(AppIcons.truck, color: Colors.white, size: 18),
-              ),
-            ),
+          SizedBox(
+            width: 38,
+            height: 38,
+            child: Image.asset('assets/images/s-logo.png', fit: BoxFit.contain),
           ),
           const SizedBox(width: 12),
           Column(

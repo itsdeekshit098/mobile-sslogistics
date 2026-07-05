@@ -4,9 +4,9 @@ class ApiConstants {
   /// Base URL switches between Android emulator and iOS simulator automatically.
   /// Replace with the production HTTPS URL before going live.
   static String get baseUrl {
-    if (Platform.isAndroid) return 'http://10.0.2.2:3000';
-    return 'http://localhost:3000';
-    // return 'https://sslogistics-g1ah5sby0-deekshiths-projects-eaba341b.vercel.app/';
+    // if (Platform.isAndroid) return 'http://10.0.2.2:3000';
+    // return 'http://localhost:3000';
+    return 'https://sslogistics.vercel.app/';
   }
 
   // ── Auth ──────────────────────────────────────────────────────────────────
