@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:mobile_sslogistics/core/constants/app_icons.dart';
 
 import '../../../core/constants/app_colors.dart';
@@ -112,7 +113,7 @@ class _NotificationTile extends ConsumerWidget {
         decoration: BoxDecoration(
           color: item.isRead
               ? (isDark ? AppColors.darkCardBg : Colors.white)
-              : AppColors.primary.withOpacity(0.06),
+              : AppColors.primary.withValues(alpha: 0.06),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isDark ? AppColors.darkBorder : AppColors.border,
@@ -169,7 +170,7 @@ class _NotificationTile extends ConsumerWidget {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        item.createdAt,
+                        _relativeTime(item.createdAt),
                         style: TextStyle(
                           fontSize: 11,
                           color: isDark
@@ -187,4 +188,23 @@ class _NotificationTile extends ConsumerWidget {
       ),
     );
   }
+}
+
+String _relativeTime(String createdAt) {
+  final parsed = DateTime.tryParse(createdAt);
+  if (parsed == null) return createdAt;
+  final date = parsed.toLocal();
+  final diff = DateTime.now().difference(date);
+
+  if (diff.inSeconds < 60) return 'Just now';
+  if (diff.inMinutes < 60) {
+    return '${diff.inMinutes}m ago';
+  }
+  if (diff.inHours < 24) {
+    return '${diff.inHours}h ago';
+  }
+  if (diff.inDays < 7) {
+    return '${diff.inDays}d ago';
+  }
+  return DateFormat('dd MMM yyyy, hh:mm a').format(date);
 }

@@ -65,21 +65,6 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
             hasFilters: loadedState?.hasFilters ?? false,
             stats: loadedState?.stats,
           ),
-          // Soft fade bridging the hero into the list below, so the switch
-          // from dark glass to light content isn't a hard seam.
-          Container(
-            height: 14,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  AppColors.primary.withOpacity(0.14),
-                  AppColors.glassPageBg.withOpacity(0),
-                ],
-              ),
-            ),
-          ),
           // The body now carries the glass language too: soft pastel blobs
           // sit fixed behind the scroll content, and the cards/pagination
           // bar above them are translucent + blurred, so they genuinely
@@ -415,7 +400,7 @@ class _VehiclesHero extends StatelessWidget {
             SafeArea(
               bottom: false,
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -514,7 +499,12 @@ class _HeroGlow extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: Colors.white.withOpacity(opacity),
+        gradient: RadialGradient(
+          colors: [
+            Colors.white.withOpacity(opacity),
+            Colors.white.withOpacity(0),
+          ],
+        ),
       ),
     );
   }

@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -37,18 +35,10 @@ class VehicleCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
       decoration: BoxDecoration(
-        // Translucent rather than flat white — this is what actually makes
-        // the card "glass": the BackdropFilter below blurs whatever is
-        // behind it (the soft pastel blobs on the page), and this fill lets
-        // that blur show through instead of hiding behind solid white.
-        color: isDark
-            ? AppColors.darkCardBg.withValues(alpha: 0.58)
-            : Colors.white.withValues(alpha: 0.58),
+        color: isDark ? AppColors.darkCardBg : Colors.white,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: isDark
-              ? AppColors.darkBorder.withValues(alpha: 0.75)
-              : Colors.white.withValues(alpha: 0.75),
+          color: isDark ? AppColors.darkBorder : AppColors.border,
         ),
         boxShadow: [
           BoxShadow(
@@ -59,27 +49,29 @@ class VehicleCard extends StatelessWidget {
         ],
       ),
       clipBehavior: Clip.antiAlias,
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-        child: Material(
+      child: Material(
         color: Colors.transparent,
         child: InkWell(
         onTap: onTap,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Colored top accent tying each card back to the brand/glass
+            // Colored left accent tying each card back to the brand/glass
             // palette used in the hero above, instead of a flat white card
             // that has nothing visually in common with it.
             Container(
-              height: 3,
+              width: 4,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
                   colors: [typeColor, typeColor.withValues(alpha: 0.25)],
                 ),
               ),
             ),
-            Padding(
+            Expanded(
+              child: Padding(
               padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -152,12 +144,26 @@ class VehicleCard extends StatelessWidget {
               if (vehicle.lastServiceDate != null &&
                   vehicle.lastServiceDate!.isNotEmpty) ...[
                 const SizedBox(height: 9),
-                Text(
-                  'Last service: ${_formatDate(vehicle.lastServiceDate)}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: isDark ? AppColors.darkTextMuted : AppColors.textMuted,
-                  ),
+                Row(
+                  children: [
+                    Icon(
+                      AppIcons.clock,
+                      size: 13,
+                      color: isDark
+                          ? AppColors.darkTextMuted
+                          : AppColors.textMuted,
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      'Last service: ${_formatDate(vehicle.lastServiceDate)}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isDark
+                            ? AppColors.darkTextMuted
+                            : AppColors.textMuted,
+                      ),
+                    ),
+                  ],
                 ),
               ],
               if (onDocuments != null || canWrite || canDelete) ...[
@@ -173,9 +179,9 @@ class VehicleCard extends StatelessWidget {
                       ),
                     if (canWrite) ...[
                       if (onDocuments != null) const SizedBox(width: 10),
-                      _SolidIconButton(
+                      _IconActionButton(
                         icon: AppIcons.pencil,
-                        color: typeColor,
+                        color: AppColors.primary,
                         onTap: onEdit,
                       ),
                     ],
@@ -193,10 +199,11 @@ class VehicleCard extends StatelessWidget {
               ],
                 ],
               ),
+              ),
             ),
           ],
         ),
-      ),
+        ),
       ),
       ),
     );
@@ -253,9 +260,9 @@ class _VehicleVisual extends StatelessWidget {
       height: 96,
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: Colors.white, // Pure white background as requested
+        color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
+        border: Border.all(color: AppColors.border),
       ),
       child: Padding(
         padding: const EdgeInsets.all(8.0),
@@ -382,27 +389,6 @@ class _TypePill extends StatelessWidget {
   }
 }
 
-class _IconSquare extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-
-  const _IconSquare({required this.icon, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 32,
-      height: 32,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Icon(icon, size: 17, color: color),
-    );
-  }
-}
-
 class _InfoChip extends StatelessWidget {
   final IconData icon;
   final Color color;
@@ -421,16 +407,10 @@ class _InfoChip extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
       decoration: BoxDecoration(
-        // Translucent white rather than a flat pageBg patch, so it doesn't
-        // read as an opaque block sitting inside the glass card around it.
-        color: isDark
-            ? AppColors.darkCardBg.withValues(alpha: 0.55)
-            : Colors.white.withValues(alpha: 0.55),
+        color: isDark ? AppColors.darkPageBg : AppColors.pageBg,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: isDark
-              ? AppColors.darkBorder.withValues(alpha: 0.7)
-              : Colors.white.withValues(alpha: 0.7),
+          color: isDark ? AppColors.darkBorder : AppColors.border,
         ),
       ),
       child: Row(
@@ -476,19 +456,19 @@ class _DocumentsButton extends StatelessWidget {
         height: 44,
         padding: const EdgeInsets.symmetric(horizontal: 10),
         decoration: BoxDecoration(
-          color: isDark
-              ? AppColors.darkCardBg.withValues(alpha: 0.55)
-              : Colors.white.withValues(alpha: 0.55),
+          color: isDark ? AppColors.darkCardBg : Colors.white,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: isDark
-                ? AppColors.darkBorder.withValues(alpha: 0.7)
-                : Colors.white.withValues(alpha: 0.7),
+            color: isDark ? AppColors.darkBorder : AppColors.border,
           ),
         ),
         child: Row(
           children: [
-            _IconSquare(icon: AppIcons.fileText, color: color),
+            Icon(
+              AppIcons.fileText,
+              size: 18,
+              color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+            ),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
@@ -541,35 +521,6 @@ class _IconActionButton extends StatelessWidget {
           border: Border.all(color: color.withValues(alpha: 0.25)),
         ),
         child: Icon(icon, color: color, size: 20),
-      ),
-    );
-  }
-}
-
-class _SolidIconButton extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  final VoidCallback? onTap;
-
-  const _SolidIconButton({
-    required this.icon,
-    required this.color,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        width: 46,
-        height: 44,
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Icon(icon, color: Colors.white, size: 20),
       ),
     );
   }
