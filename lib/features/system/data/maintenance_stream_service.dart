@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 import '../../../core/network/dio_client.dart';
 import '../../../core/constants/api_constants.dart';
@@ -42,12 +43,27 @@ class MaintenanceStreamService {
           }
         },
         onDone: _scheduleReconnect,
-        onError: (_) => _scheduleReconnect(),
+        onError: (Object e) {
+          _breadcrumb('maintenance stream error', e);
+          _scheduleReconnect();
+        },
         cancelOnError: true,
       );
-    } catch (_) {
+    } catch (e) {
+      // Breadcrumb, not captureException: reconnects every 3s, so capturing
+      // each failure would flood Sentry while offline.
+      _breadcrumb('maintenance stream connect failed', e);
       _scheduleReconnect();
     }
+  }
+
+  void _breadcrumb(String message, Object error) {
+    Sentry.addBreadcrumb(Breadcrumb(
+      message: message,
+      category: 'sse',
+      level: SentryLevel.warning,
+      data: {'error': error.toString()},
+    ));
   }
 
   void _handleEventBlock(String block) {

@@ -8,9 +8,8 @@ class AppSplash extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkPageBg : AppColors.pageBg,
+      backgroundColor: AppColors.darkPageBg,
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,

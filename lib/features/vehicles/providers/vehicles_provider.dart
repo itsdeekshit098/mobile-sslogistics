@@ -81,8 +81,18 @@ final vehiclesListProvider =
     );
 
 class VehiclesNotifier extends AutoDisposeAsyncNotifier<VehiclesState> {
+  // Tracks disposal explicitly because this riverpod version doesn't expose
+  // `ref.mounted`. Without this, a mutator awaiting `_fetch()` can resolve
+  // after autoDispose tears the notifier down (e.g. the screen was navigated
+  // away from mid-search) and writing to `state` then throws
+  // "Bad state: Future already completed".
+  bool _disposed = false;
+
   @override
-  Future<VehiclesState> build() => _fetch();
+  Future<VehiclesState> build() {
+    ref.onDispose(() => _disposed = true);
+    return _fetch();
+  }
 
   Future<VehiclesState> _fetch({
     int page = 1,
@@ -142,7 +152,7 @@ class VehiclesNotifier extends AutoDisposeAsyncNotifier<VehiclesState> {
   Future<void> refresh({bool showLoading = true}) async {
     final current = state.valueOrNull;
     if (showLoading) state = const AsyncLoading();
-    state = await AsyncValue.guard(
+    final result = await AsyncValue.guard(
       () => _fetch(
         page: current?.page ?? 1,
         pageSize: current?.pageSize ?? 10,
@@ -154,12 +164,18 @@ class VehiclesNotifier extends AutoDisposeAsyncNotifier<VehiclesState> {
         fuelType: current?.fuelType ?? '',
       ),
     );
+    // Guard against the provider being torn down (autoDispose, e.g. the
+    // screen was navigated away from) while the fetch above was in flight —
+    // writing to `state` after disposal throws "Bad state: Future already
+    // completed".
+    if (_disposed) return;
+    state = result;
   }
 
   Future<void> search(String value) async {
     final current = state.valueOrNull;
     state = const AsyncLoading();
-    state = await AsyncValue.guard(
+    final result = await AsyncValue.guard(
       () => _fetch(
         page: 1,
         pageSize: current?.pageSize ?? 10,
@@ -171,6 +187,8 @@ class VehiclesNotifier extends AutoDisposeAsyncNotifier<VehiclesState> {
         fuelType: current?.fuelType ?? '',
       ),
     );
+    if (_disposed) return;
+    state = result;
   }
 
   Future<void> applyFilters({
@@ -182,7 +200,7 @@ class VehiclesNotifier extends AutoDisposeAsyncNotifier<VehiclesState> {
   }) async {
     final current = state.valueOrNull;
     state = const AsyncLoading();
-    state = await AsyncValue.guard(
+    final result = await AsyncValue.guard(
       () => _fetch(
         page: 1,
         pageSize: current?.pageSize ?? 10,
@@ -194,21 +212,25 @@ class VehiclesNotifier extends AutoDisposeAsyncNotifier<VehiclesState> {
         fuelType: fuelType ?? current?.fuelType ?? '',
       ),
     );
+    if (_disposed) return;
+    state = result;
   }
 
   Future<void> clearFilters() async {
     final current = state.valueOrNull;
     state = const AsyncLoading();
-    state = await AsyncValue.guard(
+    final result = await AsyncValue.guard(
       () => _fetch(pageSize: current?.pageSize ?? 10),
     );
+    if (_disposed) return;
+    state = result;
   }
 
   Future<void> changePage(int page) async {
     final current = state.valueOrNull;
     if (current == null) return;
     state = const AsyncLoading();
-    state = await AsyncValue.guard(
+    final result = await AsyncValue.guard(
       () => _fetch(
         page: page,
         pageSize: current.pageSize,
@@ -220,12 +242,14 @@ class VehiclesNotifier extends AutoDisposeAsyncNotifier<VehiclesState> {
         fuelType: current.fuelType,
       ),
     );
+    if (_disposed) return;
+    state = result;
   }
 
   Future<void> changePageSize(int pageSize) async {
     final current = state.valueOrNull;
     state = const AsyncLoading();
-    state = await AsyncValue.guard(
+    final result = await AsyncValue.guard(
       () => _fetch(
         page: 1,
         pageSize: pageSize,
@@ -237,6 +261,8 @@ class VehiclesNotifier extends AutoDisposeAsyncNotifier<VehiclesState> {
         fuelType: current?.fuelType ?? '',
       ),
     );
+    if (_disposed) return;
+    state = result;
   }
 
   Future<void> createVehicle(VehiclePayload payload) async {

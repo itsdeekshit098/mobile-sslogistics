@@ -37,6 +37,13 @@ Feature-first layout under `lib/`:
 
 `app_router.dart` builds a `GoRouter` whose `redirect` reads `authProvider`: unauthenticated → `/login`, authenticated on `/login` → `/dashboard`. Auth state changes propagate through a `refreshListenable` bridge. New protected screens just need a route; no per-screen guards.
 
+### Error tracking (Sentry)
+
+- Initialized in `main()` via `SentryFlutter.init(appRunner: …)` — one call installs `FlutterError.onError`, `PlatformDispatcher.onError` (unhandled async), and native crash handlers. All options live in `lib/core/config/sentry_config.dart`.
+- **PII-safe**, mirroring the web app: `sendDefaultPii = false` plus `SentryConfig.scrubEvent` strips cookies, `Authorization`/`Cookie` headers, and request bodies. User context (`setSentryUser` in `lib/core/observability/sentry_provider_observer.dart`) is **id + role only**, never email — set/cleared in `AuthNotifier` (build/login/logout/forced-logout).
+- **Config**: DSN is a committed default in `sentry_config.dart` (a DSN isn't secret on mobile — it ships in the binary, same as `ApiConstants.baseUrl`); overridable via `--dart-define=SENTRY_DSN=…`. `environment` is auto-derived from `kReleaseMode` (`development` in debug, `production` in release) — no flags needed for `flutter run`. Uses a **separate Sentry project** (`sslogistics-mobile`) from the web app, same org.
+- **Coverage**: `SentryProviderObserver` on the root `ProviderScope` auto-captures any failing Riverpod provider; `_dio.addSentry()` (last interceptor in `DioClient.init`) captures 5xx + HTTP breadcrumbs; `SentryNavigatorObserver` on the GoRouter records navigation. The two SSE services log reconnect failures as **breadcrumbs** (not captures) because they retry every 3s — capturing would flood Sentry while offline.
+
 ### Dashboard tiles
 
 `features/dashboard/widgets/dashboard_tile.dart` holds the `allTiles` list. A tile is only tappable when `isMobileReady: true` and its `allowedRoles` includes the user's role (`admin | staff | driver`); otherwise it renders greyed out with a "Mobile Soon"/"Coming Soon" badge. When you finish building a feature's screens, flip its tile's `isMobileReady`.

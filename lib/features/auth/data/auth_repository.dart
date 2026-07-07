@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import '../../../core/network/dio_client.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/storage/secure_storage.dart';
@@ -51,8 +52,11 @@ class AuthRepository {
   Future<void> logout() async {
     try {
       await _dio.post(ApiConstants.logout);
-    } catch (_) {
-      // Even if the server call fails, clear local state
+    } catch (e, st) {
+      // Even if the server call fails, clear local state — but report it,
+      // since a server-side signout that never happened leaves the session
+      // alive on the backend.
+      await Sentry.captureException(e, stackTrace: st);
     }
     await clearLocalSession();
   }

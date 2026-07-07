@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/auth_repository.dart';
 import '../../../core/network/dio_client.dart';
 import '../../../core/notifications/push_service.dart';
+import '../../../core/observability/sentry_provider_observer.dart';
 import '../../../shared/models/app_user.dart';
 
 final authRepositoryProvider = Provider<AuthRepository>(
@@ -25,6 +26,8 @@ class AuthNotifier extends AsyncNotifier<AppUser?> {
     DioClient.onSessionInvalidated = _handleSessionInvalidated;
     try {
       final user = await ref.read(authRepositoryProvider).getSession();
+      // Tag future Sentry events with who's using the app (id + role only).
+      setSentryUser(user);
       // Restoring an already-valid session on cold start — the token
       // registration attempted inside PushService.init() may have run
       // before cookies were confirmed valid, so retry here too.
@@ -42,6 +45,7 @@ class AuthNotifier extends AsyncNotifier<AppUser?> {
     });
 
     if (state.hasValue && state.value != null) {
+      setSentryUser(state.value);
       // The initial registration attempt in PushService.init() may have
       // run (and silently failed) before this login completed — retry now
       // that the session cookie is valid.
@@ -55,6 +59,7 @@ class AuthNotifier extends AsyncNotifier<AppUser?> {
     // is already dead by the time it's detected.
     await PushService.unregister();
     await ref.read(authRepositoryProvider).logout();
+    setSentryUser(null);
     state = const AsyncData(null);
   }
 
@@ -87,6 +92,7 @@ class AuthNotifier extends AsyncNotifier<AppUser?> {
   void _handleSessionInvalidated() {
     if (state.valueOrNull == null) return;
     ref.read(authRepositoryProvider).clearLocalSession();
+    setSentryUser(null);
     state = const AsyncData(null);
     ref.read(forcedLogoutMessageProvider.notifier).state =
         "You've been logged out because your account was signed in on another device.";

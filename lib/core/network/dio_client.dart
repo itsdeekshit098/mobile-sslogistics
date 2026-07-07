@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:sentry_dio/sentry_dio.dart';
 
 import '../constants/api_constants.dart';
 
@@ -88,6 +89,13 @@ class DioClient {
         },
       ),
     );
+
+    // Must be the LAST interceptor (per sentry_dio docs) so it wraps the
+    // fully-configured client. Records HTTP breadcrumbs and captures failed
+    // requests (5xx by default — matches our validateStatus `< 500`, so
+    // server errors surface in Sentry while normal 4xx do not). PII on
+    // requests is stripped by SentryConfig.scrubEvent + sendDefaultPii=false.
+    _dio!.addSentry();
   }
 
   static Dio get dio {

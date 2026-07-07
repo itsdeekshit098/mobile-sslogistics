@@ -317,34 +317,21 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
   }
 
   Future<void> _delete(FleetVehicle vehicle) async {
-    final ok = await showDialog<bool>(
+    // The dialog performs the delete itself: it stays open with a spinner while
+    // the call runs, blocks dismissal, and shows any error inline (see
+    // DeleteConfirmationDialog.onConfirm). It pops only on success.
+    await showDialog<bool>(
       context: context,
+      barrierDismissible: false,
       builder: (_) => DeleteConfirmationDialog(
         title: 'Delete Vehicle',
         targetName: vehicle.vehicleNumber.toUpperCase(),
         warningText: 'This action cannot be undone.',
         warningSubtext: 'All vehicle data will be permanently removed.',
+        onConfirm: () =>
+            ref.read(vehiclesListProvider.notifier).deleteVehicle(vehicle.id),
       ),
     );
-    if (ok == true) {
-      try {
-        await ref
-            .read(vehiclesListProvider.notifier)
-            .deleteVehicle(vehicle.id);
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                e.toString().replaceFirst('Exception: ', ''),
-              ),
-              backgroundColor: Colors.red.shade700,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
-      }
-    }
   }
 }
 

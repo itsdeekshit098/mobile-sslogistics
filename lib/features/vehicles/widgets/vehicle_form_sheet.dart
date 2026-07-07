@@ -911,29 +911,35 @@ class _Picker extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: values
-                    .map(
-                      (v) => ListTile(
-                        title: Text(
-                          _label(v),
-                          style: TextStyle(
-                            color: isDark
-                                ? AppColors.darkTextPrimary
-                                : AppColors.textPrimary,
+              child: Material(
+                type: MaterialType.transparency,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: values
+                      .map(
+                        (v) => ListTile(
+                          title: Text(
+                            _label(v),
+                            style: TextStyle(
+                              color: isDark
+                                  ? AppColors.darkTextPrimary
+                                  : AppColors.textPrimary,
+                            ),
                           ),
+                          trailing: v == value
+                              ? const Icon(
+                                  Icons.check,
+                                  color: AppColors.primary,
+                                )
+                              : null,
+                          onTap: () {
+                            Navigator.pop(context);
+                            onChanged(v);
+                          },
                         ),
-                        trailing: v == value
-                            ? const Icon(Icons.check, color: AppColors.primary)
-                            : null,
-                        onTap: () {
-                          Navigator.pop(context);
-                          onChanged(v);
-                        },
-                      ),
-                    )
-                    .toList(),
+                      )
+                      .toList(),
+                ),
               ),
             ),
           ),

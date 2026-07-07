@@ -3,12 +3,19 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_icons.dart';
 
-class DeleteConfirmationDialog extends StatelessWidget {
+class DeleteConfirmationDialog extends StatefulWidget {
   final String title;
   final String targetName;
   final String warningText;
   final String warningSubtext;
   final String confirmLabel;
+
+  /// When provided, the dialog performs the delete itself: it shows a loading
+  /// spinner, blocks dismissal (barrier tap + back gesture) and disables Cancel
+  /// while the call is in flight, and renders any thrown error inline instead of
+  /// closing. When null the dialog keeps its legacy behavior of just popping a
+  /// `bool` result for the caller to act on (used by the vehicle documents sheet).
+  final Future<void> Function()? onConfirm;
 
   const DeleteConfirmationDialog({
     super.key,
@@ -17,7 +24,38 @@ class DeleteConfirmationDialog extends StatelessWidget {
     required this.warningText,
     required this.warningSubtext,
     this.confirmLabel = 'Delete',
+    this.onConfirm,
   });
+
+  @override
+  State<DeleteConfirmationDialog> createState() =>
+      _DeleteConfirmationDialogState();
+}
+
+class _DeleteConfirmationDialogState extends State<DeleteConfirmationDialog> {
+  bool _busy = false;
+  String? _error;
+
+  Future<void> _handleConfirm() async {
+    if (widget.onConfirm == null) {
+      Navigator.pop(context, true); // legacy bool-return path (documents sheet)
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      await widget.onConfirm!();
+      if (mounted) Navigator.pop(context, true);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _busy = false;
+        _error = e.toString().replaceFirst('Exception: ', '');
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,16 +72,21 @@ class DeleteConfirmationDialog extends StatelessWidget {
     final buttonHeight = veryCompact ? 48.0 : 52.0;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Dialog(
-      insetPadding: EdgeInsets.symmetric(
-        horizontal: compact ? 16 : 22,
-        vertical: 22,
-      ),
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: dialogWidth),
-        child: Container(
+    return PopScope(
+      // While the delete call is in flight, block the back gesture/button and
+      // the barrier tap so a mistap can't dismiss the modal mid-request. The
+      // legacy (onConfirm == null) path stays fully dismissable.
+      canPop: widget.onConfirm == null || !_busy,
+      child: Dialog(
+        insetPadding: EdgeInsets.symmetric(
+          horizontal: compact ? 16 : 22,
+          vertical: 22,
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: dialogWidth),
+          child: Container(
           padding: EdgeInsets.fromLTRB(
             horizontalPadding,
             compact ? 20 : 22,
@@ -89,7 +132,7 @@ class DeleteConfirmationDialog extends StatelessWidget {
               ),
               SizedBox(height: compact ? 16 : 18),
               Text(
-                title,
+                widget.title,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: isDark
@@ -115,7 +158,7 @@ class DeleteConfirmationDialog extends StatelessWidget {
                   children: [
                     const TextSpan(text: 'Are you sure you want to delete\n'),
                     TextSpan(
-                      text: targetName,
+                      text: widget.targetName,
                       style: TextStyle(
                         color: isDark
                             ? AppColors.darkTextSecondary
@@ -154,8 +197,8 @@ class DeleteConfirmationDialog extends StatelessWidget {
                       child: Text.rich(
                         TextSpan(
                           children: [
-                            TextSpan(text: warningText),
-                            TextSpan(text: '\n$warningSubtext'),
+                            TextSpan(text: widget.warningText),
+                            TextSpan(text: '\n${widget.warningSubtext}'),
                           ],
                         ),
                         style: TextStyle(
@@ -171,19 +214,48 @@ class DeleteConfirmationDialog extends StatelessWidget {
                   ],
                 ),
               ),
+              if (_error != null) ...[
+                const SizedBox(height: 14),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color:
+                        isDark ? AppColors.darkErrorBg : AppColors.errorBg,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    _error!,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: AppColors.error,
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
               SizedBox(height: compact ? 16 : 18),
               compact
                   ? _StackedActions(
-                      confirmLabel: confirmLabel,
+                      confirmLabel: widget.confirmLabel,
                       buttonHeight: buttonHeight,
+                      busy: _busy,
+                      onConfirm: _handleConfirm,
                     )
                   : _InlineActions(
-                      confirmLabel: confirmLabel,
+                      confirmLabel: widget.confirmLabel,
                       buttonHeight: buttonHeight,
+                      busy: _busy,
+                      onConfirm: _handleConfirm,
                     ),
             ],
           ),
         ),
+      ),
       ),
     );
   }
@@ -192,15 +264,29 @@ class DeleteConfirmationDialog extends StatelessWidget {
 class _InlineActions extends StatelessWidget {
   final String confirmLabel;
   final double buttonHeight;
+  final bool busy;
+  final VoidCallback onConfirm;
 
-  const _InlineActions({required this.confirmLabel, required this.buttonHeight});
+  const _InlineActions({
+    required this.confirmLabel,
+    required this.buttonHeight,
+    required this.busy,
+    required this.onConfirm,
+  });
 
   @override
   Widget build(BuildContext context) => Row(
     children: [
-      Expanded(child: _CancelButton(height: buttonHeight)),
+      Expanded(child: _CancelButton(height: buttonHeight, busy: busy)),
       const SizedBox(width: 12),
-      Expanded(child: _DeleteButton(confirmLabel: confirmLabel, height: buttonHeight)),
+      Expanded(
+        child: _DeleteButton(
+          confirmLabel: confirmLabel,
+          height: buttonHeight,
+          busy: busy,
+          onConfirm: onConfirm,
+        ),
+      ),
     ],
   );
 }
@@ -208,29 +294,42 @@ class _InlineActions extends StatelessWidget {
 class _StackedActions extends StatelessWidget {
   final String confirmLabel;
   final double buttonHeight;
+  final bool busy;
+  final VoidCallback onConfirm;
 
-  const _StackedActions({required this.confirmLabel, required this.buttonHeight});
+  const _StackedActions({
+    required this.confirmLabel,
+    required this.buttonHeight,
+    required this.busy,
+    required this.onConfirm,
+  });
 
   @override
   Widget build(BuildContext context) => Column(
     children: [
-      _DeleteButton(confirmLabel: confirmLabel, height: buttonHeight),
+      _DeleteButton(
+        confirmLabel: confirmLabel,
+        height: buttonHeight,
+        busy: busy,
+        onConfirm: onConfirm,
+      ),
       const SizedBox(height: 10),
-      _CancelButton(height: buttonHeight),
+      _CancelButton(height: buttonHeight, busy: busy),
     ],
   );
 }
 
 class _CancelButton extends StatelessWidget {
   final double height;
+  final bool busy;
 
-  const _CancelButton({required this.height});
+  const _CancelButton({required this.height, required this.busy});
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return OutlinedButton(
-      onPressed: () => Navigator.pop(context, false),
+      onPressed: busy ? null : () => Navigator.pop(context, false),
       style: OutlinedButton.styleFrom(
         minimumSize: Size.fromHeight(height),
         foregroundColor:
@@ -249,18 +348,38 @@ class _CancelButton extends StatelessWidget {
 class _DeleteButton extends StatelessWidget {
   final String confirmLabel;
   final double height;
+  final bool busy;
+  final VoidCallback onConfirm;
 
-  const _DeleteButton({required this.confirmLabel, required this.height});
+  const _DeleteButton({
+    required this.confirmLabel,
+    required this.height,
+    required this.busy,
+    required this.onConfirm,
+  });
 
   @override
   Widget build(BuildContext context) => ElevatedButton.icon(
-    onPressed: () => Navigator.pop(context, true),
-    icon: const Icon(AppIcons.trash2, size: 18),
-    label: Text(confirmLabel),
+    onPressed: busy ? null : onConfirm,
+    icon: busy
+        ? const SizedBox.shrink()
+        : const Icon(AppIcons.trash2, size: 18),
+    label: busy
+        ? const SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(
+              strokeWidth: 2.4,
+              color: Colors.white,
+            ),
+          )
+        : Text(confirmLabel),
     style: ElevatedButton.styleFrom(
       minimumSize: Size.fromHeight(height),
       backgroundColor: AppColors.error,
+      disabledBackgroundColor: AppColors.error.withValues(alpha: 0.6),
       foregroundColor: Colors.white,
+      disabledForegroundColor: Colors.white,
       elevation: 8,
       shadowColor: AppColors.error.withValues(alpha: 0.22),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

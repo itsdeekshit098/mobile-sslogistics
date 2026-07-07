@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 import '../../features/auth/providers/auth_provider.dart';
 import '../../features/auth/screens/login_screen.dart';
@@ -32,6 +33,9 @@ final routerProvider = Provider<GoRouter>((ref) {
     navigatorKey: rootNavigatorKey,
     initialLocation: '/dashboard',
     refreshListenable: listener,
+    // Records screen navigation as breadcrumbs so a captured error shows
+    // the path the user took to get there.
+    observers: [SentryNavigatorObserver()],
     redirect: (context, state) {
       final authState = ref.read(authProvider);
 

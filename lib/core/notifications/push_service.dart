@@ -6,6 +6,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 import '../network/dio_client.dart';
 import '../constants/api_constants.dart';
@@ -172,8 +173,11 @@ class PushService {
           'platform': Platform.isIOS ? 'ios' : 'android',
         },
       );
-    } catch (_) {
-      // Best-effort — retried on next app start/token refresh.
+    } catch (e, st) {
+      // Best-effort — retried on next app start/token refresh — but report
+      // it so a persistent registration failure (backend, not just offline)
+      // is visible instead of silently disabling push for that device.
+      await Sentry.captureException(e, stackTrace: st);
     }
   }
 
@@ -187,8 +191,10 @@ class PushService {
         ApiConstants.notificationsRegisterDevice,
         queryParameters: {'token': token},
       );
-    } catch (_) {
-      // Best-effort.
+    } catch (e, st) {
+      // Best-effort, but surface it — a failed unregister means this
+      // device keeps receiving pushes for a logged-out user.
+      await Sentry.captureException(e, stackTrace: st);
     }
   }
 }

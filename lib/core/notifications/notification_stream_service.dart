@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 import '../constants/api_constants.dart';
 import '../network/dio_client.dart';
@@ -51,12 +52,28 @@ class NotificationStreamService {
           _drainBuffer(buffer, onNotification);
         },
         onDone: () => _scheduleReconnect(onNotification, onReconnect),
-        onError: (_) => _scheduleReconnect(onNotification, onReconnect),
+        onError: (Object e) {
+          _breadcrumb('notification stream error', e);
+          _scheduleReconnect(onNotification, onReconnect);
+        },
         cancelOnError: true,
       );
-    } catch (_) {
+    } catch (e) {
+      // Breadcrumb (not captureException) on purpose: this reconnects every
+      // 3s, so capturing each failure would flood Sentry while offline. The
+      // context is still attached to any real error that fires later.
+      _breadcrumb('notification stream connect failed', e);
       _scheduleReconnect(onNotification, onReconnect);
     }
+  }
+
+  void _breadcrumb(String message, Object error) {
+    Sentry.addBreadcrumb(Breadcrumb(
+      message: message,
+      category: 'sse',
+      level: SentryLevel.warning,
+      data: {'error': error.toString()},
+    ));
   }
 
   void _drainBuffer(

@@ -1,7 +1,6 @@
 import 'package:dio/dio.dart';
 import '../../../core/network/dio_client.dart';
 import '../../../core/constants/api_constants.dart';
-import '../../../shared/models/vehicle_model.dart';
 import 'diesel_models.dart';
 
 class DieselRepository {
@@ -78,26 +77,5 @@ class DieselRepository {
 
     throw Exception(
         response.data['error'] ?? 'Failed to delete diesel record');
-  }
-}
-
-class VehicleRepository {
-  Dio get _dio => DioClient.dio;
-
-  Future<List<Vehicle>> getVehicles() async {
-    final response = await _dio.get(ApiConstants.vehicles);
-
-    if (response.statusCode == 200 && response.data['success'] == true) {
-      final data = response.data['data'];
-      // Handle both flat list and paginated { data: [...] } shapes
-      final list = data is List
-          ? data
-          : (data['data'] as List? ?? data as List);
-      return list
-          .map((e) => Vehicle.fromJson(e as Map<String, dynamic>))
-          .toList();
-    }
-
-    throw Exception('Failed to fetch vehicles');
   }
 }
