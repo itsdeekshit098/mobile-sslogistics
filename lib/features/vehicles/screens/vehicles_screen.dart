@@ -62,6 +62,8 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
             onFilter: loadedState == null
                 ? null
                 : () => _showFilters(loadedState),
+            onClearFilters:
+                ref.read(vehiclesListProvider.notifier).clearFilters,
             hasFilters: loadedState?.hasFilters ?? false,
             stats: loadedState?.stats,
           ),
@@ -342,6 +344,7 @@ class _VehiclesHero extends StatelessWidget {
   final TextEditingController controller;
   final ValueChanged<String> onSearch;
   final VoidCallback? onFilter;
+  final VoidCallback? onClearFilters;
   final bool hasFilters;
   final VehicleStats? stats;
 
@@ -349,6 +352,7 @@ class _VehiclesHero extends StatelessWidget {
     required this.controller,
     required this.onSearch,
     required this.onFilter,
+    required this.onClearFilters,
     required this.hasFilters,
     required this.stats,
   });
@@ -424,6 +428,7 @@ class _VehiclesHero extends StatelessWidget {
                         const SizedBox(width: 10),
                         _GlassFilterButton(
                           onTap: onFilter,
+                          onClear: onClearFilters,
                           active: hasFilters,
                         ),
                       ],
@@ -596,50 +601,81 @@ class _GlassSearchField extends StatelessWidget {
 
 class _GlassFilterButton extends StatelessWidget {
   final VoidCallback? onTap;
+  final VoidCallback? onClear;
   final bool active;
 
-  const _GlassFilterButton({required this.onTap, required this.active});
+  const _GlassFilterButton({
+    required this.onTap,
+    required this.onClear,
+    required this.active,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Material(
-          color: Colors.white.withOpacity(0.12),
-          child: InkWell(
-            onTap: onTap,
-            child: Container(
-              width: 46,
-              height: 46,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.white.withOpacity(0.20)),
-              ),
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  const Icon(Icons.tune, color: Colors.white, size: 20),
-                  if (active)
-                    Positioned(
-                      top: 9,
-                      right: 9,
-                      child: Container(
-                        width: 8,
-                        height: 8,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFFFACC15),
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    ),
-                ],
+    return Stack(
+      // The badge is positioned outside the button's own bounds (negative
+      // offsets) so it can sit half-on/half-off the corner. Clip.none stops
+      // this outer Stack from cutting that overflow off; the inner ClipRRect
+      // still clips the glass button itself to its rounded corners.
+      clipBehavior: Clip.none,
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Material(
+              color: Colors.white.withOpacity(0.12),
+              child: InkWell(
+                onTap: onTap,
+                child: Container(
+                  width: 46,
+                  height: 46,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.white.withOpacity(0.20)),
+                  ),
+                  child: const Center(
+                    child: Icon(Icons.tune, color: Colors.white, size: 20),
+                  ),
+                ),
               ),
             ),
           ),
         ),
-      ),
+        if (active)
+          Positioned(
+            // Tap zone is 24x24 for a real touch target; centering it on
+            // the same point as the 14x14 visible dot keeps the enlarged
+            // hit area invisible while the badge itself sits exactly on
+            // the corner, half inside the button and half outside it.
+            top: -12,
+            right: -12,
+            child: GestureDetector(
+              onTap: onClear,
+              behavior: HitTestBehavior.opaque,
+              child: const SizedBox(
+                width: 24,
+                height: 24,
+                child: Center(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: Color(0xFFFACC15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Padding(
+                      padding: EdgeInsets.all(2),
+                      child: Icon(
+                        Icons.close,
+                        size: 10,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }
@@ -1147,7 +1183,6 @@ class _Detail extends StatelessWidget {
   Widget build(BuildContext context) {
     final width = MediaQuery.sizeOf(context).width;
     final compact = width < 380;
-    final iconSize = compact ? 38.0 : 42.0;
     final horizontalPadding = compact ? 14.0 : 18.0;
     final labelFontSize = compact ? 13.5 : 14.5;
     final valueFontSize = compact ? 13.5 : 14.5;
@@ -1168,14 +1203,16 @@ class _Detail extends StatelessWidget {
       ),
       child: Row(
         children: [
+          // Same 38x38 tinted icon avatar used for document rows in
+          // VehicleDocumentsSheet, so both sheets read as one system.
           Container(
-            width: iconSize,
-            height: iconSize,
+            width: 38,
+            height: 38,
             decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.07),
-              borderRadius: BorderRadius.circular(11),
+              color: AppColors.tileVehiclesBg,
+              borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, color: AppColors.primary, size: compact ? 19 : 21),
+            child: Icon(icon, color: AppColors.primary, size: 18),
           ),
           SizedBox(width: compact ? 12 : 16),
           Expanded(
@@ -1189,7 +1226,7 @@ class _Detail extends StatelessWidget {
                     ? AppColors.darkTextSecondary
                     : AppColors.textSecondary,
                 fontSize: labelFontSize,
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w800,
               ),
             ),
           ),
