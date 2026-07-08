@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/router/app_router.dart';
 import 'core/constants/app_colors.dart';
 import 'features/auth/providers/auth_provider.dart';
+import 'features/system/providers/app_version_provider.dart';
+import 'features/system/widgets/force_update_dialog.dart';
 
 class SSLogisticsApp extends ConsumerStatefulWidget {
   const SSLogisticsApp({super.key});
@@ -17,6 +19,9 @@ class _SSLogisticsAppState extends ConsumerState<SSLogisticsApp>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => ref.read(appVersionProvider.notifier).check(),
+    );
   }
 
   @override
@@ -32,12 +37,27 @@ class _SSLogisticsAppState extends ConsumerState<SSLogisticsApp>
     // session revoked by a login elsewhere logs this device out immediately.
     if (state == AppLifecycleState.resumed) {
       ref.read(authProvider.notifier).verifySession();
+      ref.read(appVersionProvider.notifier).check();
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final router = ref.watch(routerProvider);
+
+    ref.listen(appVersionProvider, (previous, next) {
+      if (next.updateRequired && previous?.updateRequired != true) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          final navigatorContext = rootNavigatorKey.currentContext;
+          if (navigatorContext == null) return;
+          showDialog<void>(
+            context: navigatorContext,
+            barrierDismissible: false,
+            builder: (_) => ForceUpdateDialog(message: next.message),
+          );
+        });
+      }
+    });
 
     return MaterialApp.router(
       title: 'SS Logistics',

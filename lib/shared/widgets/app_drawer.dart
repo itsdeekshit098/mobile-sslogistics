@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile_sslogistics/core/constants/app_icons.dart';
 
 import '../../core/constants/app_colors.dart';
+import '../../core/providers/package_info_provider.dart';
 import '../../features/auth/providers/auth_provider.dart';
 import '../../shared/models/app_user.dart';
 import '../../shared/widgets/sign_out_confirmation_dialog.dart';
@@ -150,6 +151,7 @@ class AppDrawer extends ConsumerWidget {
                     Expanded(child: _buildNavList(context, user)),
                     _GlassDivider(),
                     _buildFooter(context, user),
+                    _buildVersionLabel(ref),
                   ],
                 ),
               ),
@@ -336,6 +338,19 @@ class AppDrawer extends ConsumerWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildVersionLabel(WidgetRef ref) {
+    final packageInfo = ref.watch(packageInfoProvider).valueOrNull;
+    if (packageInfo == null) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Text(
+        'v${packageInfo.version} (${packageInfo.buildNumber})',
+        style: TextStyle(color: Colors.white.withOpacity(0.35), fontSize: 10.5),
       ),
     );
   }
