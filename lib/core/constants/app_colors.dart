@@ -49,6 +49,12 @@ class AppColors {
   static const Color tileSessionsIcon = Color(0xFF0D9488);
   static const Color tileSessionsBg = Color(0xFFF0FDFA);
 
+  static const Color tileOwnersIcon = Color(0xFF7C3AED);
+  static const Color tileOwnersBg = Color(0xFFF5F3FF);
+
+  static const Color tileSettingsIcon = Color(0xFF64748B);
+  static const Color tileSettingsBg = Color(0xFFF1F5F9);
+
   // ── Semantic / Status ─────────────────────────────────────────────────────
   static const Color success = Color(0xFF16A34A);
   static const Color successBg = Color(0xFFDCFCE7);

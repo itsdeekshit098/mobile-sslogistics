@@ -12,7 +12,7 @@ import '../../../shared/widgets/error_state.dart';
 import '../../../shared/widgets/loading_spinner.dart';
 import '../data/vehicle_models.dart';
 import '../providers/vehicles_provider.dart';
-import '../widgets/delete_confirmation_dialog.dart';
+import '../../../shared/widgets/delete_confirmation_dialog.dart';
 import '../widgets/vehicle_card.dart';
 import '../widgets/vehicle_documents_sheet.dart';
 import '../widgets/vehicle_filter_sheet.dart';
@@ -231,6 +231,8 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
         ownerType: state.ownerType,
         ownerName: state.ownerName,
         fuelType: state.fuelType,
+        fcStatus: state.fcStatus,
+        insuranceStatus: state.insuranceStatus,
       ),
     );
     if (result != null) {
@@ -242,6 +244,8 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
             ownerType: result['ownerType'],
             ownerName: result['ownerName'],
             fuelType: result['fuelType'],
+            fcStatus: result['fcStatus'],
+            insuranceStatus: result['insuranceStatus'],
           );
     }
   }
@@ -1022,6 +1026,26 @@ class _VehicleDetails extends StatelessWidget {
                 label: 'Last Service',
                 value: vehicle.lastServiceDate ?? '-',
               ),
+              if (vehicle.fcStartDate != null || vehicle.fcEndDate != null)
+                _Detail.status(
+                  icon: AppIcons.checkCircle,
+                  label: 'FC Validity',
+                  value:
+                      '${_formatVehicleDate(vehicle.fcStartDate)} – ${_formatVehicleDate(vehicle.fcEndDate)}',
+                  color: _docExpiryColor(vehicle.fcStatus, isDark: isDark),
+                ),
+              if (vehicle.insuranceStartDate != null ||
+                  vehicle.insuranceEndDate != null)
+                _Detail.status(
+                  icon: AppIcons.checkCircle,
+                  label: 'Insurance Validity',
+                  value:
+                      '${_formatVehicleDate(vehicle.insuranceStartDate)} – ${_formatVehicleDate(vehicle.insuranceEndDate)}',
+                  color: _docExpiryColor(
+                    vehicle.insuranceStatus,
+                    isDark: isDark,
+                  ),
+                ),
             ],
           ),
           const SizedBox(height: 22),
@@ -1050,6 +1074,31 @@ class _VehicleDetails extends StatelessWidget {
       ),
     ),
   );
+  }
+}
+
+/// Formats a YYYY-MM-DD date string as "12 Jan 2026"; '-' when absent/invalid.
+String _formatVehicleDate(String? value) {
+  if (value == null || value.isEmpty) return '-';
+  final parsed = DateTime.tryParse(value);
+  if (parsed == null) return '-';
+  const months = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  ];
+  return '${parsed.day.toString().padLeft(2, '0')} ${months[parsed.month - 1]} ${parsed.year}';
+}
+
+Color _docExpiryColor(String? status, {bool isDark = false}) {
+  switch (status) {
+    case 'expired':
+      return AppColors.error;
+    case 'expiring_soon':
+      return AppColors.warning;
+    case 'active':
+      return AppColors.success;
+    default:
+      return isDark ? AppColors.darkTextMuted : AppColors.textMuted;
   }
 }
 

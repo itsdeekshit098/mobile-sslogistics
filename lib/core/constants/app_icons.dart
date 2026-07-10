@@ -30,6 +30,7 @@ class AppIcons {
   static const shield = Icons.security_outlined;
   static const user = Icons.person_outline;
   static const inbox = Icons.inbox_outlined;
+  static const badge = Icons.badge_outlined;
 
   // Actions
   static const plus = Icons.add;
@@ -54,4 +55,11 @@ class AppIcons {
   static const indianRupee = Icons.currency_rupee;
   static const mapPin = Icons.place_outlined;
   static const trendingUp = Icons.trending_up;
+
+  // Admin (sessions / settings / activity log)
+  static const settings = Icons.settings_outlined;
+  static const smartphone = Icons.smartphone_outlined;
+  static const ban = Icons.block_outlined;
+  static const key = Icons.vpn_key_outlined;
+  static const uploadCloud = Icons.cloud_upload_outlined;
 }

@@ -116,9 +116,10 @@ class DieselListNotifier extends AsyncNotifier<DieselListState> {
   }
 
   // ── CRUD ─────────────────────────────────────────────────────────────────
-  Future<void> createRecord(CreateDieselDto dto) async {
+  Future<List<String>> createRecord(CreateDieselDto dto) async {
     final cur = state.valueOrNull;
-    await ref.read(dieselRepositoryProvider).createRecord(dto);
+    final warnings =
+        await ref.read(dieselRepositoryProvider).createRecord(dto);
     state = const AsyncLoading();
     state = await AsyncValue.guard(
       () => _fetch(
@@ -127,6 +128,7 @@ class DieselListNotifier extends AsyncNotifier<DieselListState> {
         pageSize: cur?.pageSize ?? 10,
       ),
     );
+    return warnings;
   }
 
   Future<void> updateRecord(UpdateDieselDto dto) async {

@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../shared/widgets/selectable_chip.dart';
 import '../data/vehicle_models.dart';
 import '../data/vehicle_repository.dart';
+
+const docExpiryStatuses = ['active', 'expiring_soon', 'expired'];
 
 class VehicleFilterSheet extends StatefulWidget {
   final String type;
@@ -10,6 +13,8 @@ class VehicleFilterSheet extends StatefulWidget {
   final String ownerType;
   final String ownerName;
   final String fuelType;
+  final String fcStatus;
+  final String insuranceStatus;
 
   const VehicleFilterSheet({
     super.key,
@@ -18,6 +23,8 @@ class VehicleFilterSheet extends StatefulWidget {
     this.ownerType = '',
     this.ownerName = '',
     this.fuelType = '',
+    this.fcStatus = '',
+    this.insuranceStatus = '',
   });
 
   @override
@@ -31,6 +38,8 @@ class _VehicleFilterSheetState extends State<VehicleFilterSheet> {
   late String _ownerType = widget.ownerType;
   late String _ownerName = widget.ownerName;
   late String _fuelType = widget.fuelType;
+  late String _fcStatus = widget.fcStatus;
+  late String _insuranceStatus = widget.insuranceStatus;
 
   List<VehicleOwner> _owners = [];
   bool _loadingOwners = true;
@@ -146,6 +155,24 @@ class _VehicleFilterSheetState extends State<VehicleFilterSheet> {
                   onSelected: (value) => setState(() => _fuelType = value),
                 ),
                 const SizedBox(height: 18),
+                Text('FC Status', style: labelStyle),
+                const SizedBox(height: 8),
+                _ChoiceWrap(
+                  values: const ['', ...docExpiryStatuses],
+                  selected: _fcStatus,
+                  label: (value) => value.isEmpty ? 'All' : _docStatusLabel(value),
+                  onSelected: (value) => setState(() => _fcStatus = value),
+                ),
+                const SizedBox(height: 18),
+                Text('Insurance Status', style: labelStyle),
+                const SizedBox(height: 8),
+                _ChoiceWrap(
+                  values: const ['', ...docExpiryStatuses],
+                  selected: _insuranceStatus,
+                  label: (value) => value.isEmpty ? 'All' : _docStatusLabel(value),
+                  onSelected: (value) => setState(() => _insuranceStatus = value),
+                ),
+                const SizedBox(height: 18),
                 Text('Owner Type', style: labelStyle),
                 const SizedBox(height: 8),
                 _ChoiceWrap(
@@ -172,6 +199,8 @@ class _VehicleFilterSheetState extends State<VehicleFilterSheet> {
                           'ownerType': '',
                           'ownerName': '',
                           'fuelType': '',
+                          'fcStatus': '',
+                          'insuranceStatus': '',
                         }),
                         child: const Text('Reset'),
                       ),
@@ -185,6 +214,8 @@ class _VehicleFilterSheetState extends State<VehicleFilterSheet> {
                           'ownerType': _ownerType,
                           'ownerName': _ownerName,
                           'fuelType': _fuelType,
+                          'fcStatus': _fcStatus,
+                          'insuranceStatus': _insuranceStatus,
                         }),
                         child: const Text('Apply'),
                       ),
@@ -249,6 +280,19 @@ class _VehicleFilterSheetState extends State<VehicleFilterSheet> {
   }
 }
 
+String _docStatusLabel(String value) {
+  switch (value) {
+    case 'expiring_soon':
+      return 'Expiring Soon';
+    case 'expired':
+      return 'Expired';
+    case 'active':
+      return 'Active';
+    default:
+      return value;
+  }
+}
+
 class _ChoiceWrap extends StatelessWidget {
   final List<String> values;
   final String selected;
@@ -264,33 +308,14 @@ class _ChoiceWrap extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Wrap(
       spacing: 8,
       runSpacing: 8,
       children: values.map((value) {
-        final active = selected == value;
-        return ChoiceChip(
-          label: Text(label(value)),
-          selected: active,
-          onSelected: (_) => onSelected(value),
-          selectedColor: AppColors.primary.withValues(alpha: 0.12),
-          labelStyle: TextStyle(
-            color: active
-                ? AppColors.primary
-                : (isDark
-                    ? AppColors.darkTextSecondary
-                    : AppColors.textSecondary),
-            fontWeight: active ? FontWeight.w800 : FontWeight.w600,
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-            side: BorderSide(
-              color: active
-                  ? AppColors.primary
-                  : (isDark ? AppColors.darkBorder : AppColors.border),
-            ),
-          ),
+        return SelectableChip(
+          label: label(value),
+          selected: selected == value,
+          onTap: () => onSelected(value),
         );
       }).toList(),
     );

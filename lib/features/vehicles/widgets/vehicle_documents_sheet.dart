@@ -7,7 +7,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_icons.dart';
 import '../data/vehicle_models.dart';
 import '../data/vehicle_repository.dart';
-import 'delete_confirmation_dialog.dart';
+import '../../../shared/widgets/delete_confirmation_dialog.dart';
 
 class VehicleDocumentsSheet extends StatefulWidget {
   final FleetVehicle vehicle;

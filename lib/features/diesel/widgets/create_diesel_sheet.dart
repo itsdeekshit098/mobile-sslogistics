@@ -7,7 +7,14 @@ import '../../../core/constants/app_colors.dart';
 import '../data/diesel_models.dart';
 import '../providers/diesel_provider.dart';
 import '../providers/vehicle_provider.dart';
+import '../providers/active_drivers_provider.dart';
 import '../../../shared/models/vehicle_model.dart';
+import '../../../shared/utils/validated_field.dart';
+import '../../../shared/widgets/form_error_banner.dart';
+import '../../drivers/data/driver_models.dart';
+import '../../drivers/data/driver_repository.dart';
+import '../../drivers/widgets/driver_form_sheet.dart';
+import 'driver_picker_sheet.dart';
 
 class CreateDieselSheet extends ConsumerStatefulWidget {
   const CreateDieselSheet({super.key});
@@ -20,7 +27,6 @@ class _CreateDieselSheetState extends ConsumerState<CreateDieselSheet> {
   final _formKey = GlobalKey<FormState>();
 
   // Controllers
-  final _driverCtrl = TextEditingController();
   final _odoCtrl = TextEditingController();
   final _fuelCtrl = TextEditingController();
   final _priceCtrl = TextEditingController();
@@ -31,9 +37,46 @@ class _CreateDieselSheetState extends ConsumerState<CreateDieselSheet> {
   DateTime _selectedDate = DateTime.now();
   TimeOfDay _selectedTime = TimeOfDay.now();
   Vehicle? _selectedVehicle;
+  Driver? _selectedDriver;
   String _fillType = 'full'; // 'full' | 'partial'
   String? _paymentMethod;
   bool _isSubmitting = false;
+  int _errorCount = 0;
+
+  final _vehicleSectionKey = GlobalKey();
+  final _driverSectionKey = GlobalKey();
+  final _odoFieldKey = GlobalKey<FormFieldState>();
+  final _odoFocus = FocusNode();
+  final _fuelFieldKey = GlobalKey<FormFieldState>();
+  final _fuelFocus = FocusNode();
+  final _priceFieldKey = GlobalKey<FormFieldState>();
+  final _priceFocus = FocusNode();
+
+  List<ValidatedField> get _validatedFields => [
+        ValidatedField(
+          key: _vehicleSectionKey,
+          hasError: () => _selectedVehicle == null,
+        ),
+        ValidatedField(
+          key: _driverSectionKey,
+          hasError: () => _selectedDriver == null,
+        ),
+        ValidatedField(
+          key: _odoFieldKey,
+          hasError: () => _odoFieldKey.currentState?.hasError ?? false,
+          focusNode: _odoFocus,
+        ),
+        ValidatedField(
+          key: _fuelFieldKey,
+          hasError: () => _fuelFieldKey.currentState?.hasError ?? false,
+          focusNode: _fuelFocus,
+        ),
+        ValidatedField(
+          key: _priceFieldKey,
+          hasError: () => _priceFieldKey.currentState?.hasError ?? false,
+          focusNode: _priceFocus,
+        ),
+      ];
 
   static const _paymentMethods = ['Cash', 'Card', 'UPI', 'Fleet'];
 
@@ -44,10 +87,33 @@ class _CreateDieselSheetState extends ConsumerState<CreateDieselSheet> {
     return fuel * price;
   }
 
+  // Client-side warnings — mirrors web's live warning computation
+  // (createDieselModal.tsx) so users see the same tank-capacity checks
+  // before submitting.
+  List<String> get _warnings {
+    final w = <String>[];
+    final tank = _selectedVehicle?.tankCapacity;
+    final litres = double.tryParse(_fuelCtrl.text) ?? 0;
+    if (tank != null && tank > 0 && litres > tank) {
+      w.add(
+        'Fuel (${litres.toStringAsFixed(1)}L) exceeds tank capacity (${tank}L)',
+      );
+    }
+    if (_fillType == 'full' &&
+        tank != null &&
+        tank > 0 &&
+        litres > 0 &&
+        litres < tank * 0.3) {
+      w.add(
+        'Only ${litres.toStringAsFixed(1)}L for a full fill? Tank capacity is ${tank}L. Are you sure?',
+      );
+    }
+    return w;
+  }
+
   @override
   void dispose() {
     for (final c in [
-      _driverCtrl,
       _odoCtrl,
       _fuelCtrl,
       _priceCtrl,
@@ -57,6 +123,9 @@ class _CreateDieselSheetState extends ConsumerState<CreateDieselSheet> {
     ]) {
       c.dispose();
     }
+    _odoFocus.dispose();
+    _fuelFocus.dispose();
+    _priceFocus.dispose();
     super.dispose();
   }
 
@@ -91,6 +160,43 @@ class _CreateDieselSheetState extends ConsumerState<CreateDieselSheet> {
     if (picked != null) setState(() => _selectedVehicle = picked);
   }
 
+  Future<void> _pickDriver(List<Driver> drivers) async {
+    final picked = await showModalBottomSheet<Driver>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => DriverPickerSheet(
+        drivers: drivers,
+        selectedDriver: _selectedDriver,
+        onAddNewDriver: _addNewDriver,
+      ),
+    );
+    if (picked != null) setState(() => _selectedDriver = picked);
+  }
+
+  Future<void> _addNewDriver() async {
+    Navigator.pop(context); // close the driver picker sheet first
+    final repo = DriverRepository();
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => DriverFormSheet(
+        onSubmit: (create, _) async {
+          if (create == null) return;
+          await repo.createDriver(create);
+          ref.invalidate(activeDriversProvider);
+          final drivers = await ref.read(activeDriversProvider.future);
+          final added = drivers.where((d) => d.name == create.name).toList();
+          if (added.isNotEmpty && mounted) {
+            setState(() => _selectedDriver = added.last);
+          }
+        },
+      ),
+    );
+  }
+
   Future<void> _pickPaymentMethod() async {
     final picked = await showModalBottomSheet<String?>(
       context: context,
@@ -107,15 +213,18 @@ class _CreateDieselSheetState extends ConsumerState<CreateDieselSheet> {
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
-    if (_selectedVehicle == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Please select a vehicle')));
+    final formValid = _formKey.currentState!.validate();
+    if (!formValid || _selectedVehicle == null || _selectedDriver == null) {
+      final fields = _validatedFields;
+      setState(() => _errorCount = countFormErrors(fields));
+      await scrollToFirstError(fields);
       return;
     }
 
-    setState(() => _isSubmitting = true);
+    setState(() {
+      _errorCount = 0;
+      _isSubmitting = true;
+    });
 
     try {
       final dt = DateTime(
@@ -128,7 +237,7 @@ class _CreateDieselSheetState extends ConsumerState<CreateDieselSheet> {
 
       final dto = CreateDieselDto(
         vehicleId: _selectedVehicle!.id,
-        driverName: _driverCtrl.text.trim(),
+        driverName: _selectedDriver!.name,
         fillDate: dt.toUtc().toIso8601String(),
         fillType: _fillType,
         fuelLitres: double.parse(_fuelCtrl.text),
@@ -144,14 +253,21 @@ class _CreateDieselSheetState extends ConsumerState<CreateDieselSheet> {
         notes: _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
       );
 
-      await ref.read(dieselListProvider.notifier).createRecord(dto);
+      final serverWarnings =
+          await ref.read(dieselListProvider.notifier).createRecord(dto);
 
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Diesel entry added'),
-            backgroundColor: AppColors.success,
+          SnackBar(
+            content: Text(
+              serverWarnings.isEmpty
+                  ? 'Diesel entry added'
+                  : 'Diesel entry added — ${serverWarnings.join('; ')}',
+            ),
+            backgroundColor: serverWarnings.isEmpty
+                ? AppColors.success
+                : AppColors.warning,
           ),
         );
       }
@@ -218,6 +334,7 @@ class _CreateDieselSheetState extends ConsumerState<CreateDieselSheet> {
             ),
           ),
           const Divider(height: 1),
+          if (_errorCount > 0) FormErrorBanner(count: _errorCount),
 
           // Form
           Expanded(
@@ -258,6 +375,7 @@ class _CreateDieselSheetState extends ConsumerState<CreateDieselSheet> {
 
                     // ── Vehicle ──────────────────────────────────────────
                     _Section(
+                      key: _vehicleSectionKey,
                       label: 'Vehicle *',
                       child: vehiclesAsync.when(
                         loading: () => const LinearProgressIndicator(),
@@ -306,13 +424,25 @@ class _CreateDieselSheetState extends ConsumerState<CreateDieselSheet> {
 
                     // ── Driver Name ──────────────────────────────────────
                     _Section(
+                      key: _driverSectionKey,
                       label: 'Driver Name *',
-                      child: TextFormField(
-                        controller: _driverCtrl,
-                        decoration: _inputDecor(hint: 'Enter driver name'),
-                        textCapitalization: TextCapitalization.words,
-                        validator: (v) =>
-                            (v == null || v.trim().isEmpty) ? 'Required' : null,
+                      child: Consumer(
+                        builder: (context, ref, _) {
+                          final driversAsync = ref.watch(activeDriversProvider);
+                          return driversAsync.when(
+                            loading: () => const LinearProgressIndicator(),
+                            error: (e, _) => Text(
+                              'Error loading drivers',
+                              style: TextStyle(color: AppColors.error),
+                            ),
+                            data: (drivers) => _TapField(
+                              value: _selectedDriver?.name ?? 'Select driver',
+                              icon: AppIcons.user,
+                              muted: _selectedDriver == null,
+                              onTap: () => _pickDriver(drivers),
+                            ),
+                          );
+                        },
                       ),
                     ),
                     const SizedBox(height: 14),
@@ -379,7 +509,9 @@ class _CreateDieselSheetState extends ConsumerState<CreateDieselSheet> {
                           child: _Section(
                             label: 'Current Odometer (km) *',
                             child: TextFormField(
+                              key: _odoFieldKey,
                               controller: _odoCtrl,
+                              focusNode: _odoFocus,
                               keyboardType:
                                   const TextInputType.numberWithOptions(
                                     decimal: true,
@@ -400,7 +532,9 @@ class _CreateDieselSheetState extends ConsumerState<CreateDieselSheet> {
                           child: _Section(
                             label: 'Fuel Added (L) *',
                             child: TextFormField(
+                              key: _fuelFieldKey,
                               controller: _fuelCtrl,
+                              focusNode: _fuelFocus,
                               keyboardType:
                                   const TextInputType.numberWithOptions(
                                     decimal: true,
@@ -427,7 +561,9 @@ class _CreateDieselSheetState extends ConsumerState<CreateDieselSheet> {
                           child: _Section(
                             label: 'Price per Litre (₹)',
                             child: TextFormField(
+                              key: _priceFieldKey,
                               controller: _priceCtrl,
+                              focusNode: _priceFocus,
                               keyboardType:
                                   const TextInputType.numberWithOptions(
                                     decimal: true,
@@ -484,6 +620,12 @@ class _CreateDieselSheetState extends ConsumerState<CreateDieselSheet> {
                       ],
                     ),
                     const SizedBox(height: 14),
+
+                    // ── Warnings ─────────────────────────────────────────
+                    if (_warnings.isNotEmpty) ...[
+                      _CreateWarningBox(warnings: _warnings),
+                      const SizedBox(height: 14),
+                    ],
 
                     // ── Station ──────────────────────────────────────────
                     _Section(
@@ -591,10 +733,57 @@ class _CreateDieselSheetState extends ConsumerState<CreateDieselSheet> {
   }
 }
 
+class _CreateWarningBox extends StatelessWidget {
+  final List<String> warnings;
+  const _CreateWarningBox({required this.warnings});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.warningBg,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        children: warnings
+            .map(
+              (warning) => Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(
+                      AppIcons.alertTriangle,
+                      size: 16,
+                      color: AppColors.warning,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        warning,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.warning,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+            .toList(),
+      ),
+    );
+  }
+}
+
 class _Section extends StatelessWidget {
   final String label;
   final Widget child;
-  const _Section({required this.label, required this.child});
+  const _Section({super.key, required this.label, required this.child});
 
   @override
   Widget build(BuildContext context) {

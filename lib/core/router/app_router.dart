@@ -3,14 +3,23 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
+import '../../features/activity_log/screens/activity_log_screen.dart';
 import '../../features/auth/providers/auth_provider.dart';
 import '../../features/auth/screens/login_screen.dart';
 import '../../features/dashboard/screens/dashboard_screen.dart';
 import '../../features/diesel/screens/diesel_list_screen.dart';
+import '../../features/drivers/screens/drivers_screen.dart';
+import '../../features/external_trips/screens/external_trips_list_screen.dart';
 import '../../features/notifications/screens/notification_list_screen.dart';
+import '../../features/owners/screens/owners_screen.dart';
+import '../../features/repairs/screens/repair_list_screen.dart';
+import '../../features/sessions/screens/sessions_screen.dart';
+import '../../features/settings_admin/screens/settings_screen.dart';
 import '../../features/system/providers/maintenance_provider.dart';
 import '../../features/system/screens/maintenance_screen.dart';
+import '../../features/technicians/screens/technicians_screen.dart';
 import '../../features/vehicles/screens/vehicles_screen.dart';
+import '../../features/warranty/screens/warranty_screen.dart';
 
 /// Bridges Riverpod auth + maintenance state changes to GoRouter's
 /// Listenable refresh.
@@ -82,12 +91,58 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(
+        path: '/external-trips',
+        builder: (context, state) {
+          final vehicleId = int.tryParse(
+            state.uri.queryParameters['vehicle_id'] ?? '',
+          );
+          return ExternalTripsListScreen(initialVehicleId: vehicleId);
+        },
+      ),
+      GoRoute(
+        path: '/repair-records',
+        builder: (context, state) {
+          final vehicleId = int.tryParse(
+            state.uri.queryParameters['vehicle_id'] ?? '',
+          );
+          return RepairListScreen(initialVehicleId: vehicleId);
+        },
+      ),
+      GoRoute(
         path: '/vehicles',
         builder: (context, state) => const VehiclesScreen(),
       ),
       GoRoute(
+        path: '/drivers',
+        builder: (context, state) => const DriversScreen(),
+      ),
+      GoRoute(
+        path: '/technicians',
+        builder: (context, state) => const TechniciansScreen(),
+      ),
+      GoRoute(
+        path: '/vehicle-owners',
+        builder: (context, state) => const OwnersScreen(),
+      ),
+      GoRoute(
         path: '/notifications',
         builder: (context, state) => const NotificationListScreen(),
+      ),
+      GoRoute(
+        path: '/activity-log',
+        builder: (context, state) => const ActivityLogScreen(),
+      ),
+      GoRoute(
+        path: '/warranty',
+        builder: (context, state) => const WarrantyScreen(),
+      ),
+      GoRoute(
+        path: '/sessions',
+        builder: (context, state) => const SessionsScreen(),
+      ),
+      GoRoute(
+        path: '/settings',
+        builder: (context, state) => const SettingsScreen(),
       ),
     ],
   );

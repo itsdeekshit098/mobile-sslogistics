@@ -7,6 +7,35 @@ import '../data/vehicle_models.dart';
 
 final _dateFmt = DateFormat('dd MMM yyyy');
 
+({String message, Color color})? _documentWarning(FleetVehicle vehicle) {
+  final fc = vehicle.fcStatus;
+  final ins = vehicle.insuranceStatus;
+  final fcBad = fc == 'expired' || fc == 'expiring_soon';
+  final insBad = ins == 'expired' || ins == 'expiring_soon';
+  if (!fcBad && !insBad) return null;
+
+  final color = (fc == 'expired' || ins == 'expired')
+      ? AppColors.error
+      : AppColors.warning;
+
+  String phrase(String label, String status) =>
+      status == 'expired' ? '$label is expired' : '$label is expiring soon';
+
+  final String message;
+  if (fcBad && insBad) {
+    message = fc == ins
+        ? (fc == 'expired'
+            ? 'FC and insurance are expired'
+            : 'FC and insurance are expiring soon')
+        : '${phrase('FC', fc!)}, ${phrase('insurance', ins!).toLowerCase()}';
+  } else if (fcBad) {
+    message = phrase('FC', fc!);
+  } else {
+    message = phrase('Insurance', ins!);
+  }
+  return (message: message, color: color);
+}
+
 class VehicleCard extends StatelessWidget {
   final FleetVehicle vehicle;
   final bool canWrite;
@@ -122,6 +151,24 @@ class VehicleCard extends StatelessWidget {
                                 color: AppColors.warning,
                               ),
                             ],
+                            if (canWrite) ...[
+                              const SizedBox(width: 8),
+                              _IconActionButton(
+                                icon: AppIcons.pencil,
+                                color: AppColors.primary,
+                                onTap: onEdit,
+                                compact: true,
+                              ),
+                            ],
+                            if (canDelete) ...[
+                              const SizedBox(width: 8),
+                              _IconActionButton(
+                                icon: AppIcons.trash2,
+                                color: AppColors.error,
+                                onTap: onDelete,
+                                compact: true,
+                              ),
+                            ],
                           ],
                         ),
                         const SizedBox(height: 11),
@@ -166,35 +213,15 @@ class VehicleCard extends StatelessWidget {
                   ],
                 ),
               ],
-              if (onDocuments != null || canWrite || canDelete) ...[
+              if (onDocuments != null) ...[
                 const SizedBox(height: 12),
-                Row(
-                  children: [
-                    if (onDocuments != null)
-                      Expanded(
-                        child: _DocumentsButton(
-                          color: typeColor,
-                          onTap: onDocuments,
-                        ),
-                      ),
-                    if (canWrite) ...[
-                      if (onDocuments != null) const SizedBox(width: 10),
-                      _IconActionButton(
-                        icon: AppIcons.pencil,
-                        color: AppColors.primary,
-                        onTap: onEdit,
-                      ),
-                    ],
-                    if (canDelete) ...[
-                      if (onDocuments != null || canWrite)
-                        const SizedBox(width: 10),
-                      _IconActionButton(
-                        icon: AppIcons.trash2,
-                        color: AppColors.error,
-                        onTap: onDelete,
-                      ),
-                    ],
-                  ],
+                SizedBox(
+                  width: double.infinity,
+                  child: _DocumentsButton(
+                    color: typeColor,
+                    onTap: onDocuments,
+                    warning: _documentWarning(vehicle),
+                  ),
                 ),
               ],
                 ],
@@ -443,45 +470,71 @@ class _InfoChip extends StatelessWidget {
 class _DocumentsButton extends StatelessWidget {
   final Color color;
   final VoidCallback? onTap;
+  final ({String message, Color color})? warning;
 
-  const _DocumentsButton({required this.color, this.onTap});
+  const _DocumentsButton({required this.color, this.onTap, this.warning});
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final warning = this.warning;
+    final neutralTextColor =
+        isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
+    final contentColor = warning?.color ?? neutralTextColor;
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(10),
       child: Container(
-        height: 44,
-        padding: const EdgeInsets.symmetric(horizontal: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         decoration: BoxDecoration(
-          color: isDark ? AppColors.darkCardBg : Colors.white,
+          color: warning != null
+              ? warning.color.withValues(alpha: 0.1)
+              : (isDark ? AppColors.darkCardBg : Colors.white),
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: isDark ? AppColors.darkBorder : AppColors.border,
+            color: warning != null
+                ? warning.color.withValues(alpha: 0.3)
+                : (isDark ? AppColors.darkBorder : AppColors.border),
           ),
         ),
         child: Row(
           children: [
             Icon(
               AppIcons.fileText,
-              size: 18,
-              color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+              size: warning != null ? 30 : 18,
+              color: contentColor,
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: warning != null ? 10 : 8),
             Expanded(
-              child: Text(
-                'Documents',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: isDark
-                      ? AppColors.darkTextSecondary
-                      : AppColors.textSecondary,
-                  fontWeight: FontWeight.w800,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Documents',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: contentColor,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  if (warning != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      warning.message,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: warning.color,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
             Icon(
@@ -500,27 +553,30 @@ class _IconActionButton extends StatelessWidget {
   final IconData icon;
   final Color color;
   final VoidCallback? onTap;
+  final bool compact;
 
   const _IconActionButton({
     required this.icon,
     required this.color,
     this.onTap,
+    this.compact = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final size = compact ? 32.0 : 44.0;
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(compact ? 9 : 12),
       child: Container(
-        width: 46,
-        height: 44,
+        width: compact ? size : 46,
+        height: size,
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(compact ? 9 : 12),
           border: Border.all(color: color.withValues(alpha: 0.25)),
         ),
-        child: Icon(icon, color: color, size: 20),
+        child: Icon(icon, color: color, size: compact ? 16 : 20),
       ),
     );
   }

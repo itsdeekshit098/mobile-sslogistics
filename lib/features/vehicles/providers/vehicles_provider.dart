@@ -19,6 +19,8 @@ class VehiclesState {
   final String ownerType;
   final String ownerName;
   final String fuelType;
+  final String fcStatus;
+  final String insuranceStatus;
 
   const VehiclesState({
     required this.vehicles,
@@ -32,6 +34,8 @@ class VehiclesState {
     this.ownerType = '',
     this.ownerName = '',
     this.fuelType = '',
+    this.fcStatus = '',
+    this.insuranceStatus = '',
   });
 
   int get totalPages => total == 0 ? 1 : (total / pageSize).ceil();
@@ -41,7 +45,9 @@ class VehiclesState {
       status.isNotEmpty ||
       ownerType.isNotEmpty ||
       ownerName.isNotEmpty ||
-      fuelType.isNotEmpty;
+      fuelType.isNotEmpty ||
+      fcStatus.isNotEmpty ||
+      insuranceStatus.isNotEmpty;
 
   VehiclesState copyWith({
     List<FleetVehicle>? vehicles,
@@ -55,6 +61,8 @@ class VehiclesState {
     String? ownerType,
     String? ownerName,
     String? fuelType,
+    String? fcStatus,
+    String? insuranceStatus,
   }) {
     return VehiclesState(
       vehicles: vehicles ?? this.vehicles,
@@ -68,6 +76,8 @@ class VehiclesState {
       ownerType: ownerType ?? this.ownerType,
       ownerName: ownerName ?? this.ownerName,
       fuelType: fuelType ?? this.fuelType,
+      fcStatus: fcStatus ?? this.fcStatus,
+      insuranceStatus: insuranceStatus ?? this.insuranceStatus,
     );
   }
 }
@@ -103,6 +113,8 @@ class VehiclesNotifier extends AutoDisposeAsyncNotifier<VehiclesState> {
     String ownerType = '',
     String ownerName = '',
     String fuelType = '',
+    String fcStatus = '',
+    String insuranceStatus = '',
   }) async {
     var data = await ref
         .read(vehicleRepositoryProvider)
@@ -115,6 +127,8 @@ class VehiclesNotifier extends AutoDisposeAsyncNotifier<VehiclesState> {
           ownerType: ownerType,
           ownerName: ownerName,
           fuelType: fuelType,
+          fcStatus: fcStatus,
+          insuranceStatus: insuranceStatus,
         );
     // The requested page can fall past the end (e.g. the last vehicle on the
     // final page was just deleted) — clamp to the last non-empty page.
@@ -132,6 +146,8 @@ class VehiclesNotifier extends AutoDisposeAsyncNotifier<VehiclesState> {
             ownerType: ownerType,
             ownerName: ownerName,
             fuelType: fuelType,
+            fcStatus: fcStatus,
+            insuranceStatus: insuranceStatus,
           );
     }
     return VehiclesState(
@@ -146,6 +162,8 @@ class VehiclesNotifier extends AutoDisposeAsyncNotifier<VehiclesState> {
       ownerType: ownerType,
       ownerName: ownerName,
       fuelType: fuelType,
+      fcStatus: fcStatus,
+      insuranceStatus: insuranceStatus,
     );
   }
 
@@ -162,6 +180,8 @@ class VehiclesNotifier extends AutoDisposeAsyncNotifier<VehiclesState> {
         ownerType: current?.ownerType ?? '',
         ownerName: current?.ownerName ?? '',
         fuelType: current?.fuelType ?? '',
+        fcStatus: current?.fcStatus ?? '',
+        insuranceStatus: current?.insuranceStatus ?? '',
       ),
     );
     // Guard against the provider being torn down (autoDispose, e.g. the
@@ -185,6 +205,8 @@ class VehiclesNotifier extends AutoDisposeAsyncNotifier<VehiclesState> {
         ownerType: current?.ownerType ?? '',
         ownerName: current?.ownerName ?? '',
         fuelType: current?.fuelType ?? '',
+        fcStatus: current?.fcStatus ?? '',
+        insuranceStatus: current?.insuranceStatus ?? '',
       ),
     );
     if (_disposed) return;
@@ -197,6 +219,8 @@ class VehiclesNotifier extends AutoDisposeAsyncNotifier<VehiclesState> {
     String? ownerType,
     String? ownerName,
     String? fuelType,
+    String? fcStatus,
+    String? insuranceStatus,
   }) async {
     final current = state.valueOrNull;
     state = const AsyncLoading();
@@ -210,6 +234,8 @@ class VehiclesNotifier extends AutoDisposeAsyncNotifier<VehiclesState> {
         ownerType: ownerType ?? current?.ownerType ?? '',
         ownerName: ownerName ?? current?.ownerName ?? '',
         fuelType: fuelType ?? current?.fuelType ?? '',
+        fcStatus: fcStatus ?? current?.fcStatus ?? '',
+        insuranceStatus: insuranceStatus ?? current?.insuranceStatus ?? '',
       ),
     );
     if (_disposed) return;
@@ -240,6 +266,8 @@ class VehiclesNotifier extends AutoDisposeAsyncNotifier<VehiclesState> {
         ownerType: current.ownerType,
         ownerName: current.ownerName,
         fuelType: current.fuelType,
+        fcStatus: current.fcStatus,
+        insuranceStatus: current.insuranceStatus,
       ),
     );
     if (_disposed) return;
@@ -259,6 +287,8 @@ class VehiclesNotifier extends AutoDisposeAsyncNotifier<VehiclesState> {
         ownerType: current?.ownerType ?? '',
         ownerName: current?.ownerName ?? '',
         fuelType: current?.fuelType ?? '',
+        fcStatus: current?.fcStatus ?? '',
+        insuranceStatus: current?.insuranceStatus ?? '',
       ),
     );
     if (_disposed) return;

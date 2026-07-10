@@ -21,6 +21,13 @@ class ApiConstants {
   static const String vehicleOwners = '/api/vehicle-owners';
   static const String drivers = '/api/drivers';
   static const String dieselRecords = '/api/diesel-records';
+  static const String externalTrips = '/api/external-trips';
+  static const String repairRecords = '/api/repair-records';
+  static const String repairIssues = '/api/repair-issues';
+  static const String partOptions = '/api/part-options';
+  static const String technicians = '/api/technicians';
+  static const String specializations = '/api/specializations';
+  static const String vendors = '/api/vendors';
 
   // ── Notifications ─────────────────────────────────────────────────────────
   static const String notifications = '/api/notifications';
@@ -34,4 +41,11 @@ class ApiConstants {
   // ── System ────────────────────────────────────────────────────────────────
   static const String maintenanceStream = '/api/system/maintenance-stream';
   static const String appVersion = '/api/system/app-version';
+
+  // ── Admin ─────────────────────────────────────────────────────────────────
+  static const String adminSessions = '/api/admin/sessions';
+  static const String maintenanceSettings = '/api/admin/settings/maintenance';
+  static const String appVersionSettings = '/api/admin/settings/app-version';
+  static const String activityLog = '/api/activity-log';
+  static const String warranty = '/api/warranty';
 }

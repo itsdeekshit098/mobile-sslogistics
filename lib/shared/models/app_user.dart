@@ -2,7 +2,7 @@ class AppUser {
   final String id;
   final String email;
   final String displayName;
-  final String role; // 'admin' | 'staff' | 'driver'
+  final String role; // 'admin' | 'staff' | 'driver' | 'superadmin'
 
   const AppUser({
     required this.id,
@@ -11,9 +11,13 @@ class AppUser {
     required this.role,
   });
 
-  bool get isAdmin => role == 'admin';
+  /// Admin-equivalent: 'admin' or 'superadmin'. Superadmin is admin-equivalent
+  /// everywhere except the superadmin-exclusive settings/sessions pages —
+  /// mirrors the web's `isAdmin(role)` in src/lib/routePermissions.ts.
+  bool get isAdmin => role == 'admin' || role == 'superadmin';
   bool get isStaff => role == 'staff';
   bool get isDriver => role == 'driver';
+  bool get isSuperAdmin => role == 'superadmin';
 
   /// Only admins can edit / delete diesel records
   bool get canEdit => isAdmin;

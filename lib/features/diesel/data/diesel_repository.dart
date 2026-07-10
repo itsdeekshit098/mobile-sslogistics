@@ -37,14 +37,20 @@ class DieselRepository {
         response.data['error'] ?? 'Failed to fetch diesel records');
   }
 
-  Future<void> createRecord(CreateDieselDto dto) async {
+  /// Returns any non-blocking warnings (e.g. tank-capacity checks) computed
+  /// server-side for the newly created record.
+  Future<List<String>> createRecord(CreateDieselDto dto) async {
     final response = await _dio.post(
       ApiConstants.dieselRecords,
       data: dto.toJson(),
     );
 
     if (response.statusCode == 201 && response.data['success'] == true) {
-      return;
+      final warnings = (response.data['data']?['warnings'] as List?)
+              ?.whereType<String>()
+              .toList() ??
+          const <String>[];
+      return warnings;
     }
 
     throw Exception(

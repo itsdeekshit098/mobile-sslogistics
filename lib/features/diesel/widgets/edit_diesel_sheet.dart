@@ -4,8 +4,15 @@ import 'package:mobile_sslogistics/core/constants/app_icons.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../shared/utils/validated_field.dart';
+import '../../../shared/widgets/form_error_banner.dart';
 import '../data/diesel_models.dart';
 import '../providers/diesel_provider.dart';
+import '../providers/active_drivers_provider.dart';
+import '../../drivers/data/driver_models.dart';
+import '../../drivers/data/driver_repository.dart';
+import '../../drivers/widgets/driver_form_sheet.dart';
+import 'driver_picker_sheet.dart';
 
 class EditDieselSheet extends ConsumerStatefulWidget {
   final DieselRecord record;
@@ -18,15 +25,35 @@ class EditDieselSheet extends ConsumerStatefulWidget {
 class _EditDieselSheetState extends ConsumerState<EditDieselSheet> {
   final _formKey = GlobalKey<FormState>();
 
-  late final TextEditingController _driverCtrl;
   late final TextEditingController _fuelCtrl;
   late final TextEditingController _priceCtrl;
   late final TextEditingController _stationCtrl;
   late final TextEditingController _receiptCtrl;
   late final TextEditingController _notesCtrl;
 
+  // The record's original driver name is kept unless the user re-picks a
+  // driver, so re-opening this sheet never forces a re-selection.
+  late String _driverName;
+  Driver? _selectedDriver;
   String? _paymentMethod;
   bool _isSubmitting = false;
+  int _errorCount = 0;
+
+  final _driverSectionKey = GlobalKey();
+  final _fuelFieldKey = GlobalKey<FormFieldState>();
+  final _fuelFocus = FocusNode();
+
+  List<ValidatedField> get _validatedFields => [
+        ValidatedField(
+          key: _driverSectionKey,
+          hasError: () => _driverName.trim().isEmpty,
+        ),
+        ValidatedField(
+          key: _fuelFieldKey,
+          hasError: () => _fuelFieldKey.currentState?.hasError ?? false,
+          focusNode: _fuelFocus,
+        ),
+      ];
 
   static const _paymentMethods = ['Cash', 'Card', 'UPI', 'Fleet'];
 
@@ -40,7 +67,7 @@ class _EditDieselSheetState extends ConsumerState<EditDieselSheet> {
   void initState() {
     super.initState();
     final r = widget.record;
-    _driverCtrl = TextEditingController(text: r.driverName);
+    _driverName = r.driverName;
     _fuelCtrl = TextEditingController(text: r.fuelLitres.toString());
     _priceCtrl = TextEditingController(text: r.pricePerL.toString());
     _stationCtrl = TextEditingController(text: r.station ?? '');
@@ -52,7 +79,6 @@ class _EditDieselSheetState extends ConsumerState<EditDieselSheet> {
   @override
   void dispose() {
     for (final c in [
-      _driverCtrl,
       _fuelCtrl,
       _priceCtrl,
       _stationCtrl,
@@ -61,12 +87,66 @@ class _EditDieselSheetState extends ConsumerState<EditDieselSheet> {
     ]) {
       c.dispose();
     }
+    _fuelFocus.dispose();
     super.dispose();
   }
 
+  Future<void> _pickDriver(List<Driver> drivers) async {
+    final picked = await showModalBottomSheet<Driver>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => DriverPickerSheet(
+        drivers: drivers,
+        selectedDriver: _selectedDriver,
+        onAddNewDriver: _addNewDriver,
+      ),
+    );
+    if (picked != null) {
+      setState(() {
+        _selectedDriver = picked;
+        _driverName = picked.name;
+      });
+    }
+  }
+
+  Future<void> _addNewDriver() async {
+    Navigator.pop(context); // close the driver picker sheet first
+    final repo = DriverRepository();
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => DriverFormSheet(
+        onSubmit: (create, _) async {
+          if (create == null) return;
+          await repo.createDriver(create);
+          ref.invalidate(activeDriversProvider);
+          final drivers = await ref.read(activeDriversProvider.future);
+          final added = drivers.where((d) => d.name == create.name).toList();
+          if (added.isNotEmpty && mounted) {
+            setState(() {
+              _selectedDriver = added.last;
+              _driverName = added.last.name;
+            });
+          }
+        },
+      ),
+    );
+  }
+
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
-    setState(() => _isSubmitting = true);
+    if (!_formKey.currentState!.validate()) {
+      final fields = _validatedFields;
+      setState(() => _errorCount = countFormErrors(fields));
+      await scrollToFirstError(fields);
+      return;
+    }
+    setState(() {
+      _errorCount = 0;
+      _isSubmitting = true;
+    });
 
     try {
       await ref
@@ -74,7 +154,7 @@ class _EditDieselSheetState extends ConsumerState<EditDieselSheet> {
           .updateRecord(
             UpdateDieselDto(
               id: widget.record.id,
-              driverName: _driverCtrl.text.trim(),
+              driverName: _driverName.trim(),
               fuelLitres: double.tryParse(_fuelCtrl.text),
               pricePerL: double.tryParse(_priceCtrl.text),
               station: _stationCtrl.text.trim(),
@@ -168,6 +248,7 @@ class _EditDieselSheetState extends ConsumerState<EditDieselSheet> {
             ),
           ),
           const Divider(height: 1),
+          if (_errorCount > 0) FormErrorBanner(count: _errorCount),
 
           Expanded(
             child: SingleChildScrollView(
@@ -214,13 +295,24 @@ class _EditDieselSheetState extends ConsumerState<EditDieselSheet> {
 
                     // ── Editable fields ────────────────────────────────
                     _Section(
+                      key: _driverSectionKey,
                       label: 'Driver Name',
-                      child: TextFormField(
-                        controller: _driverCtrl,
-                        decoration: _inputDecor(hint: 'Driver name'),
-                        textCapitalization: TextCapitalization.words,
-                        validator: (v) =>
-                            (v == null || v.trim().isEmpty) ? 'Required' : null,
+                      child: Consumer(
+                        builder: (context, ref, _) {
+                          final driversAsync = ref.watch(activeDriversProvider);
+                          return driversAsync.when(
+                            loading: () => const LinearProgressIndicator(),
+                            error: (e, _) => Text(
+                              'Error loading drivers',
+                              style: TextStyle(color: AppColors.error),
+                            ),
+                            data: (drivers) => _TapField(
+                              value: _driverName,
+                              icon: AppIcons.user,
+                              onTap: () => _pickDriver(drivers),
+                            ),
+                          );
+                        },
                       ),
                     ),
                     const SizedBox(height: 14),
@@ -231,7 +323,9 @@ class _EditDieselSheetState extends ConsumerState<EditDieselSheet> {
                           child: _Section(
                             label: 'Fuel (L)',
                             child: TextFormField(
+                              key: _fuelFieldKey,
                               controller: _fuelCtrl,
+                              focusNode: _fuelFocus,
                               keyboardType:
                                   const TextInputType.numberWithOptions(
                                     decimal: true,
@@ -426,7 +520,7 @@ class _ReadOnlyRow extends StatelessWidget {
 class _Section extends StatelessWidget {
   final String label;
   final Widget child;
-  const _Section({required this.label, required this.child});
+  const _Section({super.key, required this.label, required this.child});
 
   @override
   Widget build(BuildContext context) {

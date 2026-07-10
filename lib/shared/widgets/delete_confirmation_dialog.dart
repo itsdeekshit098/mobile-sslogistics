@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_icons.dart';
+import '../../core/constants/app_colors.dart';
+import '../../core/constants/app_icons.dart';
 
 class DeleteConfirmationDialog extends StatefulWidget {
   final String title;

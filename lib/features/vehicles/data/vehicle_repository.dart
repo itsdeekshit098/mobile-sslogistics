@@ -19,6 +19,8 @@ class VehicleRepository {
     String ownerType = '',
     String ownerName = '',
     String fuelType = '',
+    String fcStatus = '',
+    String insuranceStatus = '',
   }) async {
     final response = await _dio.get(
       ApiConstants.vehicles,
@@ -31,6 +33,8 @@ class VehicleRepository {
         if (ownerType.isNotEmpty) 'ownerType': ownerType,
         if (ownerName.isNotEmpty) 'ownerName': ownerName,
         if (fuelType.isNotEmpty) 'fuelType': fuelType,
+        if (fcStatus.isNotEmpty) 'fcStatus': fcStatus,
+        if (insuranceStatus.isNotEmpty) 'insuranceStatus': insuranceStatus,
       },
     );
 

@@ -15,7 +15,8 @@ class _NavItem {
   final String title;
   final IconData icon;
   final String path;
-  final bool adminOnly;
+  final bool superAdminOnly; // superadmin-exclusive — even 'admin' is locked out
+  final bool adminOnly; // hidden for staff + driver (admin/superadmin only)
   final bool driverHidden; // hidden entirely for driver role
   final bool enabled; // implemented on mobile — otherwise "coming soon"
 
@@ -23,6 +24,7 @@ class _NavItem {
     required this.title,
     required this.icon,
     required this.path,
+    this.superAdminOnly = false,
     this.adminOnly = false,
     this.driverHidden = false,
     this.enabled = false,
@@ -55,43 +57,66 @@ const _navItems = [
     icon: AppIcons.users,
     path: '/drivers',
     driverHidden: true,
+    enabled: true,
   ),
   _NavItem(
     title: 'Repair Records',
     icon: AppIcons.wrench,
     path: '/repair-records',
     driverHidden: true,
+    enabled: true,
   ),
   _NavItem(
     title: 'Technicians',
     icon: AppIcons.userCog,
     path: '/technicians',
     driverHidden: true,
+    enabled: true,
+  ),
+  _NavItem(
+    title: 'Vehicle Owners',
+    icon: AppIcons.badge,
+    path: '/vehicle-owners',
+    driverHidden: true,
+    enabled: true,
   ),
   _NavItem(
     title: 'External Trips',
     icon: AppIcons.navigation,
     path: '/external-trips',
     driverHidden: true,
+    enabled: true,
   ),
   _NavItem(
     title: 'Activity Log',
     icon: AppIcons.activity,
     path: '/activity-log',
     driverHidden: true,
+    enabled: true,
   ),
   _NavItem(
     title: 'Warranty',
     icon: AppIcons.shieldCheck,
     path: '/warranty',
+    adminOnly: true,
     driverHidden: true,
+    enabled: true,
   ),
   _NavItem(
     title: 'Sessions',
     icon: AppIcons.shield,
     path: '/sessions',
-    adminOnly: true,
+    superAdminOnly: true,
     driverHidden: true,
+    enabled: true,
+  ),
+  _NavItem(
+    title: 'Settings',
+    icon: AppIcons.settings,
+    path: '/settings',
+    superAdminOnly: true,
+    driverHidden: true,
+    enabled: true,
   ),
 ];
 
@@ -198,6 +223,7 @@ class AppDrawer extends ConsumerWidget {
   Widget _buildNavList(BuildContext context, AppUser? user) {
     final visibleItems = _navItems.where((item) {
       if (user == null) return false;
+      if (item.superAdminOnly && !user.isSuperAdmin) return false;
       if (item.adminOnly && !user.isAdmin) return false;
       if (item.driverHidden && user.isDriver) return false;
       return true;

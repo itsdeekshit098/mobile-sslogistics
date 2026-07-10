@@ -17,6 +17,9 @@ class FleetVehicle {
   final String? insuranceEndDate;
   final String? fcStartDate;
   final String? fcEndDate;
+  /// active/expiring_soon/expired, computed server-side from *_end_date; null when no date is set.
+  final String? fcStatus;
+  final String? insuranceStatus;
   final double? expectedKml;
   final double? tankCapacity;
   final String? fuelType;
@@ -49,6 +52,8 @@ class FleetVehicle {
     this.insuranceEndDate,
     this.fcStartDate,
     this.fcEndDate,
+    this.fcStatus,
+    this.insuranceStatus,
     this.expectedKml,
     this.tankCapacity,
     this.fuelType,
@@ -83,6 +88,8 @@ class FleetVehicle {
       insuranceEndDate: json['insurance_end_date'] as String?,
       fcStartDate: json['fc_start_date'] as String?,
       fcEndDate: json['fc_end_date'] as String?,
+      fcStatus: json['fc_status'] as String?,
+      insuranceStatus: json['insurance_status'] as String?,
       expectedKml: (json['expected_kml'] as num?)?.toDouble(),
       tankCapacity: (json['tank_capacity'] as num?)?.toDouble(),
       fuelType: json['fuel_type'] as String?,
@@ -155,6 +162,11 @@ class FleetVehicle {
       insuranceEndDate: key == 'insurance_end_date' ? value : insuranceEndDate,
       fcStartDate: key == 'fc_start_date' ? value : fcStartDate,
       fcEndDate: key == 'fc_end_date' ? value : fcEndDate,
+      // Statuses are server-computed from *_end_date — a local date patch
+      // can't recompute them, so they're intentionally dropped here; the
+      // caller should refetch the vehicle list to pick up fresh values.
+      fcStatus: null,
+      insuranceStatus: null,
       expectedKml: expectedKml,
       tankCapacity: tankCapacity,
       fuelType: fuelType,
@@ -197,6 +209,10 @@ class FleetVehicle {
       insuranceEndDate: clearInsuranceDates ? null : insuranceEndDate,
       fcStartDate: clearFcDates ? null : fcStartDate,
       fcEndDate: clearFcDates ? null : fcEndDate,
+      // Server-computed — stale after a doc/date change; the caller (see
+      // vehicle_documents_sheet's onChanged) refreshes the list to refetch.
+      fcStatus: clearFcDates ? null : fcStatus,
+      insuranceStatus: clearInsuranceDates ? null : insuranceStatus,
       expectedKml: expectedKml,
       tankCapacity: tankCapacity,
       fuelType: fuelType,

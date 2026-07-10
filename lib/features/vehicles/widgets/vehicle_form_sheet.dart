@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_icons.dart';
+import '../../../shared/utils/validated_field.dart';
+import '../../../shared/widgets/form_error_banner.dart';
 import '../data/vehicle_models.dart';
 import '../data/vehicle_repository.dart';
 
@@ -39,6 +41,78 @@ class _VehicleFormSheetState extends State<VehicleFormSheet> {
   DateTime? _lastServiceDate;
   String? _error;
   bool _saving = false;
+  int _errorCount = 0;
+
+  final _numberFieldKey = GlobalKey<FormFieldState>();
+  final _numberFocus = FocusNode();
+  final _ownerTypeFieldKey = GlobalKey<FormFieldState>();
+  final _ownerNameFieldKey = GlobalKey<FormFieldState>();
+  final _truckTypeFieldKey = GlobalKey<FormFieldState>();
+  final _containerLengthFieldKey = GlobalKey<FormFieldState>();
+  final _axleTypeFieldKey = GlobalKey<FormFieldState>();
+  final _containerBodyTypeFieldKey = GlobalKey<FormFieldState>();
+  final _seatingCapacityFieldKey = GlobalKey<FormFieldState>();
+  final _seatingCapacityFocus = FocusNode();
+  final _expectedKmlFieldKey = GlobalKey<FormFieldState>();
+  final _expectedKmlFocus = FocusNode();
+  final _tankFieldKey = GlobalKey<FormFieldState>();
+  final _tankFocus = FocusNode();
+
+  /// Ordered top-to-bottom validated fields, used to find and jump to the
+  /// first one currently showing an error.
+  List<ValidatedField> get _validatedFields => [
+        ValidatedField(
+          key: _numberFieldKey,
+          hasError: () => _numberFieldKey.currentState?.hasError ?? false,
+          focusNode: _numberFocus,
+        ),
+        ValidatedField(
+          key: _ownerTypeFieldKey,
+          hasError: () => _ownerTypeFieldKey.currentState?.hasError ?? false,
+        ),
+        ValidatedField(
+          key: _ownerNameFieldKey,
+          hasError: () => _ownerNameFieldKey.currentState?.hasError ?? false,
+        ),
+        if (_type == 'TRUCK')
+          ValidatedField(
+            key: _truckTypeFieldKey,
+            hasError: () => _truckTypeFieldKey.currentState?.hasError ?? false,
+          ),
+        if (_type == 'CONTAINER') ...[
+          ValidatedField(
+            key: _containerLengthFieldKey,
+            hasError: () =>
+                _containerLengthFieldKey.currentState?.hasError ?? false,
+          ),
+          ValidatedField(
+            key: _axleTypeFieldKey,
+            hasError: () => _axleTypeFieldKey.currentState?.hasError ?? false,
+          ),
+          ValidatedField(
+            key: _containerBodyTypeFieldKey,
+            hasError: () =>
+                _containerBodyTypeFieldKey.currentState?.hasError ?? false,
+          ),
+        ],
+        if (seatingCapacityRequiredTypes.contains(_type))
+          ValidatedField(
+            key: _seatingCapacityFieldKey,
+            hasError: () =>
+                _seatingCapacityFieldKey.currentState?.hasError ?? false,
+            focusNode: _seatingCapacityFocus,
+          ),
+        ValidatedField(
+          key: _expectedKmlFieldKey,
+          hasError: () => _expectedKmlFieldKey.currentState?.hasError ?? false,
+          focusNode: _expectedKmlFocus,
+        ),
+        ValidatedField(
+          key: _tankFieldKey,
+          hasError: () => _tankFieldKey.currentState?.hasError ?? false,
+          focusNode: _tankFocus,
+        ),
+      ];
 
   @override
   void initState() {
@@ -85,6 +159,10 @@ class _VehicleFormSheetState extends State<VehicleFormSheet> {
     _modelCtrl.dispose();
     _expectedKmlCtrl.dispose();
     _tankCtrl.dispose();
+    _numberFocus.dispose();
+    _seatingCapacityFocus.dispose();
+    _expectedKmlFocus.dispose();
+    _tankFocus.dispose();
     super.dispose();
   }
 
@@ -147,8 +225,14 @@ class _VehicleFormSheetState extends State<VehicleFormSheet> {
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      final fields = _validatedFields;
+      setState(() => _errorCount = countFormErrors(fields));
+      await scrollToFirstError(fields);
+      return;
+    }
     setState(() {
+      _errorCount = 0;
       _saving = true;
       _error = null;
     });
@@ -232,6 +316,7 @@ class _VehicleFormSheetState extends State<VehicleFormSheet> {
                 ),
               ),
               const Divider(height: 1),
+              if (_errorCount > 0) FormErrorBanner(count: _errorCount),
               if (_error != null)
                 Container(
                   width: double.infinity,
@@ -288,7 +373,9 @@ class _VehicleFormSheetState extends State<VehicleFormSheet> {
                             _Field(
                               label: 'Vehicle Number *',
                               child: TextFormField(
+                                key: _numberFieldKey,
                                 controller: _numberCtrl,
+                                focusNode: _numberFocus,
                                 textCapitalization:
                                     TextCapitalization.characters,
                                 decoration: _decor('AP39...'),
@@ -300,6 +387,7 @@ class _VehicleFormSheetState extends State<VehicleFormSheet> {
                               children: [
                                 Expanded(
                                   child: _Picker(
+                                    fieldKey: _ownerTypeFieldKey,
                                     label: 'Owner Type *',
                                     value: _ownerType ?? '',
                                     values: const ['', ...ownerTypes],
@@ -324,6 +412,7 @@ class _VehicleFormSheetState extends State<VehicleFormSheet> {
                                     child: Opacity(
                                       opacity: _ownerType == null ? 0.5 : 1,
                                       child: _Picker(
+                                        fieldKey: _ownerNameFieldKey,
                                         label: 'Owner Name *',
                                         value: _ownerName ?? '',
                                         values: ['', ..._ownerNameOptions()],
@@ -490,7 +579,9 @@ class _VehicleFormSheetState extends State<VehicleFormSheet> {
                               _Field(
                                 label: 'Seating Capacity *',
                                 child: TextFormField(
+                                  key: _seatingCapacityFieldKey,
                                   controller: _seatingCapacityCtrl,
+                                  focusNode: _seatingCapacityFocus,
                                   keyboardType: TextInputType.number,
                                   decoration: _decor('5'),
                                   validator: (v) {
@@ -508,6 +599,7 @@ class _VehicleFormSheetState extends State<VehicleFormSheet> {
                             ] else if (_type == 'TRUCK') ...[
                               const SizedBox(height: 14),
                               _Picker(
+                                fieldKey: _truckTypeFieldKey,
                                 label: 'Truck Type *',
                                 value: _truckType ?? '',
                                 values: const ['', ...truckTypes],
@@ -526,6 +618,7 @@ class _VehicleFormSheetState extends State<VehicleFormSheet> {
                                 children: [
                                   Expanded(
                                     child: _Picker(
+                                      fieldKey: _containerLengthFieldKey,
                                       label: 'Container Length *',
                                       value: _containerLength ?? '',
                                       values: const ['', ...containerLengths],
@@ -545,6 +638,7 @@ class _VehicleFormSheetState extends State<VehicleFormSheet> {
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: _Picker(
+                                      fieldKey: _axleTypeFieldKey,
                                       label: 'Axle Type *',
                                       value: _axleType ?? '',
                                       values: const ['', ...axleTypes],
@@ -562,6 +656,7 @@ class _VehicleFormSheetState extends State<VehicleFormSheet> {
                               ),
                               const SizedBox(height: 14),
                               _Picker(
+                                fieldKey: _containerBodyTypeFieldKey,
                                 label: 'Body Type *',
                                 value: _containerBodyType ?? '',
                                 values: const ['', ...containerBodyTypes],
@@ -584,7 +679,9 @@ class _VehicleFormSheetState extends State<VehicleFormSheet> {
                                   child: _Field(
                                     label: 'Expected KML',
                                     child: TextFormField(
+                                      key: _expectedKmlFieldKey,
                                       controller: _expectedKmlCtrl,
+                                      focusNode: _expectedKmlFocus,
                                       keyboardType:
                                           const TextInputType.numberWithOptions(
                                             decimal: true,
@@ -599,7 +696,9 @@ class _VehicleFormSheetState extends State<VehicleFormSheet> {
                                   child: _Field(
                                     label: 'Tank (L)',
                                     child: TextFormField(
+                                      key: _tankFieldKey,
                                       controller: _tankCtrl,
+                                      focusNode: _tankFocus,
                                       keyboardType:
                                           const TextInputType.numberWithOptions(
                                             decimal: true,
@@ -794,6 +893,7 @@ class _Picker extends StatelessWidget {
   final ValueChanged<String> onChanged;
   final String Function(String)? labelGetter;
   final String? Function(String?)? validator;
+  final GlobalKey<FormFieldState>? fieldKey;
 
   const _Picker({
     required this.label,
@@ -802,6 +902,7 @@ class _Picker extends StatelessWidget {
     required this.onChanged,
     this.labelGetter,
     this.validator,
+    this.fieldKey,
   });
 
   String _label(String v) => labelGetter != null ? labelGetter!(v) : v;
@@ -846,6 +947,7 @@ class _Picker extends StatelessWidget {
     return _Field(
       label: label,
       child: FormField<String>(
+        key: fieldKey,
         initialValue: value,
         validator: validator,
         builder: (state) => Column(
@@ -967,6 +1069,21 @@ class _AddOwnerSheetState extends State<_AddOwnerSheet> {
   String? _ownerType;
   String? _error;
   bool _saving = false;
+  int _errorCount = 0;
+
+  final _ownerTypeFieldKey = GlobalKey<FormFieldState>();
+  final _nameFieldKey = GlobalKey<FormFieldState>();
+
+  List<ValidatedField> get _validatedFields => [
+        ValidatedField(
+          key: _ownerTypeFieldKey,
+          hasError: () => _ownerTypeFieldKey.currentState?.hasError ?? false,
+        ),
+        ValidatedField(
+          key: _nameFieldKey,
+          hasError: () => _nameFieldKey.currentState?.hasError ?? false,
+        ),
+      ];
 
   @override
   void initState() {
@@ -982,8 +1099,12 @@ class _AddOwnerSheetState extends State<_AddOwnerSheet> {
   }
 
   Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      setState(() => _errorCount = countFormErrors(_validatedFields));
+      return;
+    }
     setState(() {
+      _errorCount = 0;
       _saving = true;
       _error = null;
     });
@@ -1046,6 +1167,10 @@ class _AddOwnerSheetState extends State<_AddOwnerSheet> {
                     ),
                   ),
                   const SizedBox(height: 16),
+                  if (_errorCount > 0) ...[
+                    FormErrorBanner(count: _errorCount),
+                    const SizedBox(height: 10),
+                  ],
                   if (_error != null) ...[
                     Text(
                       _error!,
@@ -1064,6 +1189,7 @@ class _AddOwnerSheetState extends State<_AddOwnerSheet> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _Picker(
+                            fieldKey: _ownerTypeFieldKey,
                             label: 'Owner Type *',
                             value: _ownerType ?? '',
                             values: const ['', ...ownerTypes],
@@ -1080,6 +1206,7 @@ class _AddOwnerSheetState extends State<_AddOwnerSheet> {
                           _Field(
                             label: 'Owner Name *',
                             child: TextFormField(
+                              key: _nameFieldKey,
                               controller: _nameCtrl,
                               decoration: const InputDecoration(
                                 hintText:

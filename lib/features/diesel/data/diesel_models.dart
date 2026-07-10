@@ -63,18 +63,21 @@ class DieselRecord {
   });
 
   factory DieselRecord.fromJson(Map<String, dynamic> json) {
-    // Vehicle plate may be in the record directly or nested
+    // Vehicle plate may be in the record directly or nested under the
+    // Supabase join key `vehicles` (see GET /api/diesel-records).
+    final joinedVehicle =
+        (json['vehicles'] as Map<String, dynamic>?) ??
+        (json['vehicle'] as Map<String, dynamic>?);
     final plate =
-        (json['vehicle'] as Map<String, dynamic>?)?['vehicle_number'] as String? ??
+        joinedVehicle?['vehicle_number'] as String? ??
         json['vehicle_number'] as String? ??
         json['plate_number'] as String? ??
-        (json['vehicle'] as Map<String, dynamic>?)?['plate_number'] as String? ??
+        joinedVehicle?['plate_number'] as String? ??
         '';
 
     final tank =
         (json['tank_capacity'] as num?)?.toDouble() ??
-        ((json['vehicle'] as Map<String, dynamic>?)?['tank_capacity'] as num?)
-            ?.toDouble();
+        (joinedVehicle?['tank_capacity'] as num?)?.toDouble();
 
     return DieselRecord(
       id: json['id'] as int,

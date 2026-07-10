@@ -35,7 +35,7 @@ const allTiles = [
     iconBgColor: AppColors.tileVehiclesBg,
     route: '/vehicles',
     isMobileReady: true,
-    allowedRoles: ['admin', 'staff'],
+    allowedRoles: ['admin', 'staff', 'superadmin'],
   ),
   DashboardTileData(
     title: 'Drivers',
@@ -44,7 +44,8 @@ const allTiles = [
     iconColor: AppColors.tileDriversIcon,
     iconBgColor: AppColors.tileDriversBg,
     route: '/drivers',
-    allowedRoles: ['admin', 'staff'],
+    isMobileReady: true,
+    allowedRoles: ['admin', 'staff', 'superadmin'],
   ),
   DashboardTileData(
     title: 'Clients',
@@ -53,7 +54,7 @@ const allTiles = [
     iconColor: AppColors.tileClientsIcon,
     iconBgColor: AppColors.tileClientsBg,
     isWebComingSoon: true,
-    allowedRoles: ['admin', 'staff'],
+    allowedRoles: ['admin', 'staff', 'superadmin'],
   ),
   DashboardTileData(
     title: 'Diesel Records',
@@ -63,7 +64,7 @@ const allTiles = [
     iconBgColor: AppColors.tileDieselBg,
     route: '/diesel-records',
     isMobileReady: false,
-    allowedRoles: ['admin', 'staff', 'driver'],
+    allowedRoles: ['admin', 'staff', 'driver', 'superadmin'],
   ),
   DashboardTileData(
     title: 'Repair Records',
@@ -72,7 +73,8 @@ const allTiles = [
     iconColor: AppColors.tileRepairIcon,
     iconBgColor: AppColors.tileRepairBg,
     route: '/repair-records',
-    allowedRoles: ['admin', 'staff'],
+    isMobileReady: true,
+    allowedRoles: ['admin', 'staff', 'superadmin'],
   ),
   DashboardTileData(
     title: 'Technicians',
@@ -81,7 +83,18 @@ const allTiles = [
     iconColor: AppColors.tileTechIcon,
     iconBgColor: AppColors.tileTechBg,
     route: '/technicians',
-    allowedRoles: ['admin', 'staff'],
+    isMobileReady: true,
+    allowedRoles: ['admin', 'staff', 'superadmin'],
+  ),
+  DashboardTileData(
+    title: 'Vehicle Owners',
+    description: 'Owner registry for the fleet',
+    icon: AppIcons.badge,
+    iconColor: AppColors.tileOwnersIcon,
+    iconBgColor: AppColors.tileOwnersBg,
+    route: '/vehicle-owners',
+    isMobileReady: true,
+    allowedRoles: ['admin', 'staff', 'superadmin'],
   ),
   DashboardTileData(
     title: 'External Trips',
@@ -90,7 +103,8 @@ const allTiles = [
     iconColor: AppColors.tileExternalIcon,
     iconBgColor: AppColors.tileExternalBg,
     route: '/external-trips',
-    allowedRoles: ['admin', 'staff'],
+    isMobileReady: true,
+    allowedRoles: ['admin', 'staff', 'superadmin'],
   ),
   DashboardTileData(
     title: 'Trip Sheets',
@@ -99,7 +113,7 @@ const allTiles = [
     iconColor: AppColors.tileTripSheetsIcon,
     iconBgColor: AppColors.tileTripSheetsBg,
     isWebComingSoon: true,
-    allowedRoles: ['admin', 'staff'],
+    allowedRoles: ['admin', 'staff', 'superadmin'],
   ),
   DashboardTileData(
     title: 'Reports',
@@ -108,7 +122,7 @@ const allTiles = [
     iconColor: AppColors.tileReportsIcon,
     iconBgColor: AppColors.tileReportsBg,
     isWebComingSoon: true,
-    allowedRoles: ['admin', 'staff'],
+    allowedRoles: ['admin', 'staff', 'superadmin'],
   ),
   DashboardTileData(
     title: 'Activity Log',
@@ -117,7 +131,8 @@ const allTiles = [
     iconColor: AppColors.tileActivityIcon,
     iconBgColor: AppColors.tileActivityBg,
     route: '/activity-log',
-    allowedRoles: ['admin', 'staff'],
+    isMobileReady: true,
+    allowedRoles: ['admin', 'staff', 'superadmin'],
   ),
   DashboardTileData(
     title: 'Warranty',
@@ -126,7 +141,9 @@ const allTiles = [
     iconColor: AppColors.tileWarrantyIcon,
     iconBgColor: AppColors.tileWarrantyBg,
     route: '/warranty',
-    allowedRoles: ['admin', 'staff'],
+    isMobileReady: true,
+    // Staff excluded on web too — admin/superadmin only.
+    allowedRoles: ['admin', 'superadmin'],
   ),
   DashboardTileData(
     title: 'Sessions',
@@ -135,7 +152,19 @@ const allTiles = [
     iconColor: AppColors.tileSessionsIcon,
     iconBgColor: AppColors.tileSessionsBg,
     route: '/sessions',
-    allowedRoles: ['admin'],
+    isMobileReady: true,
+    // Superadmin-exclusive on web too — even 'admin' is locked out.
+    allowedRoles: ['superadmin'],
+  ),
+  DashboardTileData(
+    title: 'Settings',
+    description: 'Maintenance mode and app version control',
+    icon: AppIcons.settings,
+    iconColor: AppColors.tileSettingsIcon,
+    iconBgColor: AppColors.tileSettingsBg,
+    route: '/settings',
+    isMobileReady: true,
+    allowedRoles: ['superadmin'],
   ),
 ];
 
