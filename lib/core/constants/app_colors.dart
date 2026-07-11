@@ -37,6 +37,9 @@ class AppColors {
   static const Color tileTripSheetsIcon = Color(0xFF4F46E5);
   static const Color tileTripSheetsBg = Color(0xFFEEF2FF);
 
+  static const Color tileBookingsIcon = Color(0xFFD97706);
+  static const Color tileBookingsBg = Color(0xFFFFFBEB);
+
   static const Color tileReportsIcon = Color(0xFF0891B2);
   static const Color tileReportsBg = Color(0xFFECFEFF);
 

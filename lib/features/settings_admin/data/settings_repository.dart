@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 
 import '../../../core/constants/api_constants.dart';
 import '../../../core/network/dio_client.dart';
+import '../../../shared/models/api_response.dart';
 import 'settings_models.dart';
 
 class SettingsRepository {
@@ -9,10 +10,11 @@ class SettingsRepository {
 
   Future<MaintenanceSettings> getMaintenance() async {
     final response = await _dio.get(ApiConstants.maintenanceSettings);
-    if (response.statusCode == 200 && response.data['success'] == true) {
-      return MaintenanceSettings.fromJson(response.data['data'] as Map<String, dynamic>);
-    }
-    throw Exception(response.data['error'] ?? 'Failed to fetch maintenance settings');
+    final data = unwrapResponse<Map<String, dynamic>>(
+      response,
+      fallbackError: 'Failed to fetch maintenance settings',
+    );
+    return MaintenanceSettings.fromJson(data);
   }
 
   Future<void> updateMaintenance({required bool maintenanceMode, String? message}) async {
@@ -20,16 +22,16 @@ class SettingsRepository {
       ApiConstants.maintenanceSettings,
       data: {'maintenanceMode': maintenanceMode, 'message': message},
     );
-    if (response.statusCode == 200 && response.data['success'] == true) return;
-    throw Exception(response.data['error'] ?? 'Failed to update maintenance settings');
+    unwrapResponse<dynamic>(response, fallbackError: 'Failed to update maintenance settings');
   }
 
   Future<AppVersionSettings> getAppVersion() async {
     final response = await _dio.get(ApiConstants.appVersionSettings);
-    if (response.statusCode == 200 && response.data['success'] == true) {
-      return AppVersionSettings.fromJson(response.data['data'] as Map<String, dynamic>);
-    }
-    throw Exception(response.data['error'] ?? 'Failed to fetch app version settings');
+    final data = unwrapResponse<Map<String, dynamic>>(
+      response,
+      fallbackError: 'Failed to fetch app version settings',
+    );
+    return AppVersionSettings.fromJson(data);
   }
 
   Future<void> updateAppVersion({int? minAndroidVersionCode, String? message}) async {
@@ -40,7 +42,6 @@ class SettingsRepository {
       ApiConstants.appVersionSettings,
       data: {'minAndroidVersionCode': minAndroidVersionCode, 'message': message},
     );
-    if (response.statusCode == 200 && response.data['success'] == true) return;
-    throw Exception(response.data['error'] ?? 'Failed to update app version settings');
+    unwrapResponse<dynamic>(response, fallbackError: 'Failed to update app version settings');
   }
 }

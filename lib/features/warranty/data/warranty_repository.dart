@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/constants/api_constants.dart';
 import '../../../core/network/dio_client.dart';
+import '../../../shared/models/api_response.dart';
 import 'warranty_models.dart';
 
 final _isoFmt = DateFormat('yyyy-MM-dd');
@@ -29,31 +30,27 @@ class WarrantyRepository {
       },
     );
 
-    if (response.statusCode == 200 && response.data['success'] == true) {
-      final outer = response.data['data'] as Map<String, dynamic>;
-      final list = outer['data'] as List;
-      final items = list.map((e) => WarrantyItem.fromJson(e as Map<String, dynamic>)).toList();
-      return WarrantyPage(items: items, total: outer['total'] as int? ?? items.length);
-    }
-
-    throw Exception(response.data['error'] ?? 'Failed to fetch warranty records');
+    final outer = unwrapResponse<Map<String, dynamic>>(
+      response,
+      fallbackError: 'Failed to fetch warranty records',
+    );
+    final list = outer['data'] as List;
+    final items = list.map((e) => WarrantyItem.fromJson(e as Map<String, dynamic>)).toList();
+    return WarrantyPage(items: items, total: outer['total'] as int? ?? items.length);
   }
 
   Future<void> create(WarrantyDto dto) async {
     final response = await _dio.post(ApiConstants.warranty, data: dto.toJson());
-    if (response.statusCode == 201 && response.data['success'] == true) return;
-    throw Exception(response.data['error'] ?? 'Failed to create warranty record');
+    unwrapResponse<dynamic>(response, fallbackError: 'Failed to create warranty record');
   }
 
   Future<void> update(WarrantyDto dto) async {
     final response = await _dio.put(ApiConstants.warranty, data: dto.toJson());
-    if (response.statusCode == 200 && response.data['success'] == true) return;
-    throw Exception(response.data['error'] ?? 'Failed to update warranty record');
+    unwrapResponse<dynamic>(response, fallbackError: 'Failed to update warranty record');
   }
 
   Future<void> delete(int id) async {
     final response = await _dio.delete(ApiConstants.warranty, queryParameters: {'id': id});
-    if (response.statusCode == 200 && response.data['success'] == true) return;
-    throw Exception(response.data['error'] ?? 'Failed to delete warranty record');
+    unwrapResponse<dynamic>(response, fallbackError: 'Failed to delete warranty record');
   }
 }

@@ -3,10 +3,12 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_icons.dart';
 import '../../../features/auth/providers/auth_provider.dart';
+import '../../../features/notifications/providers/notification_provider.dart';
 import '../../../shared/widgets/app_drawer.dart';
 import '../../../shared/widgets/error_state.dart';
 import '../../../shared/widgets/loading_spinner.dart';
@@ -17,7 +19,7 @@ import '../widgets/vehicle_card.dart';
 import '../widgets/vehicle_documents_sheet.dart';
 import '../widgets/vehicle_filter_sheet.dart';
 import '../widgets/vehicle_form_sheet.dart';
-import '../widgets/vehicle_pagination_bar.dart';
+import '../../../shared/widgets/list_pagination_bar.dart';
 
 class VehiclesScreen extends ConsumerStatefulWidget {
   const VehiclesScreen({super.key});
@@ -45,6 +47,8 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
     final canDelete = user?.isAdmin == true;
     final loadedState = async.valueOrNull;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final unreadCount =
+        ref.watch(notificationListProvider).valueOrNull?.unreadCount ?? 0;
 
     return Scaffold(
       // Blue-tinted rather than neutral grey, so the page still reads as
@@ -66,6 +70,7 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
                 ref.read(vehiclesListProvider.notifier).clearFilters,
             hasFilters: loadedState?.hasFilters ?? false,
             stats: loadedState?.stats,
+            unreadCount: unreadCount,
           ),
           // The body now carries the glass language too: soft pastel blobs
           // sit fixed behind the scroll content, and the cards/pagination
@@ -82,7 +87,7 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
                         right: -60,
                         child: _BodyBlob(
                           size: 220,
-                          color: AppColors.primary.withOpacity(0.12),
+                          color: AppColors.primary.withValues(alpha: 0.12),
                         ),
                       ),
                       Positioned(
@@ -90,7 +95,7 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
                         left: -70,
                         child: _BodyBlob(
                           size: 200,
-                          color: const Color(0xFF9333EA).withOpacity(0.09),
+                          color: const Color(0xFF9333EA).withValues(alpha: 0.09),
                         ),
                       ),
                       Positioned(
@@ -98,7 +103,7 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
                         right: -50,
                         child: _BodyBlob(
                           size: 190,
-                          color: const Color(0xFF16A34A).withOpacity(0.09),
+                          color: const Color(0xFF16A34A).withValues(alpha: 0.09),
                         ),
                       ),
                     ],
@@ -179,11 +184,14 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
                                 ),
                         ),
                       ),
-                      VehiclePaginationBar(
+                      ListPaginationBar(
                         page: state.page,
                         totalPages: state.totalPages,
                         total: state.total,
                         pageSize: state.pageSize,
+                        itemLabel: 'vehicles',
+                        style: PaginationBarStyle.frosted,
+                        endPadding: 86,
                         onPageChange: ref
                             .read(vehiclesListProvider.notifier)
                             .changePage,
@@ -212,7 +220,7 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
     final query = value.trim();
     _debounce?.cancel();
     _debounce = Timer(
-      const Duration(milliseconds: 900),
+      const Duration(milliseconds: 350),
       () {
         final current = ref.read(vehiclesListProvider).valueOrNull;
         if (current?.search == query) return;
@@ -239,13 +247,15 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
       ref
           .read(vehiclesListProvider.notifier)
           .applyFilters(
-            type: result['type'],
-            status: result['status'],
-            ownerType: result['ownerType'],
-            ownerName: result['ownerName'],
-            fuelType: result['fuelType'],
-            fcStatus: result['fcStatus'],
-            insuranceStatus: result['insuranceStatus'],
+            state.filters.copyWith(
+              type: result['type'],
+              status: result['status'],
+              ownerType: result['ownerType'],
+              ownerName: result['ownerName'],
+              fuelType: result['fuelType'],
+              fcStatus: result['fcStatus'],
+              insuranceStatus: result['insuranceStatus'],
+            ),
           );
     }
   }
@@ -351,6 +361,7 @@ class _VehiclesHero extends StatelessWidget {
   final VoidCallback? onClearFilters;
   final bool hasFilters;
   final VehicleStats? stats;
+  final int unreadCount;
 
   const _VehiclesHero({
     required this.controller,
@@ -359,6 +370,7 @@ class _VehiclesHero extends StatelessWidget {
     required this.onClearFilters,
     required this.hasFilters,
     required this.stats,
+    required this.unreadCount,
   });
 
   @override
@@ -401,11 +413,9 @@ class _VehiclesHero extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Builder(
-                          builder: (ctx) => _GlassIconButton(
-                            icon: AppIcons.menu,
-                            onTap: () => Scaffold.of(ctx).openDrawer(),
-                          ),
+                        _GlassIconButton(
+                          icon: AppIcons.arrowLeft,
+                          onTap: () => context.go('/dashboard'),
                         ),
                         const SizedBox(width: 12),
                         const Expanded(
@@ -416,6 +426,19 @@ class _VehiclesHero extends StatelessWidget {
                               fontSize: 20,
                               fontWeight: FontWeight.w800,
                             ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        _GlassIconButton(
+                          icon: AppIcons.bell,
+                          badgeCount: unreadCount,
+                          onTap: () => context.push('/notifications'),
+                        ),
+                        const SizedBox(width: 8),
+                        Builder(
+                          builder: (ctx) => _GlassIconButton(
+                            icon: AppIcons.menu,
+                            onTap: () => Scaffold.of(ctx).openDrawer(),
                           ),
                         ),
                       ],
@@ -497,8 +520,8 @@ class _HeroGlow extends StatelessWidget {
         shape: BoxShape.circle,
         gradient: RadialGradient(
           colors: [
-            Colors.white.withOpacity(opacity),
-            Colors.white.withOpacity(0),
+            Colors.white.withValues(alpha: opacity),
+            Colors.white.withValues(alpha: 0),
           ],
         ),
       ),
@@ -509,31 +532,60 @@ class _HeroGlow extends StatelessWidget {
 class _GlassIconButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback? onTap;
+  final int badgeCount;
 
-  const _GlassIconButton({required this.icon, this.onTap});
+  const _GlassIconButton({required this.icon, this.onTap, this.badgeCount = 0});
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-        child: Material(
-          color: Colors.white.withOpacity(0.14),
-          child: InkWell(
-            onTap: onTap,
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.white.withOpacity(0.20)),
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            child: Material(
+              color: Colors.white.withValues(alpha: 0.14),
+              child: InkWell(
+                onTap: onTap,
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.20)),
+                  ),
+                  child: Icon(icon, color: Colors.white, size: 19),
+                ),
               ),
-              child: Icon(icon, color: Colors.white, size: 19),
             ),
           ),
         ),
-      ),
+        if (badgeCount > 0)
+          Positioned(
+            top: -4,
+            right: -4,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+              constraints: const BoxConstraints(minWidth: 16),
+              decoration: BoxDecoration(
+                color: Colors.red,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.white, width: 1.5),
+              ),
+              child: Text(
+                badgeCount > 99 ? '99+' : '$badgeCount',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 9,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }
@@ -553,9 +605,9 @@ class _GlassSearchField extends StatelessWidget {
         child: Container(
           height: 46,
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.12),
+            color: Colors.white.withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white.withOpacity(0.20)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.20)),
           ),
           child: ValueListenableBuilder<TextEditingValue>(
             valueListenable: controller,
@@ -570,12 +622,12 @@ class _GlassSearchField extends StatelessWidget {
                   filled: false,
                   hintText: 'Search vehicle number',
                   hintStyle: TextStyle(
-                    color: Colors.white.withOpacity(0.5),
+                    color: Colors.white.withValues(alpha: 0.5),
                     fontSize: 14,
                   ),
                   prefixIcon: Icon(
                     Icons.search,
-                    color: Colors.white.withOpacity(0.7),
+                    color: Colors.white.withValues(alpha: 0.7),
                     size: 20,
                   ),
                   suffixIcon: value.text.isEmpty
@@ -583,7 +635,7 @@ class _GlassSearchField extends StatelessWidget {
                       : IconButton(
                           icon: Icon(
                             Icons.close,
-                            color: Colors.white.withOpacity(0.7),
+                            color: Colors.white.withValues(alpha: 0.7),
                             size: 18,
                           ),
                           onPressed: () {
@@ -628,7 +680,7 @@ class _GlassFilterButton extends StatelessWidget {
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
             child: Material(
-              color: Colors.white.withOpacity(0.12),
+              color: Colors.white.withValues(alpha: 0.12),
               child: InkWell(
                 onTap: onTap,
                 child: Container(
@@ -636,7 +688,7 @@ class _GlassFilterButton extends StatelessWidget {
                   height: 46,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.white.withOpacity(0.20)),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.20)),
                   ),
                   child: const Center(
                     child: Icon(Icons.tune, color: Colors.white, size: 20),
@@ -706,9 +758,9 @@ class _HeroStatChip extends StatelessWidget {
           width: 108,
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.12),
+            color: Colors.white.withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: Colors.white.withOpacity(0.18)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -742,7 +794,7 @@ class _HeroStatChip extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.72),
+                  color: Colors.white.withValues(alpha: 0.72),
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
                 ),
@@ -785,7 +837,7 @@ class _GradientFab extends StatelessWidget {
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.primary.withOpacity(0.4),
+                    color: AppColors.primary.withValues(alpha: 0.4),
                     blurRadius: 16,
                     offset: const Offset(0, 6),
                   ),
@@ -817,7 +869,7 @@ class _BodyBlob extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         gradient: RadialGradient(
-          colors: [color, color.withOpacity(0)],
+          colors: [color, color.withValues(alpha: 0)],
           stops: const [0.0, 1.0],
         ),
       ),
@@ -839,13 +891,13 @@ class _GlassEmptyState extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 24),
           decoration: BoxDecoration(
             color: isDark
-                ? AppColors.darkCardBg.withOpacity(0.55)
-                : Colors.white.withOpacity(0.55),
+                ? AppColors.darkCardBg.withValues(alpha: 0.55)
+                : Colors.white.withValues(alpha: 0.55),
             borderRadius: BorderRadius.circular(18),
             border: Border.all(
               color: isDark
-                  ? AppColors.darkBorder.withOpacity(0.7)
-                  : Colors.white.withOpacity(0.7),
+                  ? AppColors.darkBorder.withValues(alpha: 0.7)
+                  : Colors.white.withValues(alpha: 0.7),
             ),
           ),
           child: Column(

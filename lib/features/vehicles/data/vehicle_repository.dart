@@ -5,6 +5,7 @@ import 'package:path_provider/path_provider.dart';
 
 import '../../../core/constants/api_constants.dart';
 import '../../../core/network/dio_client.dart';
+import '../../../shared/models/api_response.dart';
 import 'vehicle_models.dart';
 
 class VehicleRepository {
@@ -38,19 +39,19 @@ class VehicleRepository {
       },
     );
 
-    if (response.statusCode == 200 && response.data['success'] == true) {
-      final data = response.data['data'] as Map<String, dynamic>? ?? {};
-      final list = data['data'] as List? ?? const [];
-      return VehicleListData(
-        vehicles: list
-            .map((item) => FleetVehicle.fromJson(item as Map<String, dynamic>))
-            .toList(),
-        total: data['total'] as int? ?? list.length,
-        stats: VehicleStats.fromJson(data['stats'] as Map<String, dynamic>?),
-      );
-    }
-
-    throw Exception(response.data['error'] ?? 'Failed to fetch vehicles');
+    final data = unwrapResponse<Map<String, dynamic>?>(
+          response,
+          fallbackError: 'Failed to fetch vehicles',
+        ) ??
+        {};
+    final list = data['data'] as List? ?? const [];
+    return VehicleListData(
+      vehicles: list
+          .map((item) => FleetVehicle.fromJson(item as Map<String, dynamic>))
+          .toList(),
+      total: data['total'] as int? ?? list.length,
+      stats: VehicleStats.fromJson(data['stats'] as Map<String, dynamic>?),
+    );
   }
 
   Future<void> createVehicle(VehiclePayload payload) async {
@@ -58,8 +59,7 @@ class VehicleRepository {
       ApiConstants.vehicles,
       data: payload.toJson(),
     );
-    if (response.statusCode == 201 && response.data['success'] == true) return;
-    throw Exception(response.data['error'] ?? 'Failed to create vehicle');
+    unwrapResponse<dynamic>(response, fallbackError: 'Failed to create vehicle');
   }
 
   Future<void> updateVehicle(VehiclePayload payload) async {
@@ -67,8 +67,7 @@ class VehicleRepository {
       ApiConstants.vehicles,
       data: payload.toJson(),
     );
-    if (response.statusCode == 200 && response.data['success'] == true) return;
-    throw Exception(response.data['error'] ?? 'Failed to update vehicle');
+    unwrapResponse<dynamic>(response, fallbackError: 'Failed to update vehicle');
   }
 
   Future<void> updateVehicleField(int id, String field, String? value) async {
@@ -76,8 +75,7 @@ class VehicleRepository {
       ApiConstants.vehicles,
       data: {'id': id, field: value},
     );
-    if (response.statusCode == 200 && response.data['success'] == true) return;
-    throw Exception(response.data['error'] ?? 'Failed to update vehicle');
+    unwrapResponse<dynamic>(response, fallbackError: 'Failed to update vehicle');
   }
 
   Future<void> deleteVehicle(int id) async {
@@ -85,8 +83,7 @@ class VehicleRepository {
       ApiConstants.vehicles,
       queryParameters: {'id': id},
     );
-    if (response.statusCode == 200 && response.data['success'] == true) return;
-    throw Exception(response.data['error'] ?? 'Failed to delete vehicle');
+    unwrapResponse<dynamic>(response, fallbackError: 'Failed to delete vehicle');
   }
 
   Future<List<VehicleOwner>> getOwners({String? ownerType}) async {
@@ -94,13 +91,14 @@ class VehicleRepository {
       ApiConstants.vehicleOwners,
       queryParameters: {'owner_type': ?ownerType},
     );
-    if (response.statusCode == 200 && response.data['success'] == true) {
-      final list = response.data['data'] as List? ?? const [];
-      return list
-          .map((item) => VehicleOwner.fromJson(item as Map<String, dynamic>))
-          .toList();
-    }
-    throw Exception(response.data['error'] ?? 'Failed to fetch owners');
+    final list = unwrapResponse<List?>(
+          response,
+          fallbackError: 'Failed to fetch owners',
+        ) ??
+        const [];
+    return list
+        .map((item) => VehicleOwner.fromJson(item as Map<String, dynamic>))
+        .toList();
   }
 
   Future<VehicleOwner> createOwner({
@@ -111,11 +109,11 @@ class VehicleRepository {
       ApiConstants.vehicleOwners,
       data: {'name': name.trim(), 'owner_type': ownerType},
     );
-    if (response.statusCode == 201 && response.data['success'] == true) {
-      final data = response.data['data'] as Map<String, dynamic>;
-      return VehicleOwner.fromJson(data['owner'] as Map<String, dynamic>);
-    }
-    throw Exception(response.data['error'] ?? 'Failed to add owner');
+    final data = unwrapResponse<Map<String, dynamic>>(
+      response,
+      fallbackError: 'Failed to add owner',
+    );
+    return VehicleOwner.fromJson(data['owner'] as Map<String, dynamic>);
   }
 
   Future<String> uploadDocument({
@@ -139,11 +137,12 @@ class VehicleRepository {
       options: Options(headers: {'Content-Type': 'multipart/form-data'}),
     );
 
-    if (response.statusCode == 201 && response.data['success'] == true) {
-      final data = response.data['data'] as Map<String, dynamic>? ?? {};
-      return data['filePath'] as String? ?? '';
-    }
-    throw Exception(response.data['error'] ?? 'Failed to upload document');
+    final data = unwrapResponse<Map<String, dynamic>?>(
+          response,
+          fallbackError: 'Failed to upload document',
+        ) ??
+        {};
+    return data['filePath'] as String? ?? '';
   }
 
   Future<void> deleteDocument({
@@ -160,8 +159,7 @@ class VehicleRepository {
       },
     );
 
-    if (response.statusCode == 200 && response.data['success'] == true) return;
-    throw Exception(response.data['error'] ?? 'Failed to delete document');
+    unwrapResponse<dynamic>(response, fallbackError: 'Failed to delete document');
   }
 
   Future<String> downloadDocument(String filePath, {String? fileName}) async {

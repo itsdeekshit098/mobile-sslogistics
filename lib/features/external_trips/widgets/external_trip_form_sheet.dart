@@ -20,10 +20,21 @@ final _moneyFmt = NumberFormat('#,##0.00', 'en_IN');
 /// Create/edit form for an external trip. When [trip] is null the sheet
 /// creates a new trip; otherwise it edits (vehicle and trip type become
 /// read-only, matching the API's PUT contract).
+///
+/// When [bookingId] is set (only valid alongside [trip] == null), the form
+/// is pre-filled from [prefill] and, on submit, includes `booking_id` in the
+/// POST payload so the server atomically completes that trip booking.
 class ExternalTripFormSheet extends ConsumerStatefulWidget {
   final ExternalTrip? trip;
+  final int? bookingId;
+  final ExternalTripPrefill? prefill;
 
-  const ExternalTripFormSheet({super.key, this.trip});
+  const ExternalTripFormSheet({
+    super.key,
+    this.trip,
+    this.bookingId,
+    this.prefill,
+  });
 
   @override
   ConsumerState<ExternalTripFormSheet> createState() =>
@@ -58,6 +69,7 @@ class _ExternalTripFormSheetState extends ConsumerState<ExternalTripFormSheet> {
   bool _isSubmitting = false;
 
   bool get _isEdit => widget.trip != null;
+  bool get _isCompletingBooking => widget.bookingId != null;
 
   double get _totalCost =>
       _costEntries.fold(0, (sum, e) => sum + e.amount);
@@ -69,6 +81,7 @@ class _ExternalTripFormSheetState extends ConsumerState<ExternalTripFormSheet> {
   void initState() {
     super.initState();
     final trip = widget.trip;
+    final prefill = widget.prefill;
     _costEntries = buildCostItemEntries(trip?.costItems);
     if (trip != null) {
       _tripType = trip.tripType;
@@ -90,6 +103,35 @@ class _ExternalTripFormSheetState extends ConsumerState<ExternalTripFormSheet> {
           id: trip.driverId!,
           name: trip.driverName ?? 'Driver #${trip.driverId}',
           phone: trip.driverPhone,
+          isActive: true,
+        );
+      }
+    } else if (prefill != null) {
+      _customerNameCtrl.text = prefill.customerName ?? '';
+      _customerPhoneCtrl.text = prefill.customerPhone ?? '';
+      _fromLocationCtrl.text = prefill.fromLocation ?? '';
+      _toLocationCtrl.text = prefill.toLocation ?? '';
+      _startDate =
+          prefill.startDate != null ? DateTime.tryParse(prefill.startDate!) : null;
+      _endDate =
+          prefill.endDate != null ? DateTime.tryParse(prefill.endDate!) : null;
+      final advance = prefill.advanceAmount ?? 0;
+      if (advance != 0) {
+        _amountReceivedCtrl.text = advance == advance.roundToDouble()
+            ? advance.toInt().toString()
+            : advance.toString();
+      }
+      if (prefill.vehicleId != null) {
+        _selectedVehicle = Vehicle(
+          id: prefill.vehicleId!,
+          plateNumber: prefill.vehicleNumber ?? 'Vehicle #${prefill.vehicleId}',
+        );
+      }
+      if (prefill.driverId != null) {
+        _selectedDriver = Driver(
+          id: prefill.driverId!,
+          name: prefill.driverName ?? 'Driver #${prefill.driverId}',
+          phone: prefill.driverPhone,
           isActive: true,
         );
       }
@@ -276,6 +318,7 @@ class _ExternalTripFormSheetState extends ConsumerState<ExternalTripFormSheet> {
           notes: _textOrNull(_notesCtrl),
           costItems: costItems,
           amountReceived: _amountReceived,
+          bookingId: widget.bookingId,
         ));
       }
 
@@ -283,7 +326,9 @@ class _ExternalTripFormSheetState extends ConsumerState<ExternalTripFormSheet> {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(_isEdit ? 'Trip updated' : 'Trip created'),
+            content: Text(_isEdit
+                ? 'Trip updated'
+                : (_isCompletingBooking ? 'Booking completed' : 'Trip created')),
             backgroundColor: AppColors.success,
           ),
         );
@@ -332,7 +377,11 @@ class _ExternalTripFormSheetState extends ConsumerState<ExternalTripFormSheet> {
             child: Row(
               children: [
                 Text(
-                  _isEdit ? 'Edit Trip' : 'New External Trip',
+                  _isEdit
+                      ? 'Edit Trip'
+                      : (_isCompletingBooking
+                          ? 'Complete Booking'
+                          : 'New External Trip'),
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
@@ -359,6 +408,10 @@ class _ExternalTripFormSheetState extends ConsumerState<ExternalTripFormSheet> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    if (widget.prefill != null) ...[
+                      _BookingReferenceBanner(prefill: widget.prefill!),
+                      const SizedBox(height: 14),
+                    ],
                     // ── Vehicle ──────────────────────────────────────────
                     _Section(
                       key: _vehicleSectionKey,
@@ -712,6 +765,49 @@ class _ExternalTripFormSheetState extends ConsumerState<ExternalTripFormSheet> {
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
         borderSide: const BorderSide(color: AppColors.primary, width: 2),
+      ),
+    );
+  }
+}
+
+/// Read-only reminder of what was agreed when the trip booking was taken,
+/// shown at the top of the form while completing it into a full trip.
+class _BookingReferenceBanner extends StatelessWidget {
+  final ExternalTripPrefill prefill;
+  const _BookingReferenceBanner({required this.prefill});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    if (prefill.quotedAmount == null && (prefill.advanceAmount ?? 0) == 0) {
+      return const SizedBox.shrink();
+    }
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isDark
+            ? AppColors.primary.withValues(alpha: 0.12)
+            : AppColors.primary.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.28)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.info_outline, size: 16, color: AppColors.primary),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Agreed at booking — Quoted: '
+              '${prefill.quotedAmount != null ? '₹${_moneyFmt.format(prefill.quotedAmount)}' : '—'}'
+              ' · Advance: ₹${_moneyFmt.format(prefill.advanceAmount ?? 0)}',
+              style: const TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w600,
+                color: AppColors.primary,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

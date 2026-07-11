@@ -1,5 +1,6 @@
 import '../../../core/network/dio_client.dart';
 import '../../../core/constants/api_constants.dart';
+import '../../../shared/models/api_response.dart';
 import '../models/app_version_status.dart';
 
 /// One-shot check against the public /api/system/app-version endpoint —
@@ -9,10 +10,10 @@ import '../models/app_version_status.dart';
 class AppVersionService {
   Future<AppVersionConfig> fetch() async {
     final response = await DioClient.dio.get(ApiConstants.appVersion);
-    final data = response.data;
-    if (data is Map && data['success'] == true && data['data'] is Map) {
-      return AppVersionConfig.fromJson(data['data'] as Map<String, dynamic>);
-    }
-    throw Exception('Failed to fetch app version config');
+    final data = unwrapResponse<Map<String, dynamic>>(
+      response,
+      fallbackError: 'Failed to fetch app version config',
+    );
+    return AppVersionConfig.fromJson(data);
   }
 }

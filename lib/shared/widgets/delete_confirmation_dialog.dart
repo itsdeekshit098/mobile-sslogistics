@@ -10,6 +10,11 @@ class DeleteConfirmationDialog extends StatefulWidget {
   final String warningSubtext;
   final String confirmLabel;
 
+  /// Optional label -> value summary rows (e.g. Date, Vehicle, Cost) shown
+  /// above the warning banner, so callers that want to remind the user
+  /// exactly what they're deleting don't need their own dialog.
+  final Map<String, String> details;
+
   /// When provided, the dialog performs the delete itself: it shows a loading
   /// spinner, blocks dismissal (barrier tap + back gesture) and disables Cancel
   /// while the call is in flight, and renders any thrown error inline instead of
@@ -24,6 +29,7 @@ class DeleteConfirmationDialog extends StatefulWidget {
     required this.warningText,
     required this.warningSubtext,
     this.confirmLabel = 'Delete',
+    this.details = const {},
     this.onConfirm,
   });
 
@@ -170,6 +176,30 @@ class _DeleteConfirmationDialogState extends State<DeleteConfirmationDialog> {
                   ],
                 ),
               ),
+              if (widget.details.isNotEmpty) ...[
+                SizedBox(height: compact ? 16 : 18),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.darkPageBg : AppColors.pageBg,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isDark ? AppColors.darkBorder : AppColors.border,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: widget.details.entries
+                        .map((e) => _DetailRow(
+                              label: e.key,
+                              value: e.value,
+                              isDark: isDark,
+                            ))
+                        .toList(),
+                  ),
+                ),
+              ],
               SizedBox(height: compact ? 16 : 18),
               Container(
                 width: double.infinity,
@@ -256,6 +286,48 @@ class _DeleteConfirmationDialogState extends State<DeleteConfirmationDialog> {
           ),
         ),
       ),
+      ),
+    );
+  }
+}
+
+class _DetailRow extends StatelessWidget {
+  final String label;
+  final String value;
+  final bool isDark;
+
+  const _DetailRow({required this.label, required this.value, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 72,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                color: isDark ? AppColors.darkTextMuted : AppColors.textMuted,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: isDark
+                    ? AppColors.darkTextSecondary
+                    : AppColors.textSecondary,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

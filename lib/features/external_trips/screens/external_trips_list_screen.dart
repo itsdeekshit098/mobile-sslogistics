@@ -6,14 +6,14 @@ import 'package:mobile_sslogistics/core/constants/app_icons.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../features/auth/providers/auth_provider.dart';
-import '../../../features/notifications/providers/notification_provider.dart';
 import '../../../shared/widgets/app_drawer.dart';
+import '../../../shared/widgets/delete_confirmation_dialog.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/error_state.dart';
 import '../../../shared/widgets/loading_spinner.dart';
+import '../../../shared/widgets/notification_bell_button.dart';
 import '../data/external_trip_models.dart';
 import '../providers/external_trip_provider.dart';
-import '../widgets/delete_external_trip_dialog.dart';
 import '../widgets/external_trip_card.dart';
 import '../widgets/external_trip_detail_sheet.dart';
 import '../widgets/external_trip_filter_bar.dart';
@@ -61,8 +61,6 @@ class _ExternalTripsListScreenState
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider).valueOrNull;
     final listAsync = ref.watch(externalTripListProvider);
-    final unreadCount =
-        ref.watch(notificationListProvider).valueOrNull?.unreadCount ?? 0;
 
     // API contract: admin+staff can create, only admin can edit/delete.
     final canCreate = (user?.isAdmin ?? false) || (user?.isStaff ?? false);
@@ -74,11 +72,10 @@ class _ExternalTripsListScreenState
         backgroundColor: Colors.white,
         elevation: 0,
         surfaceTintColor: Colors.white,
-        leading: Builder(
-          builder: (ctx) => IconButton(
-            icon: const Icon(AppIcons.menu, color: AppColors.textPrimary),
-            onPressed: () => Scaffold.of(ctx).openDrawer(),
-          ),
+        leading: IconButton(
+          icon: const Icon(AppIcons.arrowLeft, color: AppColors.textPrimary),
+          onPressed: () => context.go('/dashboard'),
+          tooltip: 'Back',
         ),
         title: const Text(
           'External Trips',
@@ -89,42 +86,12 @@ class _ExternalTripsListScreenState
           ),
         ),
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                IconButton(
-                  icon: const Icon(AppIcons.bell, color: AppColors.textPrimary),
-                  onPressed: () => context.push('/notifications'),
-                ),
-                if (unreadCount > 0)
-                  Positioned(
-                    top: 6,
-                    right: 6,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 4,
-                        vertical: 1,
-                      ),
-                      constraints: const BoxConstraints(minWidth: 16),
-                      decoration: BoxDecoration(
-                        color: Colors.red,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.white, width: 1.5),
-                      ),
-                      child: Text(
-                        unreadCount > 99 ? '99+' : '$unreadCount',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 9,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
+          const NotificationBellButton(color: AppColors.textPrimary),
+          Builder(
+            builder: (ctx) => IconButton(
+              icon: const Icon(AppIcons.menu, color: AppColors.textPrimary),
+              onPressed: () => Scaffold.of(ctx).openDrawer(),
+              tooltip: 'Open menu',
             ),
           ),
         ],
@@ -285,32 +252,19 @@ class _ExternalTripsListScreenState
   void _showDeleteDialog(BuildContext context, ExternalTrip trip) {
     showDialog(
       context: context,
-      builder: (_) => DeleteExternalTripDialog(
-        trip: trip,
-        onConfirm: () async {
-          try {
-            await ref
-                .read(externalTripListProvider.notifier)
-                .deleteTrip(trip.id);
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Trip deleted'),
-                  backgroundColor: AppColors.success,
-                ),
-              );
-            }
-          } catch (e) {
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(e.toString().replaceFirst('Exception: ', '')),
-                  backgroundColor: AppColors.error,
-                ),
-              );
-            }
-          }
+      builder: (_) => DeleteConfirmationDialog(
+        title: 'Delete Trip',
+        targetName: '${trip.vehicleNumber} - ${formatTripDate(trip.startDate)}',
+        details: {
+          'Vehicle': trip.vehicleNumber,
+          'Type': trip.tripTypeLabel,
+          'Date': formatTripDate(trip.startDate),
+          'Received': formatMoney(trip.amountReceived),
         },
+        warningText: 'This action cannot be undone.',
+        warningSubtext: 'The trip record will be permanently removed.',
+        onConfirm: () =>
+            ref.read(externalTripListProvider.notifier).deleteTrip(trip.id),
       ),
     );
   }

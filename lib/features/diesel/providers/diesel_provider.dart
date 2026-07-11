@@ -1,159 +1,85 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../shared/state/list_filters.dart';
+import '../../../shared/state/paged_result.dart';
+import '../../../shared/state/paginated_list_notifier.dart';
+import '../../../shared/state/paginated_list_state.dart';
 import '../data/diesel_repository.dart';
 import '../data/diesel_models.dart';
 
+class DieselFilters implements ListFilters {
+  final int? vehicleId;
+
+  const DieselFilters({this.vehicleId});
+
+  // Vehicle selection drives which records are shown at all (see
+  // DieselListScreen's "no vehicle selected" empty state) rather than acting
+  // as a filter chip on top of a base list, so it doesn't feed hasFilters.
+  @override
+  bool get isActive => false;
+}
+
 /// UI state for the diesel records list screen
-class DieselListState {
-  final List<DieselRecord> records;
-  final int total;
-  final int page;
-  final int pageSize;
-  final int? selectedVehicleId;
+typedef DieselListState = PaginatedListState<DieselRecord, DieselFilters, void>;
 
-  const DieselListState({
-    required this.records,
-    required this.total,
-    this.page = 1,
-    this.pageSize = 10,
-    this.selectedVehicleId,
-  });
-
-  int get totalPages => total == 0 ? 1 : (total / pageSize).ceil();
-
-  DieselListState copyWith({
-    List<DieselRecord>? records,
-    int? total,
-    int? page,
-    int? pageSize,
-    int? selectedVehicleId,
-    bool clearVehicle = false,
-  }) {
-    return DieselListState(
-      records: records ?? this.records,
-      total: total ?? this.total,
-      page: page ?? this.page,
-      pageSize: pageSize ?? this.pageSize,
-      selectedVehicleId: clearVehicle
-          ? null
-          : (selectedVehicleId ?? this.selectedVehicleId),
-    );
-  }
+extension DieselListStateX on DieselListState {
+  List<DieselRecord> get records => items;
+  int? get selectedVehicleId => filters.vehicleId;
 }
 
 final dieselRepositoryProvider = Provider<DieselRepository>(
   (ref) => DieselRepository(),
 );
 
+/// autoDispose so the cached list dies with its last listener — otherwise a
+/// logout/login as a different user would briefly show the previous user's
+/// diesel records (nothing invalidates feature providers on auth changes).
 final dieselListProvider =
-    AsyncNotifierProvider<DieselListNotifier, DieselListState>(
+    AsyncNotifierProvider.autoDispose<DieselListNotifier, DieselListState>(
       DieselListNotifier.new,
     );
 
-class DieselListNotifier extends AsyncNotifier<DieselListState> {
+class DieselListNotifier
+    extends PaginatedListNotifier<DieselRecord, DieselFilters, void> {
   @override
-  Future<DieselListState> build() async =>
-      const DieselListState(records: [], total: 0, page: 1, pageSize: 10);
+  DieselFilters get initialFilters => const DieselFilters();
 
-  // ── Internal fetch ───────────────────────────────────────────────────────
-  Future<DieselListState> _fetch({
-    int? vehicleId,
-    int page = 1,
-    int pageSize = 10,
+  @override
+  Future<PagedResult<DieselRecord, void>> fetchPage({
+    required int page,
+    required int pageSize,
+    required String search,
+    required DieselFilters filters,
   }) async {
-    if (vehicleId == null) {
-      return DieselListState(
-        records: const [],
-        total: 0,
-        page: page,
-        pageSize: pageSize,
-      );
+    if (filters.vehicleId == null) {
+      return const PagedResult(items: [], total: 0, extras: null);
     }
-
     final data = await ref
         .read(dieselRepositoryProvider)
-        .getRecords(vehicleId: vehicleId, page: page, pageSize: pageSize);
-    return DieselListState(
-      records: data.records,
-      total: data.total,
-      page: page,
-      pageSize: pageSize,
-      selectedVehicleId: vehicleId,
-    );
-  }
-
-  // ── Pagination ───────────────────────────────────────────────────────────
-  Future<void> changePage(int page) async {
-    final cur = state.valueOrNull;
-    if (cur == null) return;
-    state = const AsyncLoading();
-    state = await AsyncValue.guard(
-      () => _fetch(
-        vehicleId: cur.selectedVehicleId,
-        page: page,
-        pageSize: cur.pageSize,
-      ),
-    );
-  }
-
-  Future<void> changePageSize(int pageSize) async {
-    final cur = state.valueOrNull;
-    if (cur == null) return;
-    state = const AsyncLoading();
-    state = await AsyncValue.guard(
-      () =>
-          _fetch(vehicleId: cur.selectedVehicleId, page: 1, pageSize: pageSize),
-    );
+        .getRecords(vehicleId: filters.vehicleId, page: page, pageSize: pageSize);
+    return PagedResult(items: data.records, total: data.total, extras: null);
   }
 
   // ── Filter ───────────────────────────────────────────────────────────────
-  Future<void> filterByVehicle(int? vehicleId) async {
-    final cur = state.valueOrNull;
-    state = const AsyncLoading();
-    state = await AsyncValue.guard(
-      () =>
-          _fetch(vehicleId: vehicleId, page: 1, pageSize: cur?.pageSize ?? 10),
-    );
-  }
+  Future<void> filterByVehicle(int? vehicleId) =>
+      applyFilters(DieselFilters(vehicleId: vehicleId));
 
   // ── CRUD ─────────────────────────────────────────────────────────────────
+  /// Returns any non-blocking warnings (e.g. tank-capacity checks) computed
+  /// server-side for the newly created record.
   Future<List<String>> createRecord(CreateDieselDto dto) async {
-    final cur = state.valueOrNull;
     final warnings =
         await ref.read(dieselRepositoryProvider).createRecord(dto);
-    state = const AsyncLoading();
-    state = await AsyncValue.guard(
-      () => _fetch(
-        vehicleId: cur?.selectedVehicleId,
-        page: 1,
-        pageSize: cur?.pageSize ?? 10,
-      ),
-    );
+    await changePage(1);
     return warnings;
   }
 
   Future<void> updateRecord(UpdateDieselDto dto) async {
-    final cur = state.valueOrNull;
     await ref.read(dieselRepositoryProvider).updateRecord(dto);
-    state = const AsyncLoading();
-    state = await AsyncValue.guard(
-      () => _fetch(
-        vehicleId: cur?.selectedVehicleId,
-        page: cur?.page ?? 1,
-        pageSize: cur?.pageSize ?? 10,
-      ),
-    );
+    await refresh();
   }
 
   Future<void> deleteRecord(int id) async {
-    final cur = state.valueOrNull;
     await ref.read(dieselRepositoryProvider).deleteRecord(id);
-    state = const AsyncLoading();
-    state = await AsyncValue.guard(
-      () => _fetch(
-        vehicleId: cur?.selectedVehicleId,
-        page: cur?.page ?? 1,
-        pageSize: cur?.pageSize ?? 10,
-      ),
-    );
+    await refresh();
   }
 }

@@ -1,123 +1,55 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../shared/state/paged_result.dart';
+import '../../../shared/state/paginated_list_notifier.dart';
+import '../../../shared/state/paginated_list_state.dart';
 import '../data/warranty_models.dart';
 import '../data/warranty_repository.dart';
 
 final warrantyRepositoryProvider = Provider<WarrantyRepository>((ref) => WarrantyRepository());
 
-class WarrantyState {
-  final List<WarrantyItem> items;
-  final int total;
-  final int page;
-  final int pageSize;
-  final WarrantyFilters filters;
-
-  const WarrantyState({
-    required this.items,
-    required this.total,
-    this.page = 1,
-    this.pageSize = 20,
-    this.filters = const WarrantyFilters(),
-  });
-
-  int get totalPages => total == 0 ? 1 : (total / pageSize).ceil();
-}
+typedef WarrantyState = PaginatedListState<WarrantyItem, WarrantyFilters, void>;
 
 /// autoDispose so a switched-user login doesn't briefly show the previous
 /// user's cached warranty list.
 final warrantyProvider =
     AsyncNotifierProvider.autoDispose<WarrantyNotifier, WarrantyState>(WarrantyNotifier.new);
 
-class WarrantyNotifier extends AutoDisposeAsyncNotifier<WarrantyState> {
-  bool _disposed = false;
+class WarrantyNotifier extends PaginatedListNotifier<WarrantyItem, WarrantyFilters, void> {
+  @override
+  WarrantyFilters get initialFilters => const WarrantyFilters();
 
   @override
-  Future<WarrantyState> build() {
-    ref.onDispose(() => _disposed = true);
-    return _fetch();
-  }
+  int get defaultPageSize => 20;
 
-  Future<WarrantyState> _fetch({
-    int page = 1,
-    int pageSize = 20,
-    WarrantyFilters filters = const WarrantyFilters(),
+  // WarrantyFilters carries its own `search` field (used directly by the
+  // repository's query params), so the search text lives there rather than
+  // in the base class's top-level `search` — [search] below routes into it.
+  @override
+  Future<PagedResult<WarrantyItem, void>> fetchPage({
+    required int page,
+    required int pageSize,
+    required String search,
+    required WarrantyFilters filters,
   }) async {
-    var data = await ref
+    final data = await ref
         .read(warrantyRepositoryProvider)
         .fetch(filters: filters, page: page, pageSize: pageSize);
-    // A delete can empty out the last page — step back a page rather than
-    // showing a page that no longer exists.
-    if (data.items.isEmpty && data.total > 0 && page > 1) {
-      final lastPage = (data.total / pageSize).ceil();
-      page = lastPage < 1 ? 1 : lastPage;
-      data = await ref
-          .read(warrantyRepositoryProvider)
-          .fetch(filters: filters, page: page, pageSize: pageSize);
-    }
-    return WarrantyState(items: data.items, total: data.total, page: page, pageSize: pageSize, filters: filters);
+    return PagedResult(items: data.items, total: data.total, extras: null);
   }
 
-  Future<void> refresh() async {
+  Future<void> setSearch(String value) {
     final current = state.valueOrNull;
-    state = const AsyncLoading();
-    final result = await AsyncValue.guard(
-      () => _fetch(
-        page: current?.page ?? 1,
-        pageSize: current?.pageSize ?? 20,
-        filters: current?.filters ?? const WarrantyFilters(),
-      ),
-    );
-    if (_disposed) return;
-    state = result;
+    return applyFilters((current?.filters ?? initialFilters).copyWith(search: value));
   }
 
-  Future<void> setSearch(String value) async {
-    final current = state.valueOrNull;
-    final filters = (current?.filters ?? const WarrantyFilters()).copyWith(search: value);
-    state = const AsyncLoading();
-    final result = await AsyncValue.guard(
-      () => _fetch(page: 1, pageSize: current?.pageSize ?? 20, filters: filters),
-    );
-    if (_disposed) return;
-    state = result;
-  }
-
-  Future<void> setFilters(WarrantyFilters filters) async {
-    final current = state.valueOrNull;
-    state = const AsyncLoading();
-    final result = await AsyncValue.guard(
-      () => _fetch(page: 1, pageSize: current?.pageSize ?? 20, filters: filters),
-    );
-    if (_disposed) return;
-    state = result;
-  }
+  Future<void> setFilters(WarrantyFilters filters) => applyFilters(filters);
 
   Future<void> setStatusFilter(String? status) async {
     final current = state.valueOrNull;
-    final filters = (current?.filters ?? const WarrantyFilters())
+    final filters = (current?.filters ?? initialFilters)
         .copyWith(status: status, clearStatus: status == null);
     await setFilters(filters);
-  }
-
-  Future<void> changePage(int page) async {
-    final current = state.valueOrNull;
-    if (current == null) return;
-    state = const AsyncLoading();
-    final result = await AsyncValue.guard(
-      () => _fetch(page: page, pageSize: current.pageSize, filters: current.filters),
-    );
-    if (_disposed) return;
-    state = result;
-  }
-
-  Future<void> changePageSize(int pageSize) async {
-    final current = state.valueOrNull;
-    state = const AsyncLoading();
-    final result = await AsyncValue.guard(
-      () => _fetch(page: 1, pageSize: pageSize, filters: current?.filters ?? const WarrantyFilters()),
-    );
-    if (_disposed) return;
-    state = result;
   }
 
   Future<void> createItem(WarrantyDto dto) async {

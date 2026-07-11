@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import '../../../core/network/dio_client.dart';
 import '../../../core/constants/api_constants.dart';
+import '../../../shared/models/api_response.dart';
 import 'external_trip_models.dart';
 
 class ExternalTripRepository {
@@ -29,22 +30,21 @@ class ExternalTripRepository {
       },
     );
 
-    if (response.statusCode == 200 && response.data['success'] == true) {
-      final outer = response.data['data'];
-      // API returns { data: { data: [...], total: N, summary?: {...} } }
-      final list = outer['data'] as List;
-      final summaryJson = outer['summary'] as Map<String, dynamic>?;
-      return ExternalTripListData(
-        trips: list
-            .map((e) => ExternalTrip.fromJson(e as Map<String, dynamic>))
-            .toList(),
-        total: outer['total'] as int? ?? list.length,
-        summary:
-            summaryJson != null ? ExternalTripSummary.fromJson(summaryJson) : null,
-      );
-    }
-
-    throw Exception(response.data['error'] ?? 'Failed to fetch external trips');
+    // API returns { data: { data: [...], total: N, summary?: {...} } }
+    final outer = unwrapResponse<Map<String, dynamic>>(
+      response,
+      fallbackError: 'Failed to fetch external trips',
+    );
+    final list = outer['data'] as List;
+    final summaryJson = outer['summary'] as Map<String, dynamic>?;
+    return ExternalTripListData(
+      trips: list
+          .map((e) => ExternalTrip.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      total: outer['total'] as int? ?? list.length,
+      summary:
+          summaryJson != null ? ExternalTripSummary.fromJson(summaryJson) : null,
+    );
   }
 
   Future<void> createTrip(CreateExternalTripDto dto) async {
@@ -53,11 +53,7 @@ class ExternalTripRepository {
       data: dto.toJson(),
     );
 
-    if (response.statusCode == 201 && response.data['success'] == true) {
-      return;
-    }
-
-    throw Exception(response.data['error'] ?? 'Failed to create trip');
+    unwrapResponse<dynamic>(response, fallbackError: 'Failed to create trip');
   }
 
   Future<void> updateTrip(UpdateExternalTripDto dto) async {
@@ -66,11 +62,7 @@ class ExternalTripRepository {
       data: dto.toJson(),
     );
 
-    if (response.statusCode == 200 && response.data['success'] == true) {
-      return;
-    }
-
-    throw Exception(response.data['error'] ?? 'Failed to update trip');
+    unwrapResponse<dynamic>(response, fallbackError: 'Failed to update trip');
   }
 
   Future<void> deleteTrip(int id) async {
@@ -79,11 +71,7 @@ class ExternalTripRepository {
       queryParameters: {'id': id},
     );
 
-    if (response.statusCode == 200 && response.data['success'] == true) {
-      return;
-    }
-
-    throw Exception(response.data['error'] ?? 'Failed to delete trip');
+    unwrapResponse<dynamic>(response, fallbackError: 'Failed to delete trip');
   }
 
   Future<List<Driver>> getDrivers() async {
@@ -92,15 +80,14 @@ class ExternalTripRepository {
       queryParameters: {'pageSize': 100},
     );
 
-    if (response.statusCode == 200 && response.data['success'] == true) {
-      final outer = response.data['data'];
-      final list = outer['data'] as List;
-      return list
-          .map((e) => Driver.fromJson(e as Map<String, dynamic>))
-          .where((d) => d.isActive)
-          .toList();
-    }
-
-    throw Exception(response.data['error'] ?? 'Failed to fetch drivers');
+    final outer = unwrapResponse<Map<String, dynamic>>(
+      response,
+      fallbackError: 'Failed to fetch drivers',
+    );
+    final list = outer['data'] as List;
+    return list
+        .map((e) => Driver.fromJson(e as Map<String, dynamic>))
+        .where((d) => d.isActive)
+        .toList();
   }
 }

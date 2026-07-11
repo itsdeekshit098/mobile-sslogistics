@@ -9,6 +9,7 @@ class AppIcons {
   static const menu = Icons.menu;
   static const bell = Icons.notifications_none_outlined;
   static const arrowRight = Icons.arrow_forward;
+  static const arrowLeft = Icons.arrow_back;
   static const chevronLeft = Icons.chevron_left;
   static const chevronRight = Icons.chevron_right;
   static const x = Icons.close;

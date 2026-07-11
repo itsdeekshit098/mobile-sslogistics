@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -282,22 +283,24 @@ class _VehicleVisual extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       width: 96,
       height: 96,
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? AppColors.darkCardBg : Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.border),
       ),
       child: Padding(
         padding: const EdgeInsets.all(8.0),
         child: vehicle.logoUrl?.isNotEmpty == true
-            ? Image.network(
-                vehicle.logoUrl!,
+            ? CachedNetworkImage(
+                imageUrl: vehicle.logoUrl!,
                 fit: BoxFit.contain, // Fit perfectly without cropping
-                errorBuilder: (context, error, stackTrace) =>
+                memCacheWidth: 192, // ~2x DPR cap for a 96-logical-px box
+                errorWidget: (context, url, error) =>
                     _VehicleFallback(type: vehicle.vehicleType, color: color),
               )
             : _VehicleFallback(type: vehicle.vehicleType, color: color),

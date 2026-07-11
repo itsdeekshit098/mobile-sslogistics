@@ -36,9 +36,12 @@ class DashboardScreen extends ConsumerWidget {
     final notificationsLoading =
         notificationsAsync.isLoading && !notificationsAsync.hasValue;
 
-    final visibleTiles = allTiles
-        .where((t) => t.allowedRoles.contains(user.role))
-        .toList();
+    final roleTiles = allTiles.where((t) => t.allowedRoles.contains(user.role));
+    bool isDisabled(DashboardTileData t) => t.isWebComingSoon || !t.isMobileReady;
+    final visibleTiles = [
+      ...roleTiles.where((t) => !isDisabled(t)),
+      ...roleTiles.where(isDisabled),
+    ];
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -95,8 +98,8 @@ class DashboardScreen extends ConsumerWidget {
                   ),
                 );
               }, childCount: visibleTiles.length),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
+              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: 220,
                 crossAxisSpacing: 12,
                 mainAxisSpacing: 12,
                 childAspectRatio: 1.0,
@@ -109,8 +112,9 @@ class DashboardScreen extends ConsumerWidget {
   }
 
   void _onTileTap(BuildContext context, DashboardTileData tile) {
-    if (!tile.isMobileReady)
+    if (!tile.isMobileReady) {
       return; // tile is already visually disabled, but guard anyway
+    }
     if (tile.route != null) context.go(tile.route!);
   }
 }
@@ -195,7 +199,7 @@ class _DashboardHero extends StatelessWidget {
                     Text(
                       greeting,
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.75),
+                        color: Colors.white.withValues(alpha: 0.75),
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
                       ),
@@ -237,7 +241,7 @@ class _GlowCircle extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: Colors.white.withOpacity(opacity),
+        color: Colors.white.withValues(alpha: opacity),
       ),
     );
   }
@@ -269,7 +273,7 @@ class _GlassIconButton extends StatelessWidget {
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
               child: Material(
-                color: Colors.white.withOpacity(0.14),
+                color: Colors.white.withValues(alpha: 0.14),
                 child: InkWell(
                   onTap: onTap,
                   child: Container(
@@ -277,7 +281,7 @@ class _GlassIconButton extends StatelessWidget {
                     height: 40,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.white.withOpacity(0.20)),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.20)),
                     ),
                     child: Icon(icon, color: Colors.white, size: 19),
                   ),
@@ -330,8 +334,8 @@ class _GlassAvatar extends StatelessWidget {
           height: 40,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
-            color: Colors.white.withOpacity(0.16),
-            border: Border.all(color: Colors.white.withOpacity(0.22)),
+            color: Colors.white.withValues(alpha: 0.16),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
           ),
           alignment: Alignment.center,
           child: Text(
@@ -362,9 +366,9 @@ class _GlassPill extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.16),
+            color: Colors.white.withValues(alpha: 0.16),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withOpacity(0.24)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.24)),
           ),
           child: Text(
             text,

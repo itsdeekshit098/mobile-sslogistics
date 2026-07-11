@@ -1,12 +1,21 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show kReleaseMode;
+
 class ApiConstants {
-  /// Base URL switches between Android emulator and iOS simulator automatically.
-  /// Replace with the production HTTPS URL before going live.
+  /// Override via `--dart-define=API_BASE_URL=https://...` (e.g. from
+  /// scripts/build_release.sh). Takes priority over everything below.
+  static const String _envBaseUrl = String.fromEnvironment('API_BASE_URL');
+
+  /// An explicit --dart-define wins; otherwise release builds always point
+  /// at production (so forgetting a flag can never ship pointed at
+  /// localhost), and debug/profile builds switch between the Android
+  /// emulator and iOS simulator loopback addresses automatically.
   static String get baseUrl {
+    if (_envBaseUrl.isNotEmpty) return _envBaseUrl;
+    if (kReleaseMode) return 'https://sslogistics.vercel.app';
     if (Platform.isAndroid) return 'http://10.0.2.2:3000';
     return 'http://localhost:3000';
-    // return 'https://sslogistics.vercel.app/';
   }
 
   // ── Auth ──────────────────────────────────────────────────────────────────
@@ -22,6 +31,7 @@ class ApiConstants {
   static const String drivers = '/api/drivers';
   static const String dieselRecords = '/api/diesel-records';
   static const String externalTrips = '/api/external-trips';
+  static const String tripBookings = '/api/trip-bookings';
   static const String repairRecords = '/api/repair-records';
   static const String repairIssues = '/api/repair-issues';
   static const String partOptions = '/api/part-options';

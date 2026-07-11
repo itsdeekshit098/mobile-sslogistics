@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import '../../../core/network/dio_client.dart';
 import '../../../core/constants/api_constants.dart';
+import '../../../shared/models/api_response.dart';
 import 'diesel_models.dart';
 
 class DieselRepository {
@@ -16,25 +17,23 @@ class DieselRepository {
       queryParameters: {
         'page': page,
         'pageSize': pageSize,
-        if (vehicleId != null) 'vehicle_id': vehicleId,
+        'vehicle_id': ?vehicleId,
       },
     );
 
-    if (response.statusCode == 200 && response.data['success'] == true) {
-      final outer = response.data['data'];
-      // API returns { data: { data: [...], total: N } }
-      final list = outer['data'] as List;
-      final total = outer['total'] as int? ?? list.length;
-      return DieselListData(
-        records: list
-            .map((e) => DieselRecord.fromJson(e as Map<String, dynamic>))
-            .toList(),
-        total: total,
-      );
-    }
-
-    throw Exception(
-        response.data['error'] ?? 'Failed to fetch diesel records');
+    // API returns { data: { data: [...], total: N } }
+    final outer = unwrapResponse<Map<String, dynamic>>(
+      response,
+      fallbackError: 'Failed to fetch diesel records',
+    );
+    final list = outer['data'] as List;
+    final total = outer['total'] as int? ?? list.length;
+    return DieselListData(
+      records: list
+          .map((e) => DieselRecord.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      total: total,
+    );
   }
 
   /// Returns any non-blocking warnings (e.g. tank-capacity checks) computed
@@ -45,16 +44,12 @@ class DieselRepository {
       data: dto.toJson(),
     );
 
-    if (response.statusCode == 201 && response.data['success'] == true) {
-      final warnings = (response.data['data']?['warnings'] as List?)
-              ?.whereType<String>()
-              .toList() ??
-          const <String>[];
-      return warnings;
-    }
-
-    throw Exception(
-        response.data['error'] ?? 'Failed to create diesel record');
+    final data = unwrapResponse<Map<String, dynamic>?>(
+      response,
+      fallbackError: 'Failed to create diesel record',
+    );
+    return (data?['warnings'] as List?)?.whereType<String>().toList() ??
+        const <String>[];
   }
 
   Future<void> updateRecord(UpdateDieselDto dto) async {
@@ -63,12 +58,7 @@ class DieselRepository {
       data: dto.toJson(),
     );
 
-    if (response.statusCode == 200 && response.data['success'] == true) {
-      return;
-    }
-
-    throw Exception(
-        response.data['error'] ?? 'Failed to update diesel record');
+    unwrapResponse<dynamic>(response, fallbackError: 'Failed to update diesel record');
   }
 
   Future<void> deleteRecord(int id) async {
@@ -77,11 +67,6 @@ class DieselRepository {
       queryParameters: {'id': id},
     );
 
-    if (response.statusCode == 200 && response.data['success'] == true) {
-      return;
-    }
-
-    throw Exception(
-        response.data['error'] ?? 'Failed to delete diesel record');
+    unwrapResponse<dynamic>(response, fallbackError: 'Failed to delete diesel record');
   }
 }

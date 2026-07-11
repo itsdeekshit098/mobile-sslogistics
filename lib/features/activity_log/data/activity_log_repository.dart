@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 
 import '../../../core/constants/api_constants.dart';
 import '../../../core/network/dio_client.dart';
+import '../../../shared/models/api_response.dart';
 import 'activity_log_models.dart';
 
 class ActivityLogRepository {
@@ -13,21 +14,20 @@ class ActivityLogRepository {
       queryParameters: {'page': page, 'limit': limit},
     );
 
-    if (response.statusCode == 200 && response.data['success'] == true) {
-      final outer = response.data['data'] as Map<String, dynamic>;
-      final list = outer['data'] as List;
-      final entries = list
-          .map((e) => ActivityLogEntry.fromJson(e as Map<String, dynamic>))
-          .toList();
-      return ActivityLogPage(
-        entries: entries,
-        total: outer['total'] as int? ?? entries.length,
-        page: outer['page'] as int? ?? page,
-        limit: outer['limit'] as int? ?? limit,
-        totalPages: outer['totalPages'] as int? ?? 1,
-      );
-    }
-
-    throw Exception(response.data['error'] ?? 'Failed to fetch activity log');
+    final outer = unwrapResponse<Map<String, dynamic>>(
+      response,
+      fallbackError: 'Failed to fetch activity log',
+    );
+    final list = outer['data'] as List;
+    final entries = list
+        .map((e) => ActivityLogEntry.fromJson(e as Map<String, dynamic>))
+        .toList();
+    return ActivityLogPage(
+      entries: entries,
+      total: outer['total'] as int? ?? entries.length,
+      page: outer['page'] as int? ?? page,
+      limit: outer['limit'] as int? ?? limit,
+      totalPages: outer['totalPages'] as int? ?? 1,
+    );
   }
 }

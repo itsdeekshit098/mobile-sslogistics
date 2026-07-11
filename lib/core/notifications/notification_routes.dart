@@ -12,9 +12,17 @@ String? mobileRouteForNotification(String type, [Map<String, dynamic>? data]) {
         return '/diesel-records?vehicle_id=$vehicleId';
       }
       return '/diesel-records';
+    case 'vehicle_created':
+    case 'vehicle_updated':
+    case 'vehicle_deleted':
+      return '/vehicles';
     case 'document_expiring':
       return '/vehicles';
+    case 'trip_booking_reminder':
+      return '/trip-bookings';
     default:
-      return null;
+      // Unrecognized/future notification types still land somewhere useful
+      // instead of a dead tap.
+      return '/notifications';
   }
 }

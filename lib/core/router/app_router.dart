@@ -18,6 +18,7 @@ import '../../features/settings_admin/screens/settings_screen.dart';
 import '../../features/system/providers/maintenance_provider.dart';
 import '../../features/system/screens/maintenance_screen.dart';
 import '../../features/technicians/screens/technicians_screen.dart';
+import '../../features/trip_bookings/screens/trip_bookings_list_screen.dart';
 import '../../features/vehicles/screens/vehicles_screen.dart';
 import '../../features/warranty/screens/warranty_screen.dart';
 
@@ -34,6 +35,22 @@ class _AppStateListener extends ChangeNotifier {
 /// a background/terminated push tap, where no BuildContext is otherwise
 /// available.
 final rootNavigatorKey = GlobalKey<NavigatorState>();
+
+/// Most feature routes are reached via `context.go` (replacement, not push),
+/// which leaves nothing on the Navigator's pop stack — without this, the
+/// Android system back button exits the app from any screen instead of
+/// returning to the dashboard. But some of these same routes are also
+/// reached via `context.push` (e.g. the notification bell icon, or tapping
+/// a push notification via PushService) — in that case there IS something
+/// to pop, and it must pop normally or back-navigation breaks. So this only
+/// traps the back gesture when the Navigator can't already pop.
+Widget _backToDashboard(BuildContext context, Widget child) => PopScope(
+      canPop: Navigator.canPop(context),
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && !Navigator.canPop(context)) context.go('/dashboard');
+      },
+      child: child,
+    );
 
 final routerProvider = Provider<GoRouter>((ref) {
   final listener = _AppStateListener(ref);
@@ -74,8 +91,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
       GoRoute(
         path: '/maintenance',
-        builder: (context, state) =>
-            MaintenanceScreen(message: ref.read(maintenanceStatusProvider).message),
+        // A trap by design: maintenance-mode users shouldn't be able to
+        // back out to whatever screen they were on before it kicked in.
+        builder: (context, state) => PopScope(
+          canPop: false,
+          child: MaintenanceScreen(
+            message: ref.read(maintenanceStatusProvider).message,
+          ),
+        ),
       ),
       GoRoute(
         path: '/dashboard',
@@ -87,7 +110,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           final vehicleId = int.tryParse(
             state.uri.queryParameters['vehicle_id'] ?? '',
           );
-          return DieselListScreen(initialVehicleId: vehicleId);
+          return _backToDashboard(
+            context,
+            DieselListScreen(initialVehicleId: vehicleId),
+          );
         },
       ),
       GoRoute(
@@ -96,7 +122,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           final vehicleId = int.tryParse(
             state.uri.queryParameters['vehicle_id'] ?? '',
           );
-          return ExternalTripsListScreen(initialVehicleId: vehicleId);
+          return _backToDashboard(
+            context,
+            ExternalTripsListScreen(initialVehicleId: vehicleId),
+          );
         },
       ),
       GoRoute(
@@ -105,44 +134,61 @@ final routerProvider = Provider<GoRouter>((ref) {
           final vehicleId = int.tryParse(
             state.uri.queryParameters['vehicle_id'] ?? '',
           );
-          return RepairListScreen(initialVehicleId: vehicleId);
+          return _backToDashboard(
+            context,
+            RepairListScreen(initialVehicleId: vehicleId),
+          );
         },
       ),
       GoRoute(
+        path: '/trip-bookings',
+        builder: (context, state) =>
+            _backToDashboard(context, const TripBookingsListScreen()),
+      ),
+      GoRoute(
         path: '/vehicles',
-        builder: (context, state) => const VehiclesScreen(),
+        builder: (context, state) =>
+            _backToDashboard(context, const VehiclesScreen()),
       ),
       GoRoute(
         path: '/drivers',
-        builder: (context, state) => const DriversScreen(),
+        builder: (context, state) =>
+            _backToDashboard(context, const DriversScreen()),
       ),
       GoRoute(
         path: '/technicians',
-        builder: (context, state) => const TechniciansScreen(),
+        builder: (context, state) =>
+            _backToDashboard(context, const TechniciansScreen()),
       ),
       GoRoute(
         path: '/vehicle-owners',
-        builder: (context, state) => const OwnersScreen(),
+        builder: (context, state) =>
+            _backToDashboard(context, const OwnersScreen()),
       ),
       GoRoute(
         path: '/notifications',
-        builder: (context, state) => const NotificationListScreen(),
+        builder: (context, state) =>
+            _backToDashboard(context, const NotificationListScreen()),
       ),
       GoRoute(
         path: '/activity-log',
-        builder: (context, state) => const ActivityLogScreen(),
+        builder: (context, state) =>
+            _backToDashboard(context, const ActivityLogScreen()),
       ),
       GoRoute(
         path: '/warranty',
-        builder: (context, state) => const WarrantyScreen(),
+        builder: (context, state) =>
+            _backToDashboard(context, const WarrantyScreen()),
       ),
       GoRoute(
         path: '/sessions',
-        builder: (context, state) => const SessionsScreen(),
+        builder: (context, state) =>
+            _backToDashboard(context, const SessionsScreen()),
       ),
       GoRoute(
         path: '/settings',
-        builder: (context, state) => const SettingsScreen(),
+        builder: (context, state) =>
+            _backToDashboard(context, const SettingsScreen()),
       ),
     ],
   );

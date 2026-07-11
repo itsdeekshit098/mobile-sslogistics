@@ -1,23 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:mobile_sslogistics/core/constants/app_icons.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../features/auth/providers/auth_provider.dart';
-import '../../../features/notifications/providers/notification_provider.dart';
 import '../../../shared/widgets/app_drawer.dart';
+import '../../../shared/widgets/delete_confirmation_dialog.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/error_state.dart';
+import '../../../shared/widgets/notification_bell_button.dart';
 import '../data/repair_models.dart';
 import '../providers/repair_provider.dart';
 import '../widgets/create_repair_sheet.dart';
-import '../widgets/delete_repair_dialog.dart';
 import '../widgets/edit_repair_sheet.dart';
 import '../widgets/repair_card.dart';
 import '../widgets/repair_detail_sheet.dart';
 import '../widgets/repair_filter_bar.dart';
 import '../widgets/repair_summary_chips.dart';
+
+final _moneyFmt = NumberFormat('#,##0.00', 'en_IN');
 
 class RepairListScreen extends ConsumerStatefulWidget {
   /// Pre-selects a vehicle (e.g. arriving from a notification's deep link).
@@ -54,7 +57,6 @@ class _RepairListScreenState extends ConsumerState<RepairListScreen> {
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider).valueOrNull;
     final listAsync = ref.watch(repairListProvider);
-    final unreadCount = ref.watch(notificationListProvider).valueOrNull?.unreadCount ?? 0;
 
     final canCreate = (user?.isAdmin ?? false) || (user?.isStaff ?? false);
     final canEdit = user?.isAdmin ?? false;
@@ -66,46 +68,22 @@ class _RepairListScreenState extends ConsumerState<RepairListScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         surfaceTintColor: Colors.white,
-        leading: Builder(
-          builder: (ctx) => IconButton(
-            icon: const Icon(AppIcons.menu, color: AppColors.textPrimary),
-            onPressed: () => Scaffold.of(ctx).openDrawer(),
-          ),
+        leading: IconButton(
+          icon: const Icon(AppIcons.arrowLeft, color: AppColors.textPrimary),
+          onPressed: () => context.go('/dashboard'),
+          tooltip: 'Back',
         ),
         title: const Text(
           'Repair Records',
           style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700),
         ),
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                IconButton(
-                  icon: const Icon(AppIcons.bell, color: AppColors.textPrimary),
-                  onPressed: () => context.push('/notifications'),
-                ),
-                if (unreadCount > 0)
-                  Positioned(
-                    top: 6,
-                    right: 6,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                      constraints: const BoxConstraints(minWidth: 16),
-                      decoration: BoxDecoration(
-                        color: Colors.red,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.white, width: 1.5),
-                      ),
-                      child: Text(
-                        unreadCount > 99 ? '99+' : '$unreadCount',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w700),
-                      ),
-                    ),
-                  ),
-              ],
+          const NotificationBellButton(color: AppColors.textPrimary),
+          Builder(
+            builder: (ctx) => IconButton(
+              icon: const Icon(AppIcons.menu, color: AppColors.textPrimary),
+              onPressed: () => Scaffold.of(ctx).openDrawer(),
+              tooltip: 'Open menu',
             ),
           ),
         ],
@@ -274,30 +252,19 @@ class _RepairListScreenState extends ConsumerState<RepairListScreen> {
 
     showDialog(
       context: context,
-      builder: (_) => DeleteRepairDialog(
-        vehicleNumber: record.vehicleNumber,
-        date: dateStr,
-        category: record.categoryLabel,
-        cost: record.cost,
-        onConfirm: () async {
-          try {
-            await ref.read(repairListProvider.notifier).deleteRecord(record.id);
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Repair record deleted'), backgroundColor: AppColors.success),
-              );
-            }
-          } catch (e) {
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(e.toString().replaceFirst('Exception: ', '')),
-                  backgroundColor: AppColors.error,
-                ),
-              );
-            }
-          }
+      builder: (_) => DeleteConfirmationDialog(
+        title: 'Delete Repair Record',
+        targetName: '${record.vehicleNumber} - $dateStr',
+        details: {
+          'Date': dateStr,
+          'Vehicle': record.vehicleNumber,
+          'Category': record.categoryLabel,
+          'Cost': '₹${_moneyFmt.format(record.cost)}',
         },
+        warningText: 'This action cannot be undone.',
+        warningSubtext: 'The repair record will be permanently removed.',
+        onConfirm: () =>
+            ref.read(repairListProvider.notifier).deleteRecord(record.id),
       ),
     );
   }

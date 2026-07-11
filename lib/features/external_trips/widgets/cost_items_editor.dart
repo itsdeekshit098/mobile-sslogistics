@@ -253,7 +253,8 @@ class _CostItemRow extends StatelessWidget {
           IconButton(
             onPressed: onRemove,
             padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 36, minHeight: 42),
+            constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+            tooltip: 'Remove item',
             icon: const Icon(AppIcons.x, size: 18, color: AppColors.error),
           ),
         ],

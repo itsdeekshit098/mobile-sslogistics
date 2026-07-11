@@ -28,6 +28,13 @@ class VehicleOwner {
   int get hashCode => id.hashCode;
 }
 
+class OwnerListData {
+  final List<VehicleOwner> owners;
+  final int total;
+
+  const OwnerListData({required this.owners, required this.total});
+}
+
 /// DTO for POST /api/vehicle-owners.
 class CreateOwnerDto {
   final String name;

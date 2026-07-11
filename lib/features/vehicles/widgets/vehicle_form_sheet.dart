@@ -330,7 +330,7 @@ class _VehicleFormSheetState extends State<VehicleFormSheet> {
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
                       color: isDark
-                          ? AppColors.error.withOpacity(0.5)
+                          ? AppColors.error.withValues(alpha: 0.5)
                           : const Color(0xFFFCA5A5),
                     ),
                   ),

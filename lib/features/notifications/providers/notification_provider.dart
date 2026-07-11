@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/notifications/notification_stream_service.dart';
+import '../../auth/providers/auth_provider.dart';
 import '../data/notification_repository.dart';
 import '../data/notification_models.dart';
 
@@ -31,13 +32,25 @@ final notificationListProvider =
 );
 
 class NotificationListNotifier extends AsyncNotifier<NotificationListState> {
-  final NotificationStreamService _stream = NotificationStreamService();
-
+  // Feeds the dashboard bell badge and keeps an SSE connection open, so this
+  // provider stays app-scoped (not autoDispose) to avoid tearing the stream
+  // down and reconnecting every time the user navigates away from a screen
+  // that watches it. Instead it's gated on auth: build() re-runs on
+  // login/logout/forced-logout (ref.watch(authProvider) below), which closes
+  // the old stream via ref.onDispose and either returns empty state (no
+  // user) or opens a fresh stream + fetch (new user) — fixing both the
+  // post-logout reconnect-forever leak and stale cross-user data.
   @override
   Future<NotificationListState> build() async {
-    ref.onDispose(_stream.close);
+    final user = ref.watch(authProvider.select((s) => s.valueOrNull));
+    if (user == null) {
+      return const NotificationListState.initial();
+    }
 
-    _stream.connect(
+    final stream = NotificationStreamService();
+    ref.onDispose(stream.close);
+
+    stream.connect(
       onNotification: (json) {
         final item = NotificationItem.fromJson(json);
         final cur = state.valueOrNull ?? const NotificationListState.initial();

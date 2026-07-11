@@ -19,9 +19,14 @@ SYMBOLS_DIR="build/symbols/${VERSION_CODE}"
 
 mkdir -p "$SYMBOLS_DIR"
 
+# API_BASE_URL is optional here: ApiConstants.baseUrl already defaults to
+# production in release builds (see lib/core/constants/api_constants.dart).
+# Set it explicitly only to point a release build at a non-default backend
+# (e.g. staging), e.g. API_BASE_URL=https://staging.example.com ./scripts/build_release.sh
 flutter build appbundle --release \
   --obfuscate \
-  --split-debug-info="$SYMBOLS_DIR"
+  --split-debug-info="$SYMBOLS_DIR" \
+  ${API_BASE_URL:+--dart-define=API_BASE_URL="$API_BASE_URL"}
 
 echo ""
 echo "Build complete. Debug symbols written to: $SYMBOLS_DIR"

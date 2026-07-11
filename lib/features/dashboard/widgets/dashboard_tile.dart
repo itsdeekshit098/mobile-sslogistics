@@ -63,7 +63,7 @@ const allTiles = [
     iconColor: AppColors.tileDieselIcon,
     iconBgColor: AppColors.tileDieselBg,
     route: '/diesel-records',
-    isMobileReady: false,
+    isMobileReady: true,
     allowedRoles: ['admin', 'staff', 'driver', 'superadmin'],
   ),
   DashboardTileData(
@@ -103,6 +103,16 @@ const allTiles = [
     iconColor: AppColors.tileExternalIcon,
     iconBgColor: AppColors.tileExternalBg,
     route: '/external-trips',
+    isMobileReady: true,
+    allowedRoles: ['admin', 'staff', 'superadmin'],
+  ),
+  DashboardTileData(
+    title: 'Trip Bookings',
+    description: 'Advance phone bookings for external trips',
+    icon: AppIcons.clock,
+    iconColor: AppColors.tileBookingsIcon,
+    iconBgColor: AppColors.tileBookingsBg,
+    route: '/trip-bookings',
     isMobileReady: true,
     allowedRoles: ['admin', 'staff', 'superadmin'],
   ),
@@ -193,7 +203,7 @@ class DashboardTile extends StatelessWidget {
             ? []
             : [
                 BoxShadow(
-                  color: tile.iconColor.withOpacity(0.10),
+                  color: tile.iconColor.withValues(alpha: 0.10),
                   blurRadius: 16,
                   offset: const Offset(0, 6),
                 ),
@@ -213,8 +223,8 @@ class DashboardTile extends StatelessWidget {
             color: Colors.transparent,
             child: InkWell(
               onTap: _isDisabled ? null : onTap,
-              splashColor: tile.iconColor.withOpacity(0.08),
-              highlightColor: tile.iconColor.withOpacity(0.04),
+              splashColor: tile.iconColor.withValues(alpha: 0.08),
+              highlightColor: tile.iconColor.withValues(alpha: 0.04),
               child: Stack(
                 children: [
                   // Accent gradient strip along the top edge.
@@ -230,7 +240,7 @@ class DashboardTile extends StatelessWidget {
                             _isDisabled ? borderColor : tile.iconColor,
                             _isDisabled
                                 ? borderColor
-                                : tile.iconColor.withOpacity(0.25),
+                                : tile.iconColor.withValues(alpha: 0.25),
                           ],
                         ),
                       ),
@@ -255,7 +265,7 @@ class DashboardTile extends StatelessWidget {
                                         end: Alignment.bottomRight,
                                         colors: [
                                           tile.iconBgColor,
-                                          tile.iconBgColor.withOpacity(0.55),
+                                          tile.iconBgColor.withValues(alpha: 0.55),
                                         ],
                                       ),
                                 color: _isDisabled ? borderColor : null,

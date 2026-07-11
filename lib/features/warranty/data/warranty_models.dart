@@ -1,3 +1,5 @@
+import '../../../shared/state/list_filters.dart';
+
 /// Data models for GET/POST/PUT/DELETE /api/warranty.
 const String warrantyStatusActive = 'active';
 const String warrantyStatusExpiringSoon = 'expiring_soon';
@@ -109,7 +111,7 @@ class WarrantyPage {
   const WarrantyPage({required this.items, required this.total});
 }
 
-class WarrantyFilters {
+class WarrantyFilters implements ListFilters {
   final int? vehicleId;
   final int? vendorId;
   final String? status; // active | expiring_soon | expired
@@ -128,6 +130,9 @@ class WarrantyFilters {
 
   bool get hasActiveFilters =>
       vehicleId != null || vendorId != null || status != null || fromDate != null || toDate != null;
+
+  @override
+  bool get isActive => hasActiveFilters;
 
   int get activeCount =>
       [vehicleId, vendorId, status, fromDate, toDate].where((v) => v != null).length;

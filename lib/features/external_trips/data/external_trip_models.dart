@@ -163,6 +163,11 @@ class CreateExternalTripDto {
   final List<CostItem> costItems;
   final double amountReceived;
 
+  /// When set, the server atomically marks the referenced trip booking
+  /// 'completed' (and stamps its external_trip_id) once this trip is
+  /// created — see /api/external-trips `booking_id`.
+  final int? bookingId;
+
   const CreateExternalTripDto({
     required this.vehicleId,
     required this.tripType,
@@ -176,6 +181,7 @@ class CreateExternalTripDto {
     this.notes,
     required this.costItems,
     required this.amountReceived,
+    this.bookingId,
   });
 
   Map<String, dynamic> toJson() => {
@@ -195,7 +201,47 @@ class CreateExternalTripDto {
         if (endDate != null) 'end_date': endDate,
         if (driverId != null) 'driver_id': driverId,
         if (notes != null && notes!.isNotEmpty) 'notes': notes,
+        if (bookingId != null) 'booking_id': bookingId,
       };
+}
+
+/// Values carried over from a confirmed trip booking being completed into a
+/// trip — mirrors ExternalTripPrefill in
+/// ui-sslogistics/src/components/externalTripsModal/externalTripsModal.types.ts.
+class ExternalTripPrefill {
+  final String? customerName;
+  final String? customerPhone;
+  final String? fromLocation;
+  final String? toLocation;
+  final String? startDate;
+  final String? endDate;
+  final int? vehicleId;
+  /// Display label for [vehicleId] before the full vehicle list loads.
+  final String? vehicleNumber;
+  final int? driverId;
+  /// Display label for [driverId] before the full driver list loads.
+  final String? driverName;
+  final String? driverPhone;
+  /// Shown read-only in the form so the person entering final costs
+  /// remembers what was agreed at booking time.
+  final double? quotedAmount;
+  final double? advanceAmount;
+
+  const ExternalTripPrefill({
+    this.customerName,
+    this.customerPhone,
+    this.fromLocation,
+    this.toLocation,
+    this.startDate,
+    this.endDate,
+    this.vehicleId,
+    this.vehicleNumber,
+    this.driverId,
+    this.driverName,
+    this.driverPhone,
+    this.quotedAmount,
+    this.advanceAmount,
+  });
 }
 
 /// DTO for PUT /api/external-trips. Sends every editable field so cleared

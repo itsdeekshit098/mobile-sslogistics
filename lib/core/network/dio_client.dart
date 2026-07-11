@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'package:cookie_jar/cookie_jar.dart';
@@ -5,6 +7,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:sentry_dio/sentry_dio.dart';
 
 import '../constants/api_constants.dart';
+import 'secure_cookie_storage.dart';
 
 /// Singleton Dio client with persistent cookie jar.
 /// Call [DioClient.init] once in main() before the app starts.
@@ -26,11 +29,11 @@ class DioClient {
   static void Function(String? message)? onMaintenanceDetected;
 
   static Future<void> init() async {
-    final appDocDir = await getApplicationDocumentsDirectory();
+    await _deleteLegacyPlaintextCookies();
 
     _cookieJar = PersistCookieJar(
       ignoreExpires: false,
-      storage: FileStorage('${appDocDir.path}/.cookies/'),
+      storage: SecureCookieStorage(),
     );
 
     _dio = Dio(
@@ -106,6 +109,24 @@ class DioClient {
   /// Deletes all stored cookies (call on logout).
   static Future<void> clearCookies() async {
     await _cookieJar?.deleteAll();
+  }
+
+  /// One-time cleanup for installs that predate [SecureCookieStorage]:
+  /// the session cookie was previously written as a plain file under the
+  /// app's documents directory. Best-effort — if this fails or the
+  /// directory doesn't exist there's nothing to clean up. Deleting it
+  /// signs the user out once on upgrade, which is acceptable for a
+  /// single-session product and is the point of the migration.
+  static Future<void> _deleteLegacyPlaintextCookies() async {
+    try {
+      final appDocDir = await getApplicationDocumentsDirectory();
+      final legacyDir = Directory('${appDocDir.path}/.cookies/');
+      if (await legacyDir.exists()) {
+        await legacyDir.delete(recursive: true);
+      }
+    } catch (_) {
+      // Best-effort; nothing to do if this fails.
+    }
   }
 }
 

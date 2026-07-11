@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import '../../../core/network/dio_client.dart';
 import '../../../core/constants/api_constants.dart';
+import '../../../shared/models/api_response.dart';
 import 'notification_models.dart';
 
 class NotificationRepository {
@@ -15,19 +16,18 @@ class NotificationRepository {
       queryParameters: {'page': page, 'pageSize': pageSize},
     );
 
-    if (response.statusCode == 200 && response.data['success'] == true) {
-      final outer = response.data['data'];
-      final list = outer['data'] as List;
-      return NotificationListData(
-        items: list
-            .map((e) => NotificationItem.fromJson(e as Map<String, dynamic>))
-            .toList(),
-        total: outer['total'] as int? ?? list.length,
-        unreadCount: outer['unreadCount'] as int? ?? 0,
-      );
-    }
-
-    throw Exception(response.data['error'] ?? 'Failed to fetch notifications');
+    final outer = unwrapResponse<Map<String, dynamic>>(
+      response,
+      fallbackError: 'Failed to fetch notifications',
+    );
+    final list = outer['data'] as List;
+    return NotificationListData(
+      items: list
+          .map((e) => NotificationItem.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      total: outer['total'] as int? ?? list.length,
+      unreadCount: outer['unreadCount'] as int? ?? 0,
+    );
   }
 
   Future<void> markRead(int id) async {
@@ -36,23 +36,13 @@ class NotificationRepository {
       data: {'id': id},
     );
 
-    if (response.statusCode == 200 && response.data['success'] == true) {
-      return;
-    }
-
-    throw Exception(
-        response.data['error'] ?? 'Failed to mark notification read');
+    unwrapResponse<dynamic>(response, fallbackError: 'Failed to mark notification read');
   }
 
   Future<void> markAllRead() async {
     final response = await _dio.put(ApiConstants.notificationsMarkAllRead);
 
-    if (response.statusCode == 200 && response.data['success'] == true) {
-      return;
-    }
-
-    throw Exception(
-        response.data['error'] ?? 'Failed to mark notifications read');
+    unwrapResponse<dynamic>(response, fallbackError: 'Failed to mark notifications read');
   }
 
   Future<void> registerDevice({
@@ -64,11 +54,7 @@ class NotificationRepository {
       data: {'token': token, 'platform': platform},
     );
 
-    if (response.statusCode == 200 && response.data['success'] == true) {
-      return;
-    }
-
-    throw Exception(response.data['error'] ?? 'Failed to register device');
+    unwrapResponse<dynamic>(response, fallbackError: 'Failed to register device');
   }
 
   Future<void> unregisterDevice(String token) async {
@@ -77,10 +63,6 @@ class NotificationRepository {
       queryParameters: {'token': token},
     );
 
-    if (response.statusCode == 200 && response.data['success'] == true) {
-      return;
-    }
-
-    throw Exception(response.data['error'] ?? 'Failed to unregister device');
+    unwrapResponse<dynamic>(response, fallbackError: 'Failed to unregister device');
   }
 }

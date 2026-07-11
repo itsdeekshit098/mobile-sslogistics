@@ -142,7 +142,7 @@ class _SSLogisticsAppState extends ConsumerState<SSLogisticsApp>
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
-          disabledBackgroundColor: AppColors.primary.withOpacity(0.5),
+          disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.5),
           minimumSize: const Size(double.infinity, 48),
           shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8)),

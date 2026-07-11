@@ -83,7 +83,7 @@ class _ShimmerBarPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final trackPaint = Paint()..color = Colors.white.withOpacity(0.08);
+    final trackPaint = Paint()..color = Colors.white.withValues(alpha: 0.08);
     canvas.drawRect(Offset.zero & size, trackPaint);
 
     final sweep = ((progress * 1.4) % 1.0).clamp(0.0, 1.0);
@@ -92,9 +92,9 @@ class _ShimmerBarPainter extends CustomPainter {
     final highlightPaint = Paint()
       ..shader = LinearGradient(
         colors: [
-          AppColors.primary.withOpacity(0),
+          AppColors.primary.withValues(alpha: 0),
           AppColors.primary,
-          AppColors.primary.withOpacity(0),
+          AppColors.primary.withValues(alpha: 0),
         ],
         stops: const [0.0, 0.5, 1.0],
       ).createShader(

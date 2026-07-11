@@ -1,80 +1,62 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../shared/state/list_filters.dart';
+import '../../../shared/state/paged_result.dart';
+import '../../../shared/state/paginated_list_notifier.dart';
+import '../../../shared/state/paginated_list_state.dart';
 import '../data/owner_models.dart';
 import '../data/owner_repository.dart';
 
 final ownerRepositoryProvider = Provider<OwnerRepository>((ref) => OwnerRepository());
 
-class OwnersState {
-  final List<VehicleOwner> owners;
-  final String search;
-  final String? ownerTypeFilter;
+class OwnerFilters implements ListFilters {
+  final String? ownerType;
 
-  const OwnersState({required this.owners, this.search = '', this.ownerTypeFilter});
+  const OwnerFilters({this.ownerType});
 
-  OwnersState copyWith({
-    List<VehicleOwner>? owners,
-    String? search,
-    String? ownerTypeFilter,
-    bool clearOwnerTypeFilter = false,
-  }) {
-    return OwnersState(
-      owners: owners ?? this.owners,
-      search: search ?? this.search,
-      ownerTypeFilter: clearOwnerTypeFilter ? null : (ownerTypeFilter ?? this.ownerTypeFilter),
-    );
-  }
+  @override
+  bool get isActive => ownerType != null;
+
+  OwnerFilters copyWith({String? ownerType, bool clearOwnerType = false}) =>
+      OwnerFilters(ownerType: clearOwnerType ? null : (ownerType ?? this.ownerType));
+}
+
+typedef OwnersState = PaginatedListState<VehicleOwner, OwnerFilters, void>;
+
+extension OwnersStateX on OwnersState {
+  List<VehicleOwner> get owners => items;
+  String? get ownerTypeFilter => filters.ownerType;
 }
 
 /// autoDispose so a switched-user login doesn't briefly show stale owners.
 final ownersListProvider =
     AsyncNotifierProvider.autoDispose<OwnersNotifier, OwnersState>(OwnersNotifier.new);
 
-class OwnersNotifier extends AutoDisposeAsyncNotifier<OwnersState> {
-  bool _disposed = false;
+class OwnersNotifier extends PaginatedListNotifier<VehicleOwner, OwnerFilters, void> {
+  @override
+  OwnerFilters get initialFilters => const OwnerFilters();
 
   @override
-  Future<OwnersState> build() {
-    ref.onDispose(() => _disposed = true);
-    return _fetch();
+  int get defaultPageSize => 20;
+
+  @override
+  Future<PagedResult<VehicleOwner, void>> fetchPage({
+    required int page,
+    required int pageSize,
+    required String search,
+    required OwnerFilters filters,
+  }) async {
+    final data = await ref.read(ownerRepositoryProvider).getOwners(
+          page: page,
+          pageSize: pageSize,
+          search: search,
+          ownerType: filters.ownerType,
+        );
+    return PagedResult(items: data.owners, total: data.total, extras: null);
   }
 
-  Future<OwnersState> _fetch({String search = '', String? ownerTypeFilter}) async {
-    final owners = await ref
-        .read(ownerRepositoryProvider)
-        .getOwners(ownerType: ownerTypeFilter, search: search);
-    return OwnersState(owners: owners, search: search, ownerTypeFilter: ownerTypeFilter);
-  }
-
-  Future<void> refresh({bool showLoading = true}) async {
-    final current = state.valueOrNull;
-    if (showLoading) state = const AsyncLoading();
-    final result = await AsyncValue.guard(
-      () => _fetch(search: current?.search ?? '', ownerTypeFilter: current?.ownerTypeFilter),
-    );
-    if (_disposed) return;
-    state = result;
-  }
-
-  Future<void> search(String value) async {
-    final current = state.valueOrNull;
-    state = const AsyncLoading();
-    final result = await AsyncValue.guard(
-      () => _fetch(search: value, ownerTypeFilter: current?.ownerTypeFilter),
-    );
-    if (_disposed) return;
-    state = result;
-  }
-
-  Future<void> setOwnerTypeFilter(String? ownerType) async {
-    final current = state.valueOrNull;
-    state = const AsyncLoading();
-    final result = await AsyncValue.guard(
-      () => _fetch(search: current?.search ?? '', ownerTypeFilter: ownerType),
-    );
-    if (_disposed) return;
-    state = result;
-  }
+  Future<void> setOwnerTypeFilter(String? ownerType) =>
+      applyFilters(OwnerFilters(ownerType: ownerType));
 
   Future<void> createOwner(CreateOwnerDto dto) async {
     await ref.read(ownerRepositoryProvider).createOwner(dto);

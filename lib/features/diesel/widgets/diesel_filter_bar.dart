@@ -18,33 +18,19 @@ class DieselFilterBar extends ConsumerWidget {
     return Container(
       color: AppColors.pageBg,
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
-      child: Row(
-        children: [
-          Expanded(
-            child: vehiclesAsync.when(
-              loading: () => const _FilterSkeleton(),
-              error: (e, _) => _FilterButton(
-                icon: AppIcons.truck,
-                label: 'Vehicles unavailable',
-                onTap: null,
-              ),
-              data: (vehicles) => _VehicleFilterButton(
-                vehicles: vehicles,
-                selectedId: listState?.selectedVehicleId,
-                onChanged: (id) =>
-                    ref.read(dieselListProvider.notifier).filterByVehicle(id),
-              ),
-            ),
-          ),
-          if (listState?.selectedVehicleId != null) ...[
-            const SizedBox(width: 8),
-            _PageSizeButton(
-              value: listState?.pageSize ?? 10,
-              onChanged: (size) =>
-                  ref.read(dieselListProvider.notifier).changePageSize(size),
-            ),
-          ],
-        ],
+      child: vehiclesAsync.when(
+        loading: () => const _FilterSkeleton(),
+        error: (e, _) => _FilterButton(
+          icon: AppIcons.truck,
+          label: 'Vehicles unavailable',
+          onTap: null,
+        ),
+        data: (vehicles) => _VehicleFilterButton(
+          vehicles: vehicles,
+          selectedId: listState?.selectedVehicleId,
+          onChanged: (id) =>
+              ref.read(dieselListProvider.notifier).filterByVehicle(id),
+        ),
       ),
     );
   }
@@ -360,151 +346,6 @@ class _PickerItem extends StatelessWidget {
           ? const Icon(Icons.check_rounded, size: 18, color: AppColors.primary)
           : null,
       onTap: onTap,
-    );
-  }
-}
-
-// ── Page size button with popup menu ─────────────────────────────────────────
-
-class _PageSizeButton extends StatelessWidget {
-  final int value;
-  final ValueChanged<int> onChanged;
-
-  const _PageSizeButton({required this.value, required this.onChanged});
-
-  void _showPicker(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _PageSizeSheet(
-        value: value,
-        onSelected: (size) {
-          Navigator.pop(context);
-          onChanged(size);
-        },
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => _showPicker(context),
-      child: Container(
-        height: 50,
-        constraints: const BoxConstraints(minWidth: 66),
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(13),
-          border: Border.all(color: AppColors.border),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              '$value',
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(width: 2),
-            const Icon(
-              Icons.keyboard_arrow_down_rounded,
-              size: 18,
-              color: AppColors.textMuted,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _PageSizeSheet extends StatelessWidget {
-  final int value;
-  final ValueChanged<int> onSelected;
-
-  const _PageSizeSheet({required this.value, required this.onSelected});
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white,
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.border,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(height: 14),
-              const Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Rows per page',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [10, 20, 50, 100].map((size) {
-                  final selected = size == value;
-                  return Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: InkWell(
-                        onTap: () => onSelected(size),
-                        borderRadius: BorderRadius.circular(12),
-                        child: Container(
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: selected
-                                ? AppColors.primary
-                                : AppColors.pageBg,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: selected
-                                  ? AppColors.primary
-                                  : AppColors.border,
-                            ),
-                          ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            '$size',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w800,
-                              color: selected
-                                  ? Colors.white
-                                  : AppColors.textPrimary,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

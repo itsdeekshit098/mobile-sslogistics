@@ -15,7 +15,7 @@ class DebouncedSearchField extends StatefulWidget {
     super.key,
     required this.onDebouncedChanged,
     this.hintText = 'Search',
-    this.debounce = const Duration(milliseconds: 400),
+    this.debounce = const Duration(milliseconds: 350),
   });
 
   @override
@@ -60,7 +60,11 @@ class _DebouncedSearchFieldState extends State<DebouncedSearchField> {
         prefixIcon: const Icon(Icons.search_rounded, size: 20),
         suffixIcon: _controller.text.isEmpty
             ? null
-            : IconButton(icon: const Icon(Icons.close, size: 18), onPressed: _clear),
+            : IconButton(
+                icon: const Icon(Icons.close, size: 18),
+                onPressed: _clear,
+                tooltip: 'Clear search',
+              ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),

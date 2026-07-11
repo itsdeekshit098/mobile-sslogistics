@@ -103,8 +103,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         Text(
                           'Sign in to your account',
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.75),
+                            color: Colors.white.withValues(alpha: 0.92),
                             fontSize: 14,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                         const SizedBox(height: 32),
@@ -118,14 +119,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
                             child: Container(
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.12),
+                                color: Colors.white.withValues(alpha: 0.12),
                                 borderRadius: BorderRadius.circular(22),
                                 border: Border.all(
-                                  color: Colors.white.withOpacity(0.20),
+                                  color: Colors.white.withValues(alpha: 0.20),
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.20),
+                                    color: Colors.black.withValues(alpha: 0.20),
                                     blurRadius: 30,
                                     offset: const Offset(0, 12),
                                   ),
@@ -148,12 +149,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                           ),
                                           decoration: BoxDecoration(
                                             color: AppColors.error
-                                                .withOpacity(0.16),
+                                                .withValues(alpha: 0.16),
                                             borderRadius:
                                                 BorderRadius.circular(8),
                                             border: Border.all(
                                               color: AppColors.error
-                                                  .withOpacity(0.4),
+                                                  .withValues(alpha: 0.4),
                                             ),
                                           ),
                                           child: Row(
@@ -270,7 +271,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           'SS Logistics Operations Platform',
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.white.withOpacity(0.65),
+                            color: Colors.white.withValues(alpha: 0.65),
                           ),
                         ),
                       ],
@@ -299,7 +300,7 @@ class _Glow extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: Colors.white.withOpacity(opacity),
+        color: Colors.white.withValues(alpha: opacity),
       ),
     );
   }
@@ -313,19 +314,19 @@ InputDecoration _glassInputDecoration({
 }) {
   final border = OutlineInputBorder(
     borderRadius: BorderRadius.circular(12),
-    borderSide: BorderSide(color: Colors.white.withOpacity(0.18)),
+    borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.18)),
   );
   return InputDecoration(
     hintText: hintText,
     suffixIcon: suffixIcon,
     filled: true,
-    fillColor: Colors.white.withOpacity(0.08),
-    hintStyle: TextStyle(color: Colors.white.withOpacity(0.45)),
+    fillColor: Colors.white.withValues(alpha: 0.08),
+    hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.45)),
     border: border,
     enabledBorder: border,
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(12),
-      borderSide: BorderSide(color: Colors.white.withOpacity(0.55), width: 1.5),
+      borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.55), width: 1.5),
     ),
     errorBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(12),
@@ -381,17 +382,17 @@ class _GradientButton extends StatelessWidget {
                 begin: Alignment.centerLeft,
                 end: Alignment.centerRight,
                 colors: [
-                  AppColors.primary.withOpacity(disabled ? 0.5 : 1),
-                  AppColors.primaryDark.withOpacity(disabled ? 0.5 : 1),
+                  AppColors.primary.withValues(alpha: disabled ? 0.5 : 1),
+                  AppColors.primaryDark.withValues(alpha: disabled ? 0.5 : 1),
                 ],
               ),
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: Colors.white.withOpacity(0.18)),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
               boxShadow: disabled
                   ? []
                   : [
                       BoxShadow(
-                        color: AppColors.primary.withOpacity(0.35),
+                        color: AppColors.primary.withValues(alpha: 0.35),
                         blurRadius: 16,
                         offset: const Offset(0, 6),
                       ),

@@ -66,14 +66,29 @@ final driversProvider = FutureProvider<List<Driver>>(
   (ref) => ref.read(externalTripRepositoryProvider).getDrivers(),
 );
 
+/// autoDispose so the cached list dies with its last listener — otherwise a
+/// logout/login as a different user would briefly show the previous user's
+/// external trips (nothing invalidates feature providers on auth changes).
 final externalTripListProvider =
-    AsyncNotifierProvider<ExternalTripListNotifier, ExternalTripListState>(
-      ExternalTripListNotifier.new,
-    );
+    AsyncNotifierProvider.autoDispose<
+      ExternalTripListNotifier,
+      ExternalTripListState
+    >(ExternalTripListNotifier.new);
 
-class ExternalTripListNotifier extends AsyncNotifier<ExternalTripListState> {
+class ExternalTripListNotifier
+    extends AutoDisposeAsyncNotifier<ExternalTripListState> {
+  // Tracks disposal explicitly because this riverpod version doesn't expose
+  // `ref.mounted`. Without this, a mutator awaiting a fetch can resolve
+  // after autoDispose tears the notifier down (e.g. the screen was navigated
+  // away from mid-fetch) and writing to `state` then throws
+  // "Bad state: Future already completed".
+  bool _disposed = false;
+
   @override
-  Future<ExternalTripListState> build() => _fetchFirstPage();
+  Future<ExternalTripListState> build() {
+    ref.onDispose(() => _disposed = true);
+    return _fetchFirstPage();
+  }
 
   /// Loads page 1 (with summary) for the given filters.
   Future<ExternalTripListState> _fetchFirstPage({
@@ -119,6 +134,7 @@ class ExternalTripListNotifier extends AsyncNotifier<ExternalTripListState> {
             pageSize: _pageSize,
             includeSummary: false,
           );
+      if (_disposed) return;
       state = AsyncData(cur.copyWith(
         trips: [...cur.trips, ...data.trips],
         total: data.total,
@@ -127,6 +143,7 @@ class ExternalTripListNotifier extends AsyncNotifier<ExternalTripListState> {
       ));
     } catch (_) {
       // Keep what's on screen; the scroll trigger will retry naturally.
+      if (_disposed) return;
       state = AsyncData(cur.copyWith(isLoadingMore: false));
     }
   }
@@ -139,7 +156,7 @@ class ExternalTripListNotifier extends AsyncNotifier<ExternalTripListState> {
     String? tripType,
   }) async {
     state = const AsyncLoading();
-    state = await AsyncValue.guard(
+    final result = await AsyncValue.guard(
       () => _fetchFirstPage(
         fromDate: fromDate,
         toDate: toDate,
@@ -147,12 +164,14 @@ class ExternalTripListNotifier extends AsyncNotifier<ExternalTripListState> {
         tripType: tripType,
       ),
     );
+    if (_disposed) return;
+    state = result;
   }
 
   /// Pull-to-refresh: reload page 1 with the current filters, no flash.
   Future<void> refresh() async {
     final cur = state.valueOrNull;
-    state = await AsyncValue.guard(
+    final result = await AsyncValue.guard(
       () => _fetchFirstPage(
         fromDate: cur?.fromDate,
         toDate: cur?.toDate,
@@ -160,12 +179,14 @@ class ExternalTripListNotifier extends AsyncNotifier<ExternalTripListState> {
         tripType: cur?.tripType,
       ),
     );
+    if (_disposed) return;
+    state = result;
   }
 
   Future<void> _reloadAfterMutation() async {
     final cur = state.valueOrNull;
     state = const AsyncLoading();
-    state = await AsyncValue.guard(
+    final result = await AsyncValue.guard(
       () => _fetchFirstPage(
         fromDate: cur?.fromDate,
         toDate: cur?.toDate,
@@ -173,6 +194,8 @@ class ExternalTripListNotifier extends AsyncNotifier<ExternalTripListState> {
         tripType: cur?.tripType,
       ),
     );
+    if (_disposed) return;
+    state = result;
   }
 
   Future<void> createTrip(CreateExternalTripDto dto) async {

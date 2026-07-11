@@ -48,14 +48,27 @@ final repairRepositoryProvider = Provider<RepairRepository>(
   (ref) => RepairRepository(),
 );
 
+/// autoDispose so the cached list dies with its last listener — otherwise a
+/// logout/login as a different user would briefly show the previous user's
+/// repair records (nothing invalidates feature providers on auth changes).
 final repairListProvider =
-    AsyncNotifierProvider<RepairListNotifier, RepairListState>(
+    AsyncNotifierProvider.autoDispose<RepairListNotifier, RepairListState>(
   RepairListNotifier.new,
 );
 
-class RepairListNotifier extends AsyncNotifier<RepairListState> {
+class RepairListNotifier extends AutoDisposeAsyncNotifier<RepairListState> {
+  // Tracks disposal explicitly because this riverpod version doesn't expose
+  // `ref.mounted`. Without this, a mutator awaiting a fetch can resolve
+  // after autoDispose tears the notifier down (e.g. the screen was navigated
+  // away from mid-fetch) and writing to `state` then throws
+  // "Bad state: Future already completed".
+  bool _disposed = false;
+
   @override
-  Future<RepairListState> build() => _fetchFirstPage(const RepairFilters());
+  Future<RepairListState> build() {
+    ref.onDispose(() => _disposed = true);
+    return _fetchFirstPage(const RepairFilters());
+  }
 
   Future<RepairListState> _fetchFirstPage(RepairFilters filters) async {
     final data = await ref
@@ -73,12 +86,16 @@ class RepairListNotifier extends AsyncNotifier<RepairListState> {
   Future<void> refresh() async {
     final filters = state.valueOrNull?.filters ?? const RepairFilters();
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() => _fetchFirstPage(filters));
+    final result = await AsyncValue.guard(() => _fetchFirstPage(filters));
+    if (_disposed) return;
+    state = result;
   }
 
   Future<void> setFilters(RepairFilters filters) async {
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() => _fetchFirstPage(filters));
+    final result = await AsyncValue.guard(() => _fetchFirstPage(filters));
+    if (_disposed) return;
+    state = result;
   }
 
   Future<void> loadMore() async {
@@ -94,6 +111,7 @@ class RepairListNotifier extends AsyncNotifier<RepairListState> {
             pageSize: _pageSize,
             includeSummary: false,
           );
+      if (_disposed) return;
       final latest = state.valueOrNull ?? cur;
       state = AsyncData(
         latest.copyWith(
@@ -104,6 +122,7 @@ class RepairListNotifier extends AsyncNotifier<RepairListState> {
         ),
       );
     } catch (_) {
+      if (_disposed) return;
       final latest = state.valueOrNull ?? cur;
       state = AsyncData(latest.copyWith(isLoadingMore: false));
     }

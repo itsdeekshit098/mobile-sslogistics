@@ -43,7 +43,7 @@ const _navItems = [
     title: 'Diesel Records',
     icon: AppIcons.fuel,
     path: '/diesel-records',
-    enabled: false,
+    enabled: true,
   ),
   _NavItem(
     title: 'Vehicles',
@@ -84,6 +84,13 @@ const _navItems = [
     title: 'External Trips',
     icon: AppIcons.navigation,
     path: '/external-trips',
+    driverHidden: true,
+    enabled: true,
+  ),
+  _NavItem(
+    title: 'Trip Bookings',
+    icon: AppIcons.clock,
+    path: '/trip-bookings',
     driverHidden: true,
     enabled: true,
   ),
@@ -281,9 +288,9 @@ class AppDrawer extends ConsumerWidget {
           child: Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.08),
+              color: Colors.white.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: Colors.white.withOpacity(0.14)),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
             ),
             child: Column(
               children: [
@@ -293,10 +300,10 @@ class AppDrawer extends ConsumerWidget {
                       width: 32,
                       height: 32,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.16),
+                        color: Colors.white.withValues(alpha: 0.16),
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.22),
+                          color: Colors.white.withValues(alpha: 0.22),
                         ),
                       ),
                       alignment: Alignment.center,
@@ -356,7 +363,7 @@ class AppDrawer extends ConsumerWidget {
                     style: TextButton.styleFrom(
                       alignment: Alignment.centerLeft,
                       padding: EdgeInsets.zero,
-                      minimumSize: const Size(0, 32),
+                      minimumSize: const Size(0, 48),
                     ),
                   ),
                 ),
@@ -376,7 +383,7 @@ class AppDrawer extends ConsumerWidget {
       padding: const EdgeInsets.only(bottom: 10),
       child: Text(
         'v${packageInfo.version} (${packageInfo.buildNumber})',
-        style: TextStyle(color: Colors.white.withOpacity(0.35), fontSize: 10.5),
+        style: TextStyle(color: Colors.white.withValues(alpha: 0.35), fontSize: 10.5),
       ),
     );
   }
@@ -395,7 +402,7 @@ class _Glow extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: Colors.white.withOpacity(opacity),
+        color: Colors.white.withValues(alpha: opacity),
       ),
     );
   }
@@ -406,7 +413,7 @@ class _GlassDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(height: 1, color: Colors.white.withOpacity(0.08));
+    return Container(height: 1, color: Colors.white.withValues(alpha: 0.08));
   }
 }
 
@@ -422,7 +429,7 @@ class _SectionLabel extends StatelessWidget {
       child: Text(
         text.toUpperCase(),
         style: TextStyle(
-          color: Colors.white.withOpacity(0.38),
+          color: Colors.white.withValues(alpha: 0.38),
           fontSize: 10.5,
           fontWeight: FontWeight.w700,
           letterSpacing: 0.8,
@@ -456,10 +463,10 @@ class _NavTile extends StatelessWidget {
     final tile = Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: isActive ? Colors.white.withOpacity(0.14) : Colors.transparent,
+        color: isActive ? Colors.white.withValues(alpha: 0.14) : Colors.transparent,
         borderRadius: BorderRadius.circular(10),
         border: isActive
-            ? Border.all(color: Colors.white.withOpacity(0.20))
+            ? Border.all(color: Colors.white.withValues(alpha: 0.20))
             : null,
       ),
       child: Row(

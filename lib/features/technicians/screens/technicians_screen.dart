@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_icons.dart';
@@ -9,6 +10,7 @@ import '../../../shared/widgets/delete_confirmation_dialog.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/error_state.dart';
 import '../../../shared/widgets/list_pagination_bar.dart';
+import '../../../shared/widgets/notification_bell_button.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../data/technician_models.dart';
 import '../providers/technicians_provider.dart';
@@ -34,11 +36,10 @@ class TechniciansScreen extends ConsumerWidget {
         backgroundColor: isDark ? AppColors.darkCardBg : Colors.white,
         elevation: 0,
         surfaceTintColor: isDark ? AppColors.darkCardBg : Colors.white,
-        leading: Builder(
-          builder: (ctx) => IconButton(
-            icon: Icon(AppIcons.menu, color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary),
-            onPressed: () => Scaffold.of(ctx).openDrawer(),
-          ),
+        leading: IconButton(
+          icon: Icon(AppIcons.arrowLeft, color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary),
+          onPressed: () => context.go('/dashboard'),
+          tooltip: 'Back',
         ),
         title: Text(
           'Technicians',
@@ -48,6 +49,18 @@ class TechniciansScreen extends ConsumerWidget {
             fontWeight: FontWeight.w700,
           ),
         ),
+        actions: [
+          NotificationBellButton(
+            color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+          ),
+          Builder(
+            builder: (ctx) => IconButton(
+              icon: Icon(AppIcons.menu, color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary),
+              onPressed: () => Scaffold.of(ctx).openDrawer(),
+              tooltip: 'Open menu',
+            ),
+          ),
+        ],
       ),
       drawer: const AppDrawer(currentPath: '/technicians'),
       body: Column(
@@ -117,6 +130,7 @@ class TechniciansScreen extends ConsumerWidget {
                         total: state.total,
                         pageSize: state.pageSize,
                         itemLabel: 'technicians',
+                        endPadding: 86,
                         onPageChange: ref.read(techniciansListProvider.notifier).changePage,
                         onPageSizeChange: ref.read(techniciansListProvider.notifier).changePageSize,
                       ),

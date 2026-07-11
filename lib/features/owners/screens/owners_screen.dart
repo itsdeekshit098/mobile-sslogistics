@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_icons.dart';
@@ -8,6 +9,8 @@ import '../../../shared/widgets/debounced_search_field.dart';
 import '../../../shared/widgets/delete_confirmation_dialog.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/error_state.dart';
+import '../../../shared/widgets/list_pagination_bar.dart';
+import '../../../shared/widgets/notification_bell_button.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../data/owner_models.dart';
 import '../providers/owners_provider.dart';
@@ -33,11 +36,10 @@ class OwnersScreen extends ConsumerWidget {
         backgroundColor: isDark ? AppColors.darkCardBg : Colors.white,
         elevation: 0,
         surfaceTintColor: isDark ? AppColors.darkCardBg : Colors.white,
-        leading: Builder(
-          builder: (ctx) => IconButton(
-            icon: Icon(AppIcons.menu, color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary),
-            onPressed: () => Scaffold.of(ctx).openDrawer(),
-          ),
+        leading: IconButton(
+          icon: Icon(AppIcons.arrowLeft, color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary),
+          onPressed: () => context.go('/dashboard'),
+          tooltip: 'Back',
         ),
         title: Text(
           'Vehicle Owners',
@@ -47,6 +49,18 @@ class OwnersScreen extends ConsumerWidget {
             fontWeight: FontWeight.w700,
           ),
         ),
+        actions: [
+          NotificationBellButton(
+            color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+          ),
+          Builder(
+            builder: (ctx) => IconButton(
+              icon: Icon(AppIcons.menu, color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary),
+              onPressed: () => Scaffold.of(ctx).openDrawer(),
+              tooltip: 'Open menu',
+            ),
+          ),
+        ],
       ),
       drawer: const AppDrawer(currentPath: '/vehicle-owners'),
       body: Column(
@@ -87,23 +101,39 @@ class OwnersScreen extends ConsumerWidget {
                     onAction: canWrite ? () => _showForm(context, ref, null) : null,
                   );
                 }
-                return RefreshIndicator(
-                  onRefresh: () => ref.read(ownersListProvider.notifier).refresh(),
-                  child: ListView.builder(
-                    padding: const EdgeInsets.only(top: 4, bottom: 8),
-                    itemCount: state.owners.length,
-                    itemBuilder: (context, i) {
-                      final owner = state.owners[i];
-                      return OwnerCard(
-                        key: ValueKey(owner.id),
-                        owner: owner,
-                        canManage: canManage,
-                        onTap: canWrite ? () => _showForm(context, ref, owner) : () {},
-                        onEdit: () => _showForm(context, ref, owner),
-                        onDelete: () => _delete(context, ref, owner),
-                      );
-                    },
-                  ),
+                return Column(
+                  children: [
+                    Expanded(
+                      child: RefreshIndicator(
+                        onRefresh: () => ref.read(ownersListProvider.notifier).refresh(),
+                        child: ListView.builder(
+                          padding: const EdgeInsets.only(top: 4, bottom: 8),
+                          itemCount: state.owners.length,
+                          itemBuilder: (context, i) {
+                            final owner = state.owners[i];
+                            return OwnerCard(
+                              key: ValueKey(owner.id),
+                              owner: owner,
+                              canManage: canManage,
+                              onTap: canWrite ? () => _showForm(context, ref, owner) : () {},
+                              onEdit: () => _showForm(context, ref, owner),
+                              onDelete: () => _delete(context, ref, owner),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                    ListPaginationBar(
+                      page: state.page,
+                      totalPages: state.totalPages,
+                      total: state.total,
+                      pageSize: state.pageSize,
+                      itemLabel: 'owners',
+                      endPadding: 86,
+                      onPageChange: ref.read(ownersListProvider.notifier).changePage,
+                      onPageSizeChange: ref.read(ownersListProvider.notifier).changePageSize,
+                    ),
+                  ],
                 );
               },
             ),

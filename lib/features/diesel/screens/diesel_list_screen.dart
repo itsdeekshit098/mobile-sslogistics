@@ -6,18 +6,18 @@ import 'package:intl/intl.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../features/auth/providers/auth_provider.dart';
-import '../../../features/notifications/providers/notification_provider.dart';
 import '../../../shared/widgets/app_drawer.dart';
 import '../../../shared/widgets/loading_spinner.dart';
 import '../../../shared/widgets/error_state.dart';
+import '../../../shared/widgets/notification_bell_button.dart';
 import '../providers/diesel_provider.dart';
 import '../widgets/diesel_card.dart';
 import '../widgets/diesel_filter_bar.dart';
-import '../widgets/diesel_pagination_bar.dart';
+import '../../../shared/widgets/list_pagination_bar.dart';
 import '../widgets/create_diesel_sheet.dart';
 import '../widgets/diesel_detail_sheet.dart';
 import '../widgets/edit_diesel_sheet.dart';
-import '../widgets/delete_confirm_dialog.dart';
+import '../../../shared/widgets/delete_confirmation_dialog.dart';
 import '../data/diesel_models.dart';
 
 class DieselListScreen extends ConsumerStatefulWidget {
@@ -48,8 +48,6 @@ class _DieselListScreenState extends ConsumerState<DieselListScreen> {
     final user = ref.watch(authProvider).valueOrNull;
     final listAsync = ref.watch(dieselListProvider);
     final selectedVehicleId = listAsync.valueOrNull?.selectedVehicleId;
-    final unreadCount =
-        ref.watch(notificationListProvider).valueOrNull?.unreadCount ?? 0;
 
     return Scaffold(
       backgroundColor: AppColors.pageBg,
@@ -57,11 +55,10 @@ class _DieselListScreenState extends ConsumerState<DieselListScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         surfaceTintColor: Colors.white,
-        leading: Builder(
-          builder: (ctx) => IconButton(
-            icon: const Icon(AppIcons.menu, color: AppColors.textPrimary),
-            onPressed: () => Scaffold.of(ctx).openDrawer(),
-          ),
+        leading: IconButton(
+          icon: const Icon(AppIcons.arrowLeft, color: AppColors.textPrimary),
+          onPressed: () => context.go('/dashboard'),
+          tooltip: 'Back',
         ),
         title: const Text(
           'Diesel Records',
@@ -72,39 +69,12 @@ class _DieselListScreenState extends ConsumerState<DieselListScreen> {
           ),
         ),
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                IconButton(
-                  icon: const Icon(AppIcons.bell, color: AppColors.textPrimary),
-                  onPressed: () => context.push('/notifications'),
-                ),
-                if (unreadCount > 0)
-                  Positioned(
-                    top: 6,
-                    right: 6,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                      constraints: const BoxConstraints(minWidth: 16),
-                      decoration: BoxDecoration(
-                        color: Colors.red,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.white, width: 1.5),
-                      ),
-                      child: Text(
-                        unreadCount > 99 ? '99+' : '$unreadCount',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 9,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
+          const NotificationBellButton(color: AppColors.textPrimary),
+          Builder(
+            builder: (ctx) => IconButton(
+              icon: const Icon(AppIcons.menu, color: AppColors.textPrimary),
+              onPressed: () => Scaffold.of(ctx).openDrawer(),
+              tooltip: 'Open menu',
             ),
           ),
         ],
@@ -165,11 +135,19 @@ class _DieselListScreenState extends ConsumerState<DieselListScreen> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           const Divider(height: 1, color: AppColors.border),
-                          DieselPaginationBar(
-                            state: state,
+                          ListPaginationBar(
+                            page: state.page,
+                            totalPages: state.totalPages,
+                            total: state.total,
+                            pageSize: state.pageSize,
+                            itemLabel: 'records',
+                            endPadding: 96,
                             onPageChange: (page) => ref
                                 .read(dieselListProvider.notifier)
                                 .changePage(page),
+                            onPageSizeChange: (size) => ref
+                                .read(dieselListProvider.notifier)
+                                .changePageSize(size),
                           ),
                         ],
                       ),
@@ -262,33 +240,19 @@ class _DieselListScreenState extends ConsumerState<DieselListScreen> {
 
     showDialog(
       context: context,
-      builder: (_) => DeleteConfirmDialog(
-        vehiclePlate: record.vehiclePlate,
-        date: dateStr,
-        driverName: record.driverName,
-        fuelLitres: record.fuelLitres,
-        onConfirm: () async {
-          try {
-            await ref.read(dieselListProvider.notifier).deleteRecord(record.id);
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Record deleted'),
-                  backgroundColor: AppColors.success,
-                ),
-              );
-            }
-          } catch (e) {
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(e.toString().replaceFirst('Exception: ', '')),
-                  backgroundColor: AppColors.error,
-                ),
-              );
-            }
-          }
+      builder: (_) => DeleteConfirmationDialog(
+        title: 'Delete Record',
+        targetName: '$dateStr - ${record.vehiclePlate}',
+        details: {
+          'Date': dateStr,
+          'Vehicle': record.vehiclePlate,
+          'Driver': record.driverName,
+          'Fuel': '${record.fuelLitres.toStringAsFixed(1)} L',
         },
+        warningText: 'This action cannot be undone.',
+        warningSubtext: 'The diesel record will be permanently removed.',
+        onConfirm: () =>
+            ref.read(dieselListProvider.notifier).deleteRecord(record.id),
       ),
     );
   }

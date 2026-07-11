@@ -31,6 +31,9 @@ dependencies:
   # Date/number formatting
   intl: ^0.20.2
 
+  # Disk-cached network images (vehicle logos)
+  cached_network_image: ^3.4.1
+
   # Cookie jar storage path resolution
   path_provider: ^2.1.0
   file_picker: ^11.0.2
