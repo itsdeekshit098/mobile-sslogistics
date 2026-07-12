@@ -14,9 +14,10 @@ class DieselFilterBar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final vehiclesAsync = ref.watch(vehiclesProvider);
     final listState = ref.watch(dieselListProvider).valueOrNull;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
-      color: AppColors.pageBg,
+      color: isDark ? AppColors.darkPageBg : AppColors.pageBg,
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
       child: vehiclesAsync.when(
         loading: () => const _FilterSkeleton(),
@@ -53,9 +54,14 @@ class _FilterButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bgColor = Colors.white;
-    final borderColor = active ? AppColors.primary : AppColors.border;
-    final textColor = active ? AppColors.primary : AppColors.textSecondary;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? AppColors.darkCardBg : Colors.white;
+    final borderColor = active
+        ? AppColors.primary
+        : (isDark ? AppColors.darkBorder : AppColors.border);
+    final secondaryColor =
+        isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
+    final textColor = active ? AppColors.primary : secondaryColor;
 
     return GestureDetector(
       onTap: onTap,
@@ -69,7 +75,7 @@ class _FilterButton extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(icon, size: 22, color: AppColors.textSecondary),
+            Icon(icon, size: 22, color: secondaryColor),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
@@ -86,7 +92,7 @@ class _FilterButton extends StatelessWidget {
             Icon(
               Icons.keyboard_arrow_down_rounded,
               size: 24,
-              color: AppColors.textPrimary,
+              color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
             ),
           ],
         ),
@@ -181,13 +187,17 @@ class _VehiclePickerSheetState extends State<_VehiclePickerSheet> {
     final media = MediaQuery.of(context);
     final keyboardHeight = media.viewInsets.bottom;
     final maxListHeight = (media.size.height - keyboardHeight) * 0.42;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final borderColor = isDark ? AppColors.darkBorder : AppColors.border;
+    final secondaryColor =
+        isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
 
     return AnimatedPadding(
       duration: const Duration(milliseconds: 180),
       curve: Curves.easeOut,
       padding: EdgeInsets.only(bottom: keyboardHeight),
       child: Material(
-        color: Colors.white,
+        color: isDark ? AppColors.darkCardBg : Colors.white,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         child: SafeArea(
           top: false,
@@ -200,7 +210,7 @@ class _VehiclePickerSheetState extends State<_VehiclePickerSheet> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.border,
+                  color: borderColor,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -220,7 +230,9 @@ class _VehiclePickerSheetState extends State<_VehiclePickerSheet> {
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
+                        color: isDark
+                            ? AppColors.darkTextPrimary
+                            : AppColors.textPrimary,
                       ),
                     ),
                     const Spacer(),
@@ -238,18 +250,18 @@ class _VehiclePickerSheetState extends State<_VehiclePickerSheet> {
                     prefixIcon: const Icon(Icons.search_rounded, size: 20),
                     isDense: true,
                     filled: true,
-                    fillColor: AppColors.pageBg,
+                    fillColor: isDark ? AppColors.darkPageBg : AppColors.pageBg,
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 12,
                       vertical: 12,
                     ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.border),
+                      borderSide: BorderSide(color: borderColor),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.border),
+                      borderSide: BorderSide(color: borderColor),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -266,23 +278,23 @@ class _VehiclePickerSheetState extends State<_VehiclePickerSheet> {
                   maxHeight: maxListHeight.clamp(160.0, 420.0),
                 ),
                 child: filtered.isEmpty
-                    ? const Center(
+                    ? Center(
                         child: Padding(
-                          padding: EdgeInsets.symmetric(vertical: 32),
+                          padding: const EdgeInsets.symmetric(vertical: 32),
                           child: Text(
                             'No vehicles found',
-                            style: TextStyle(color: AppColors.textSecondary),
+                            style: TextStyle(color: secondaryColor),
                           ),
                         ),
                       )
                     : ListView.separated(
                         shrinkWrap: true,
                         itemCount: filtered.length,
-                        separatorBuilder: (_, _) => const Divider(
+                        separatorBuilder: (_, _) => Divider(
                           height: 1,
                           indent: 16,
                           endIndent: 16,
-                          color: AppColors.border,
+                          color: borderColor,
                         ),
                         itemBuilder: (_, i) {
                           final v = filtered[i];
@@ -322,6 +334,7 @@ class _PickerItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return ListTile(
       dense: true,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
@@ -330,15 +343,19 @@ class _PickerItem extends StatelessWidget {
         style: TextStyle(
           fontSize: 14,
           fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-          color: isSelected ? AppColors.primary : AppColors.textPrimary,
+          color: isSelected
+              ? AppColors.primary
+              : (isDark ? AppColors.darkTextPrimary : AppColors.textPrimary),
         ),
       ),
       subtitle: subtitle != null && subtitle!.isNotEmpty
           ? Text(
               subtitle!,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
-                color: AppColors.textSecondary,
+                color: isDark
+                    ? AppColors.darkTextSecondary
+                    : AppColors.textSecondary,
               ),
             )
           : null,
@@ -357,10 +374,11 @@ class _FilterSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       height: 40,
       decoration: BoxDecoration(
-        color: AppColors.border,
+        color: isDark ? AppColors.darkBorder : AppColors.border,
         borderRadius: BorderRadius.circular(8),
       ),
     );

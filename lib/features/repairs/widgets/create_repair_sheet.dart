@@ -519,6 +519,7 @@ class _VehiclePickerSheetState extends State<VehiclePickerSheet> {
   @override
   Widget build(BuildContext context) {
     final filtered = _filtered;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return PickerShell(
       title: 'Select vehicle (${widget.vehicles.length})',
       searchHint: 'Search vehicle number, make, model',
@@ -529,12 +530,12 @@ class _VehiclePickerSheetState extends State<VehiclePickerSheet> {
         final selected = widget.selected?.id == v.id;
         return ListTile(
           dense: true,
-          leading: const Icon(AppIcons.truck, color: AppColors.textSecondary),
+          leading: Icon(AppIcons.truck, color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
           title: Text(
             v.plateNumber,
             style: TextStyle(
               fontWeight: selected ? FontWeight.w700 : FontWeight.w400,
-              color: selected ? AppColors.primary : AppColors.textPrimary,
+              color: selected ? AppColors.primary : (isDark ? AppColors.darkTextPrimary : AppColors.textPrimary),
             ),
           ),
           subtitle: [v.make, v.model].whereType<String>().join(' ').isEmpty
@@ -573,6 +574,8 @@ class _TechnicianPickerSheetState extends State<TechnicianPickerSheet> {
   @override
   Widget build(BuildContext context) {
     final filtered = _filtered;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final mutedColor = isDark ? AppColors.darkTextMuted : AppColors.textMuted;
     return PickerShell(
       title: 'Select technician',
       searchHint: 'Search name, specialization',
@@ -584,16 +587,17 @@ class _TechnicianPickerSheetState extends State<TechnicianPickerSheet> {
         return ListTile(
           dense: true,
           enabled: t.isActive,
-          leading: Icon(AppIcons.userCog, color: t.isActive ? AppColors.textSecondary : AppColors.textMuted),
+          leading: Icon(AppIcons.userCog,
+              color: t.isActive ? (isDark ? AppColors.darkTextSecondary : AppColors.textSecondary) : mutedColor),
           title: Text(
             t.isActive ? t.name : '${t.name} (inactive)',
             style: TextStyle(
               fontWeight: selected ? FontWeight.w700 : FontWeight.w400,
               color: !t.isActive
-                  ? AppColors.textMuted
+                  ? mutedColor
                   : selected
                       ? AppColors.primary
-                      : AppColors.textPrimary,
+                      : (isDark ? AppColors.darkTextPrimary : AppColors.textPrimary),
             ),
           ),
           subtitle: t.specializations.isNotEmpty ? Text(t.specializations.join(', ')) : null,
@@ -701,9 +705,11 @@ class _IssuesPickerSheetState extends ConsumerState<IssuesPickerSheet> {
               ConstrainedBox(
                 constraints: const BoxConstraints(maxHeight: 320),
                 child: _options.isEmpty
-                    ? const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 16),
-                        child: Text('No issue options yet', style: TextStyle(color: AppColors.textSecondary)),
+                    ? Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        child: Text('No issue options yet',
+                            style: TextStyle(
+                                color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary)),
                       )
                     : ListView.builder(
                         shrinkWrap: true,
@@ -779,13 +785,15 @@ class PickerShell extends StatelessWidget {
     final media = MediaQuery.of(context);
     final keyboardHeight = media.viewInsets.bottom;
     final maxListHeight = (media.size.height - keyboardHeight) * 0.42;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final borderColor = isDark ? AppColors.darkBorder : AppColors.border;
 
     return AnimatedPadding(
       duration: const Duration(milliseconds: 180),
       curve: Curves.easeOut,
       padding: EdgeInsets.only(bottom: keyboardHeight),
       child: Material(
-        color: Colors.white,
+        color: isDark ? AppColors.darkCardBg : Colors.white,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         child: SafeArea(
           top: false,
@@ -796,7 +804,7 @@ class PickerShell extends StatelessWidget {
               Container(
                 width: 40,
                 height: 4,
-                decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)),
+                decoration: BoxDecoration(color: borderColor, borderRadius: BorderRadius.circular(2)),
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
@@ -804,7 +812,10 @@ class PickerShell extends StatelessWidget {
                   alignment: Alignment.centerLeft,
                   child: Text(
                     title,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary),
                   ),
                 ),
               ),
@@ -818,11 +829,11 @@ class PickerShell extends StatelessWidget {
                     prefixIcon: const Icon(Icons.search_rounded, size: 20),
                     isDense: true,
                     filled: true,
-                    fillColor: AppColors.pageBg,
+                    fillColor: isDark ? AppColors.darkPageBg : AppColors.pageBg,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.border),
+                      borderSide: BorderSide(color: borderColor),
                     ),
                   ),
                 ),
@@ -832,7 +843,9 @@ class PickerShell extends StatelessWidget {
                 child: itemCount == 0
                     ? Padding(
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        child: Text(emptyLabel, style: const TextStyle(color: AppColors.textSecondary)),
+                        child: Text(emptyLabel,
+                            style: TextStyle(
+                                color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary)),
                       )
                     : ListView.builder(shrinkWrap: true, itemCount: itemCount, itemBuilder: itemBuilder),
               ),

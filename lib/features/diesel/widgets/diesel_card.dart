@@ -30,6 +30,7 @@ class DieselCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final fillDate = DateTime.tryParse(record.fillDate)?.toLocal();
     final dateStr = fillDate != null
         ? _dateFormat.format(fillDate)
@@ -48,10 +49,13 @@ class DieselCard extends StatelessWidget {
       elevation: 2,
       shadowColor: Colors.black.withValues(alpha: 0.12),
       surfaceTintColor: Colors.transparent,
-      color: Colors.white,
+      color: isDark ? AppColors.darkCardBg : Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(14),
-        side: const BorderSide(color: AppColors.border, width: 0.8),
+        side: BorderSide(
+          color: isDark ? AppColors.darkBorder : AppColors.border,
+          width: 0.8,
+        ),
       ),
       child: InkWell(
         onTap: onTap,
@@ -112,6 +116,7 @@ class DieselCard extends StatelessWidget {
                         mileageColor: _kmlColor(
                           record.kml,
                           record.expectedKml,
+                          isDark,
                         ),
                       ),
                     ],
@@ -125,9 +130,9 @@ class DieselCard extends StatelessWidget {
     );
   }
 
-  Color _kmlColor(double? kml, double? expected) {
+  Color _kmlColor(double? kml, double? expected, bool isDark) {
     if (kml == null || expected == null || expected == 0) {
-      return AppColors.textPrimary;
+      return isDark ? AppColors.darkTextPrimary : AppColors.textPrimary;
     }
     return kml >= expected ? AppColors.success : AppColors.error;
   }
@@ -164,6 +169,12 @@ class _RecordHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor =
+        isDark ? AppColors.darkTextPrimary : AppColors.textPrimary;
+    final secondaryColor =
+        isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
+    final mutedColor = isDark ? AppColors.darkTextMuted : AppColors.textMuted;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -177,40 +188,33 @@ class _RecordHeader extends StatelessWidget {
                 date,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w800,
-                  color: AppColors.textPrimary,
+                  color: primaryColor,
                 ),
               ),
               if (time.isNotEmpty) ...[
                 const SizedBox(height: 2),
                 Text(
                   time,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    color: AppColors.textSecondary,
-                  ),
+                  style: TextStyle(fontSize: 15, color: secondaryColor),
                 ),
               ],
               const SizedBox(height: 10),
               Row(
                 children: [
-                  const Icon(
-                    AppIcons.user,
-                    size: 18,
-                    color: AppColors.textMuted,
-                  ),
+                  Icon(AppIcons.user, size: 18, color: mutedColor),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       driverName,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.textSecondary,
+                        color: secondaryColor,
                       ),
                     ),
                   ),
@@ -228,19 +232,17 @@ class _RecordHeader extends StatelessWidget {
               children: [
                 Text(
                   'Cycle #$cycleId',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
+                    color: primaryColor,
                   ),
                 ),
                 const SizedBox(width: 4),
                 Icon(
                   AppIcons.chevronRight,
                   size: 24,
-                  color: onTap != null
-                      ? AppColors.textPrimary
-                      : AppColors.textMuted,
+                  color: onTap != null ? primaryColor : mutedColor,
                 ),
               ],
             ),
@@ -291,12 +293,14 @@ class _PrimaryMetricsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final borderColor = isDark ? AppColors.darkBorder : AppColors.border;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       decoration: BoxDecoration(
-        color: AppColors.pageBg,
+        color: isDark ? AppColors.darkPageBg : AppColors.pageBg,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: borderColor),
       ),
       child: IntrinsicHeight(
         child: Row(
@@ -309,11 +313,13 @@ class _PrimaryMetricsRow extends StatelessWidget {
                 label: 'This Fill',
               ),
             ),
-            const VerticalDivider(color: AppColors.border, width: 22),
+            VerticalDivider(color: borderColor, width: 22),
             Expanded(
               child: _MetricSummaryItem(
                 icon: AppIcons.gauge,
-                iconColor: AppColors.textPrimary,
+                iconColor: isDark
+                    ? AppColors.darkTextPrimary
+                    : AppColors.textPrimary,
                 value: odometer,
                 label: 'Odometer',
               ),
@@ -340,6 +346,7 @@ class _MetricSummaryItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -355,10 +362,12 @@ class _MetricSummaryItem extends StatelessWidget {
                 alignment: Alignment.centerLeft,
                 child: Text(
                   value,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 19,
                     fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
+                    color: isDark
+                        ? AppColors.darkTextPrimary
+                        : AppColors.textPrimary,
                   ),
                 ),
               ),
@@ -366,9 +375,11 @@ class _MetricSummaryItem extends StatelessWidget {
                 label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13,
-                  color: AppColors.textSecondary,
+                  color: isDark
+                      ? AppColors.darkTextSecondary
+                      : AppColors.textSecondary,
                 ),
               ),
             ],
@@ -480,6 +491,10 @@ class _CycleSummaryBand extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final borderColor = isDark ? AppColors.darkBorder : AppColors.border;
+    final secondaryColor =
+        isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
@@ -499,17 +514,17 @@ class _CycleSummaryBand extends StatelessWidget {
                 label: 'Total Fuel',
               ),
             ),
-            const VerticalDivider(color: AppColors.border, width: 12),
+            VerticalDivider(color: borderColor, width: 12),
             Expanded(
               child: _SummaryItem(
                 icon: Icons.route_outlined,
-                iconColor: AppColors.textSecondary,
+                iconColor: secondaryColor,
                 value: cycleDistance,
                 label: 'Total Distance',
               ),
             ),
             if (mileage != null) ...[
-              const VerticalDivider(color: AppColors.border, width: 12),
+              VerticalDivider(color: borderColor, width: 12),
               Expanded(
                 child: _SummaryItem(
                   icon: AppIcons.trendingUp,
@@ -541,6 +556,9 @@ class _SummaryItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final secondaryColor =
+        isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -561,7 +579,7 @@ class _SummaryItem extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w800,
-                    color: iconColor == AppColors.textSecondary
+                    color: iconColor == secondaryColor
                         ? AppColors.success
                         : iconColor,
                   ),
@@ -571,10 +589,10 @@ class _SummaryItem extends StatelessWidget {
                 label,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 10.5,
                   height: 1.15,
-                  color: AppColors.textSecondary,
+                  color: secondaryColor,
                 ),
               ),
             ],
@@ -647,6 +665,10 @@ class _ExpandableNotesState extends State<_ExpandableNotes> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final mutedColor = isDark ? AppColors.darkTextMuted : AppColors.textMuted;
+    final secondaryColor =
+        isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
     return Padding(
       padding: const EdgeInsets.only(top: 4),
       child: Column(
@@ -654,17 +676,13 @@ class _ExpandableNotesState extends State<_ExpandableNotes> {
         children: [
           Row(
             children: [
-              const Icon(
-                Icons.notes_rounded,
-                size: 13,
-                color: AppColors.textMuted,
-              ),
+              Icon(Icons.notes_rounded, size: 13, color: mutedColor),
               const SizedBox(width: 6),
-              const SizedBox(
+              SizedBox(
                 width: 52,
                 child: Text(
                   'Notes',
-                  style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+                  style: TextStyle(fontSize: 11, color: mutedColor),
                 ),
               ),
               Expanded(
@@ -677,17 +695,11 @@ class _ExpandableNotesState extends State<_ExpandableNotes> {
                     widget.notes,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textSecondary,
-                    ),
+                    style: TextStyle(fontSize: 12, color: secondaryColor),
                   ),
                   secondChild: Text(
                     widget.notes,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textSecondary,
-                    ),
+                    style: TextStyle(fontSize: 12, color: secondaryColor),
                   ),
                 ),
               ),

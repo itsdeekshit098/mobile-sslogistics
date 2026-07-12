@@ -569,13 +569,14 @@ class _SearchAddSheetState extends State<_SearchAddSheet> {
     final media = MediaQuery.of(context);
     final keyboardHeight = media.viewInsets.bottom;
     final maxListHeight = (media.size.height - keyboardHeight) * 0.42;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return AnimatedPadding(
       duration: const Duration(milliseconds: 180),
       curve: Curves.easeOut,
       padding: EdgeInsets.only(bottom: keyboardHeight),
       child: Material(
-        color: Colors.white,
+        color: isDark ? AppColors.darkCardBg : Colors.white,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         child: SafeArea(
           top: false,
@@ -586,30 +587,38 @@ class _SearchAddSheetState extends State<_SearchAddSheet> {
               Container(
                 width: 40,
                 height: 4,
-                decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)),
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.darkBorder : AppColors.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
                 child: Text(
                   widget.title,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                  ),
                 ),
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                 child: TextField(
                   autofocus: true,
+                  style: TextStyle(color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary),
                   onChanged: (v) => setState(() => _query = v),
                   decoration: InputDecoration(
                     hintText: 'Search or type a new name',
                     prefixIcon: const Icon(Icons.search_rounded, size: 20),
                     isDense: true,
                     filled: true,
-                    fillColor: AppColors.pageBg,
+                    fillColor: isDark ? AppColors.darkPageBg : AppColors.pageBg,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.border),
+                      borderSide: BorderSide(color: isDark ? AppColors.darkBorder : AppColors.border),
                     ),
                   ),
                 ),
@@ -617,9 +626,14 @@ class _SearchAddSheetState extends State<_SearchAddSheet> {
               ConstrainedBox(
                 constraints: BoxConstraints(maxHeight: maxListHeight.clamp(160.0, 420.0)),
                 child: filtered.isEmpty
-                    ? const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 16),
-                        child: Text('No matches', style: TextStyle(color: AppColors.textSecondary)),
+                    ? Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        child: Text(
+                          'No matches',
+                          style: TextStyle(
+                            color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                          ),
+                        ),
                       )
                     : ListView.builder(
                         shrinkWrap: true,
@@ -633,7 +647,9 @@ class _SearchAddSheetState extends State<_SearchAddSheet> {
                               o,
                               style: TextStyle(
                                 fontWeight: selected ? FontWeight.w700 : FontWeight.w400,
-                                color: selected ? AppColors.primary : AppColors.textPrimary,
+                                color: selected
+                                    ? AppColors.primary
+                                    : (isDark ? AppColors.darkTextPrimary : AppColors.textPrimary),
                               ),
                             ),
                             trailing: selected ? const Icon(Icons.check_rounded, color: AppColors.primary) : null,
@@ -697,13 +713,14 @@ class _VendorPickerSheetState extends State<_VendorPickerSheet> {
     final media = MediaQuery.of(context);
     final keyboardHeight = media.viewInsets.bottom;
     final maxListHeight = (media.size.height - keyboardHeight) * 0.42;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return AnimatedPadding(
       duration: const Duration(milliseconds: 180),
       curve: Curves.easeOut,
       padding: EdgeInsets.only(bottom: keyboardHeight),
       child: Material(
-        color: Colors.white,
+        color: isDark ? AppColors.darkCardBg : Colors.white,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         child: SafeArea(
           top: false,
@@ -714,15 +731,22 @@ class _VendorPickerSheetState extends State<_VendorPickerSheet> {
               Container(
                 width: 40,
                 height: 4,
-                decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)),
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.darkBorder : AppColors.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
-              const Padding(
-                padding: EdgeInsets.fromLTRB(16, 14, 16, 8),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
                     'Select vendor',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                    ),
                   ),
                 ),
               ),
@@ -730,17 +754,18 @@ class _VendorPickerSheetState extends State<_VendorPickerSheet> {
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                 child: TextField(
                   autofocus: true,
+                  style: TextStyle(color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary),
                   onChanged: (v) => setState(() => _query = v),
                   decoration: InputDecoration(
                     hintText: 'Search vendor name, location',
                     prefixIcon: const Icon(Icons.search_rounded, size: 20),
                     isDense: true,
                     filled: true,
-                    fillColor: AppColors.pageBg,
+                    fillColor: isDark ? AppColors.darkPageBg : AppColors.pageBg,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.border),
+                      borderSide: BorderSide(color: isDark ? AppColors.darkBorder : AppColors.border),
                     ),
                   ),
                 ),
@@ -748,9 +773,14 @@ class _VendorPickerSheetState extends State<_VendorPickerSheet> {
               ConstrainedBox(
                 constraints: BoxConstraints(maxHeight: maxListHeight.clamp(160.0, 420.0)),
                 child: filtered.isEmpty
-                    ? const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 16),
-                        child: Text('No vendors found', style: TextStyle(color: AppColors.textSecondary)),
+                    ? Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        child: Text(
+                          'No vendors found',
+                          style: TextStyle(
+                            color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                          ),
+                        ),
                       )
                     : ListView.builder(
                         shrinkWrap: true,
@@ -764,10 +794,19 @@ class _VendorPickerSheetState extends State<_VendorPickerSheet> {
                               v.name,
                               style: TextStyle(
                                 fontWeight: selected ? FontWeight.w700 : FontWeight.w400,
-                                color: selected ? AppColors.primary : AppColors.textPrimary,
+                                color: selected
+                                    ? AppColors.primary
+                                    : (isDark ? AppColors.darkTextPrimary : AppColors.textPrimary),
                               ),
                             ),
-                            subtitle: v.location != null ? Text(v.location!) : null,
+                            subtitle: v.location != null
+                                ? Text(
+                                    v.location!,
+                                    style: TextStyle(
+                                      color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                                    ),
+                                  )
+                                : null,
                             trailing: selected ? const Icon(Icons.check_rounded, color: AppColors.primary) : null,
                             onTap: () => Navigator.pop(context, v),
                           );

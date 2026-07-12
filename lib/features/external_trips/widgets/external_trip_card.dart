@@ -42,6 +42,7 @@ class ExternalTripCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final accent = tripTypeColor(trip.tripType);
     final hasRoute = (trip.fromLocation?.isNotEmpty ?? false) ||
         (trip.toLocation?.isNotEmpty ?? false);
@@ -51,10 +52,13 @@ class ExternalTripCard extends StatelessWidget {
       elevation: 2,
       shadowColor: Colors.black.withValues(alpha: 0.12),
       surfaceTintColor: Colors.transparent,
-      color: Colors.white,
+      color: isDark ? AppColors.darkCardBg : Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(14),
-        side: const BorderSide(color: AppColors.border, width: 0.8),
+        side: BorderSide(
+          color: isDark ? AppColors.darkBorder : AppColors.border,
+          width: 0.8,
+        ),
       ),
       child: InkWell(
         onTap: onTap,
@@ -88,10 +92,12 @@ class ExternalTripCard extends StatelessWidget {
                                 trip.vehicleNumber,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.w800,
-                                  color: AppColors.textPrimary,
+                                  color: isDark
+                                      ? AppColors.darkTextPrimary
+                                      : AppColors.textPrimary,
                                 ),
                               ),
                               const SizedBox(height: 6),
@@ -126,8 +132,12 @@ class ExternalTripCard extends StatelessWidget {
                               AppIcons.chevronRight,
                               size: 24,
                               color: onTap != null
-                                  ? AppColors.textPrimary
-                                  : AppColors.textMuted,
+                                  ? (isDark
+                                      ? AppColors.darkTextPrimary
+                                      : AppColors.textPrimary)
+                                  : (isDark
+                                      ? AppColors.darkTextMuted
+                                      : AppColors.textMuted),
                             ),
                             if (canManage) ...[
                               const SizedBox(height: 12),
@@ -203,19 +213,26 @@ class _InfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
       children: [
-        Icon(icon, size: 15, color: AppColors.textMuted),
+        Icon(
+          icon,
+          size: 15,
+          color: isDark ? AppColors.darkTextMuted : AppColors.textMuted,
+        ),
         const SizedBox(width: 7),
         Expanded(
           child: Text(
             text,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 13.5,
               fontWeight: FontWeight.w600,
-              color: AppColors.textSecondary,
+              color: isDark
+                  ? AppColors.darkTextSecondary
+                  : AppColors.textSecondary,
             ),
           ),
         ),
@@ -237,13 +254,17 @@ class _MoneyBand extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final profitColor = profit >= 0 ? AppColors.success : AppColors.error;
+    final borderColor = isDark ? AppColors.darkBorder : AppColors.border;
+    final primaryTextColor =
+        isDark ? AppColors.darkTextPrimary : AppColors.textPrimary;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
       decoration: BoxDecoration(
-        color: AppColors.pageBg,
+        color: isDark ? AppColors.darkPageBg : AppColors.pageBg,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: borderColor),
       ),
       child: IntrinsicHeight(
         child: Row(
@@ -252,18 +273,18 @@ class _MoneyBand extends StatelessWidget {
               child: _MoneyItem(
                 label: 'Cost',
                 value: formatMoney(cost),
-                color: AppColors.textPrimary,
+                color: primaryTextColor,
               ),
             ),
-            const VerticalDivider(color: AppColors.border, width: 18),
+            VerticalDivider(color: borderColor, width: 18),
             Expanded(
               child: _MoneyItem(
                 label: 'Received',
                 value: formatMoney(received),
-                color: AppColors.textPrimary,
+                color: primaryTextColor,
               ),
             ),
-            const VerticalDivider(color: AppColors.border, width: 18),
+            VerticalDivider(color: borderColor, width: 18),
             Expanded(
               child: _MoneyItem(
                 label: 'Profit',
@@ -313,9 +334,11 @@ class _MoneyItem extends StatelessWidget {
           label,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 11,
-            color: AppColors.textSecondary,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? AppColors.darkTextSecondary
+                : AppColors.textSecondary,
           ),
         ),
       ],

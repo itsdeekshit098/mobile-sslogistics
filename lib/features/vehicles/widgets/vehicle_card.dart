@@ -283,15 +283,17 @@ class _VehicleVisual extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    // Vehicle thumbnails (asset + uploaded logos) are photos on an opaque
+    // white background, so the frame stays white in both themes to avoid
+    // a visible seam around the image.
     return Container(
       width: 96,
       height: 96,
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkCardBg : Colors.white,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.border),
+        border: Border.all(color: AppColors.border),
       ),
       child: Padding(
         padding: const EdgeInsets.all(8.0),

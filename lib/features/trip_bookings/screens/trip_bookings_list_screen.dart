@@ -46,27 +46,32 @@ class _TripBookingsListScreenState extends ConsumerState<TripBookingsListScreen>
     final canCreate = (user?.isAdmin ?? false) || (user?.isStaff ?? false);
     final canComplete = canCreate;
     final canManage = user?.isAdmin ?? false;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: AppColors.pageBg,
+      backgroundColor: isDark ? AppColors.darkPageBg : AppColors.pageBg,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: isDark ? AppColors.darkCardBg : Colors.white,
         elevation: 0,
-        surfaceTintColor: Colors.white,
+        surfaceTintColor: isDark ? AppColors.darkCardBg : Colors.white,
         leading: IconButton(
-          icon: const Icon(AppIcons.arrowLeft, color: AppColors.textPrimary),
+          icon: Icon(AppIcons.arrowLeft, color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary),
           onPressed: () => context.go('/dashboard'),
           tooltip: 'Back',
         ),
-        title: const Text(
+        title: Text(
           'Trip Bookings',
-          style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700),
+          style: TextStyle(
+            color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+          ),
         ),
         actions: [
-          const NotificationBellButton(color: AppColors.textPrimary),
+          NotificationBellButton(color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary),
           Builder(
             builder: (ctx) => IconButton(
-              icon: const Icon(AppIcons.menu, color: AppColors.textPrimary),
+              icon: Icon(AppIcons.menu, color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary),
               onPressed: () => Scaffold.of(ctx).openDrawer(),
               tooltip: 'Open menu',
             ),
@@ -315,13 +320,14 @@ class _SummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isDark ? AppColors.darkCardBg : Colors.white,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.border),
+          border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.border),
         ),
         child: Column(
           children: [
@@ -338,7 +344,10 @@ class _SummaryCard extends StatelessWidget {
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 10.5, color: AppColors.textSecondary),
+              style: TextStyle(
+                fontSize: 10.5,
+                color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+              ),
             ),
           ],
         ),

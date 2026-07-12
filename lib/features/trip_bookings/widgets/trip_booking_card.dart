@@ -72,6 +72,7 @@ class TripBookingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final overdue = isBookingOverdue(booking);
     final today = isBookingToday(booking);
     final accent = overdue
@@ -91,14 +92,14 @@ class TripBookingCard extends StatelessWidget {
       elevation: 2,
       shadowColor: Colors.black.withValues(alpha: 0.12),
       surfaceTintColor: Colors.transparent,
-      color: Colors.white,
+      color: isDark ? AppColors.darkCardBg : Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(14),
         side: overdue
             ? BorderSide(color: AppColors.error.withValues(alpha: 0.4), width: 1.2)
             : today
                 ? BorderSide(color: AppColors.warning.withValues(alpha: 0.4), width: 1.2)
-                : const BorderSide(color: AppColors.border, width: 0.8),
+                : BorderSide(color: isDark ? AppColors.darkBorder : AppColors.border, width: 0.8),
       ),
       child: InkWell(
         onTap: onTap,
@@ -141,10 +142,10 @@ class TripBookingCard extends StatelessWidget {
                                 booking.customerName,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.w800,
-                                  color: AppColors.textPrimary,
+                                  color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                                 ),
                               ),
                               if (booking.customerPhone != null &&
@@ -169,7 +170,9 @@ class TripBookingCard extends StatelessWidget {
                         Icon(
                           AppIcons.chevronRight,
                           size: 24,
-                          color: onTap != null ? AppColors.textPrimary : AppColors.textMuted,
+                          color: onTap != null
+                              ? (isDark ? AppColors.darkTextPrimary : AppColors.textPrimary)
+                              : (isDark ? AppColors.darkTextMuted : AppColors.textMuted),
                         ),
                       ],
                     ),
@@ -273,19 +276,20 @@ class _InfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
       children: [
-        Icon(icon, size: 15, color: AppColors.textMuted),
+        Icon(icon, size: 15, color: isDark ? AppColors.darkTextMuted : AppColors.textMuted),
         const SizedBox(width: 7),
         Expanded(
           child: Text(
             text,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 13.5,
               fontWeight: FontWeight.w600,
-              color: AppColors.textSecondary,
+              color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
             ),
           ),
         ),
@@ -302,12 +306,14 @@ class _MoneyBand extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final borderColor = isDark ? AppColors.darkBorder : AppColors.border;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
       decoration: BoxDecoration(
-        color: AppColors.pageBg,
+        color: isDark ? AppColors.darkPageBg : AppColors.pageBg,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: borderColor),
       ),
       child: IntrinsicHeight(
         child: Row(
@@ -318,7 +324,7 @@ class _MoneyBand extends StatelessWidget {
                 value: quoted != null ? formatBookingMoney(quoted!) : '—',
               ),
             ),
-            const VerticalDivider(color: AppColors.border, width: 18),
+            VerticalDivider(color: borderColor, width: 18),
             Expanded(
               child: _MoneyItem(label: 'Advance', value: formatBookingMoney(advance)),
             ),
@@ -337,6 +343,7 @@ class _MoneyItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       mainAxisSize: MainAxisSize.min,
@@ -346,10 +353,10 @@ class _MoneyItem extends StatelessWidget {
           child: Text(
             value,
             maxLines: 1,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
+              color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
             ),
           ),
         ),
@@ -358,7 +365,10 @@ class _MoneyItem extends StatelessWidget {
           label,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+          style: TextStyle(
+            fontSize: 11,
+            color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+          ),
         ),
       ],
     );

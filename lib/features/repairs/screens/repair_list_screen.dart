@@ -61,27 +61,32 @@ class _RepairListScreenState extends ConsumerState<RepairListScreen> {
     final canCreate = (user?.isAdmin ?? false) || (user?.isStaff ?? false);
     final canEdit = user?.isAdmin ?? false;
     final canDelete = user?.isAdmin ?? false;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: AppColors.pageBg,
+      backgroundColor: isDark ? AppColors.darkPageBg : AppColors.pageBg,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: isDark ? AppColors.darkCardBg : Colors.white,
         elevation: 0,
-        surfaceTintColor: Colors.white,
+        surfaceTintColor: isDark ? AppColors.darkCardBg : Colors.white,
         leading: IconButton(
-          icon: const Icon(AppIcons.arrowLeft, color: AppColors.textPrimary),
+          icon: Icon(AppIcons.arrowLeft, color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary),
           onPressed: () => context.go('/dashboard'),
           tooltip: 'Back',
         ),
-        title: const Text(
+        title: Text(
           'Repair Records',
-          style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700),
+          style: TextStyle(
+            color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+          ),
         ),
         actions: [
-          const NotificationBellButton(color: AppColors.textPrimary),
+          NotificationBellButton(color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary),
           Builder(
             builder: (ctx) => IconButton(
-              icon: const Icon(AppIcons.menu, color: AppColors.textPrimary),
+              icon: Icon(AppIcons.menu, color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary),
               onPressed: () => Scaffold.of(ctx).openDrawer(),
               tooltip: 'Open menu',
             ),

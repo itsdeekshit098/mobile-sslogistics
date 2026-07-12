@@ -7,6 +7,7 @@ class EmptyState extends StatelessWidget {
   final String? subtitle;
   final VoidCallback? onAction;
   final String? actionLabel;
+  final IconData icon;
 
   const EmptyState({
     super.key,
@@ -14,6 +15,7 @@ class EmptyState extends StatelessWidget {
     this.subtitle,
     this.onAction,
     this.actionLabel,
+    this.icon = AppIcons.inbox,
   });
 
   @override
@@ -33,7 +35,7 @@ class EmptyState extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Icon(
-                AppIcons.inbox,
+                icon,
                 size: 28,
                 color: isDark ? AppColors.darkTextMuted : AppColors.textMuted,
               ),

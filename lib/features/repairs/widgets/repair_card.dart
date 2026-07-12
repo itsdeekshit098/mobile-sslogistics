@@ -36,6 +36,11 @@ class RepairCard extends StatelessWidget {
     final accentColor = isElectrical ? AppColors.tileTechIcon : AppColors.tileRepairIcon;
     final isOpen = record.isOpen;
     final statusColor = isOpen ? AppColors.warning : AppColors.success;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final borderColor = isDark ? AppColors.darkBorder : AppColors.border;
+    final textPrimary = isDark ? AppColors.darkTextPrimary : AppColors.textPrimary;
+    final textSecondary = isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
+    final textMuted = isDark ? AppColors.darkTextMuted : AppColors.textMuted;
 
     return Card(
       key: ValueKey(record.id),
@@ -43,10 +48,10 @@ class RepairCard extends StatelessWidget {
       elevation: 2,
       shadowColor: Colors.black.withValues(alpha: 0.12),
       surfaceTintColor: Colors.transparent,
-      color: Colors.white,
+      color: isDark ? AppColors.darkCardBg : Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(14),
-        side: const BorderSide(color: AppColors.border, width: 0.8),
+        side: BorderSide(color: borderColor, width: 0.8),
       ),
       child: InkWell(
         onTap: onTap,
@@ -80,27 +85,27 @@ class RepairCard extends StatelessWidget {
                                 dateStr,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.w800,
-                                  color: AppColors.textPrimary,
+                                  color: textPrimary,
                                 ),
                               ),
                               if (showVehicle && record.vehicleNumber.isNotEmpty) ...[
                                 const SizedBox(height: 6),
                                 Row(
                                   children: [
-                                    const Icon(AppIcons.truck, size: 16, color: AppColors.textMuted),
+                                    Icon(AppIcons.truck, size: 16, color: textMuted),
                                     const SizedBox(width: 6),
                                     Expanded(
                                       child: Text(
                                         record.vehicleNumber,
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontSize: 14,
                                           fontWeight: FontWeight.w700,
-                                          color: AppColors.textSecondary,
+                                          color: textSecondary,
                                         ),
                                       ),
                                     ),
@@ -150,9 +155,9 @@ class RepairCard extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                       decoration: BoxDecoration(
-                        color: AppColors.pageBg,
+                        color: isDark ? AppColors.darkPageBg : AppColors.pageBg,
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: AppColors.border),
+                        border: Border.all(color: borderColor),
                       ),
                       child: Row(
                         children: [
@@ -164,21 +169,21 @@ class RepairCard extends StatelessWidget {
                               label: 'Cost',
                             ),
                           ),
-                          const VerticalDivider(color: AppColors.border, width: 22),
+                          VerticalDivider(color: borderColor, width: 22),
                           Expanded(
                             child: _InfoItem(
                               icon: AppIcons.userCog,
-                              iconColor: AppColors.textPrimary,
+                              iconColor: textPrimary,
                               value: record.technicianName ?? 'Unassigned',
                               label: 'Technician',
                             ),
                           ),
                           if (record.parts.isNotEmpty) ...[
-                            const VerticalDivider(color: AppColors.border, width: 22),
+                            VerticalDivider(color: borderColor, width: 22),
                             Expanded(
                               child: _InfoItem(
                                 icon: Icons.settings_outlined,
-                                iconColor: AppColors.textSecondary,
+                                iconColor: textSecondary,
                                 value: '${record.parts.length}',
                                 label: record.parts.length == 1 ? 'Part' : 'Parts',
                               ),
@@ -206,6 +211,9 @@ class _IssueChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? AppColors.darkPageBg : AppColors.pageBg;
+    final borderColor = isDark ? AppColors.darkBorder : AppColors.border;
     final shown = issues.take(_maxShown).toList();
     final remaining = issues.length - shown.length;
     return Wrap(
@@ -216,13 +224,14 @@ class _IssueChips extends StatelessWidget {
           (issue) => Container(
             padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
             decoration: BoxDecoration(
-              color: AppColors.pageBg,
+              color: bgColor,
               borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: AppColors.border),
+              border: Border.all(color: borderColor),
             ),
             child: Text(
               issue,
-              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+              style: TextStyle(
+                  fontSize: 12, color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
             ),
           ),
         ),
@@ -230,16 +239,16 @@ class _IssueChips extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
             decoration: BoxDecoration(
-              color: AppColors.pageBg,
+              color: bgColor,
               borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: AppColors.border),
+              border: Border.all(color: borderColor),
             ),
             child: Text(
               '+$remaining',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
-                color: AppColors.textMuted,
+                color: isDark ? AppColors.darkTextMuted : AppColors.textMuted,
               ),
             ),
           ),
@@ -263,6 +272,7 @@ class _InfoItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -279,10 +289,10 @@ class _InfoItem extends StatelessWidget {
                 child: Text(
                   value,
                   maxLines: 1,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
+                    color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                   ),
                 ),
               ),
@@ -290,7 +300,8 @@ class _InfoItem extends StatelessWidget {
                 label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                style: TextStyle(
+                    fontSize: 11, color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
               ),
             ],
           ),

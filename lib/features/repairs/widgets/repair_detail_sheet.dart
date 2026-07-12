@@ -243,7 +243,7 @@ class _DetailRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 17, color: AppColors.textMuted),
+          Icon(icon, size: 17, color: isDark ? AppColors.darkTextMuted : AppColors.textMuted),
           const SizedBox(width: 10),
           SizedBox(
             width: 92,
@@ -267,7 +267,10 @@ class _DetailRow extends StatelessWidget {
                 if (subtitle != null && subtitle!.isNotEmpty)
                   Text(
                     subtitle!,
-                    style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDark ? AppColors.darkTextMuted : AppColors.textMuted,
+                    ),
                   ),
               ],
             ),
@@ -325,7 +328,10 @@ class _PartDetailCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               'Vendor: ${part.vendorName}${part.vendorPhone != null ? ' · ${part.vendorPhone}' : ''}',
-              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+              style: TextStyle(
+                fontSize: 12,
+                color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+              ),
             ),
           ],
           const SizedBox(height: 6),
@@ -335,21 +341,34 @@ class _PartDetailCard extends StatelessWidget {
             children: [
               if (purchaseDate != null)
                 Text('Purchased: ${_dateFmt.format(purchaseDate)}',
-                    style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDark ? AppColors.darkTextMuted : AppColors.textMuted,
+                    )),
               Text(
                 'Warranty: ${part.warrantyDuration} ${part.warrantyDurationUnit}',
-                style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isDark ? AppColors.darkTextMuted : AppColors.textMuted,
+                ),
               ),
               if (expiry != null)
                 Text('Expires: ${_dateFmt.format(expiry)}',
-                    style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDark ? AppColors.darkTextMuted : AppColors.textMuted,
+                    )),
             ],
           ),
           if (part.notes != null && part.notes!.isNotEmpty) ...[
             const SizedBox(height: 6),
             Text(
               part.notes!,
-              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, fontStyle: FontStyle.italic),
+              style: TextStyle(
+                fontSize: 12,
+                color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                fontStyle: FontStyle.italic,
+              ),
             ),
           ],
         ],

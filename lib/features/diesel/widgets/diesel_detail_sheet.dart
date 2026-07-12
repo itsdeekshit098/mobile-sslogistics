@@ -28,6 +28,7 @@ class DieselDetailSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final fillDate = DateTime.tryParse(record.fillDate)?.toLocal();
     final dateTime = fillDate != null
         ? _dateTimeFmt.format(fillDate)
@@ -47,9 +48,9 @@ class DieselDetailSheet extends StatelessWidget {
     final performanceColor = mileageBad ? AppColors.error : AppColors.success;
 
     return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.pageBg,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkPageBg : AppColors.pageBg,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: SafeArea(
         top: false,
@@ -60,7 +61,7 @@ class DieselDetailSheet extends StatelessWidget {
               width: 38,
               height: 4,
               decoration: BoxDecoration(
-                color: AppColors.border,
+                color: isDark ? AppColors.darkBorder : AppColors.border,
                 borderRadius: BorderRadius.circular(99),
               ),
             ),
@@ -72,14 +73,16 @@ class DieselDetailSheet extends StatelessWidget {
                     icon: const Icon(AppIcons.chevronLeft),
                     onPressed: () => Navigator.pop(context),
                   ),
-                  const Expanded(
+                  Expanded(
                     child: Text(
                       'Record Details',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w800,
-                        color: AppColors.textPrimary,
+                        color: isDark
+                            ? AppColors.darkTextPrimary
+                            : AppColors.textPrimary,
                       ),
                     ),
                   ),
@@ -318,6 +321,7 @@ class _HeroCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -354,10 +358,12 @@ class _HeroCard extends StatelessWidget {
                   children: [
                     Text(
                       'Cycle #$cycleId',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.textSecondary,
+                        color: isDark
+                            ? AppColors.darkTextSecondary
+                            : AppColors.textSecondary,
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -380,11 +386,14 @@ class _DetailsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? AppColors.darkCardBg : Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(
+          color: isDark ? AppColors.darkBorder : AppColors.border,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.03),
@@ -431,11 +440,14 @@ class _DetailRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final secondaryColor =
+        isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
     final isStatus = data.label == 'Status';
     final statusColor = data.value == 'CLOSED'
         ? AppColors.success
         : AppColors.tileDieselIcon;
-    final valueColor = data.valueColor ?? AppColors.textSecondary;
+    final valueColor = data.valueColor ?? secondaryColor;
     return Column(
       children: [
         Container(
@@ -449,16 +461,16 @@ class _DetailRow extends StatelessWidget {
               Icon(
                 data.icon,
                 size: 18,
-                color: data.highlight ? valueColor : AppColors.textSecondary,
+                color: data.highlight ? valueColor : secondaryColor,
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   data.label,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textSecondary,
+                    color: secondaryColor,
                   ),
                 ),
               ),
@@ -500,11 +512,11 @@ class _DetailRow extends StatelessWidget {
           ),
         ),
         if (showDivider)
-          const Divider(
+          Divider(
             height: 1,
             indent: 42,
             endIndent: 14,
-            color: AppColors.border,
+            color: isDark ? AppColors.darkBorder : AppColors.border,
           ),
       ],
     );

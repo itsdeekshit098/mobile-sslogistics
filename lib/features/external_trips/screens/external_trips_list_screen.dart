@@ -65,31 +65,40 @@ class _ExternalTripsListScreenState
     // API contract: admin+staff can create, only admin can edit/delete.
     final canCreate = (user?.isAdmin ?? false) || (user?.isStaff ?? false);
     final canManage = user?.isAdmin ?? false;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: AppColors.pageBg,
+      backgroundColor: isDark ? AppColors.darkPageBg : AppColors.pageBg,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: isDark ? AppColors.darkCardBg : Colors.white,
         elevation: 0,
-        surfaceTintColor: Colors.white,
+        surfaceTintColor: isDark ? AppColors.darkCardBg : Colors.white,
         leading: IconButton(
-          icon: const Icon(AppIcons.arrowLeft, color: AppColors.textPrimary),
+          icon: Icon(
+            AppIcons.arrowLeft,
+            color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+          ),
           onPressed: () => context.go('/dashboard'),
           tooltip: 'Back',
         ),
-        title: const Text(
+        title: Text(
           'External Trips',
           style: TextStyle(
-            color: AppColors.textPrimary,
+            color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
             fontSize: 18,
             fontWeight: FontWeight.w700,
           ),
         ),
         actions: [
-          const NotificationBellButton(color: AppColors.textPrimary),
+          NotificationBellButton(
+            color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+          ),
           Builder(
             builder: (ctx) => IconButton(
-              icon: const Icon(AppIcons.menu, color: AppColors.textPrimary),
+              icon: Icon(
+                AppIcons.menu,
+                color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+              ),
               onPressed: () => Scaffold.of(ctx).openDrawer(),
               tooltip: 'Open menu',
             ),
@@ -277,8 +286,11 @@ class _SummaryStrip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final profitColor =
         summary.totalProfit >= 0 ? AppColors.success : AppColors.error;
+    final primaryColor =
+        isDark ? AppColors.darkTextPrimary : AppColors.textPrimary;
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 4, 12, 6),
       child: Row(
@@ -292,13 +304,13 @@ class _SummaryStrip extends StatelessWidget {
           _SummaryCard(
             label: 'Cost',
             value: '₹${_summaryFmt.format(summary.totalCost)}',
-            color: AppColors.textPrimary,
+            color: primaryColor,
           ),
           const SizedBox(width: 8),
           _SummaryCard(
             label: 'Received',
             value: '₹${_summaryFmt.format(summary.totalReceived)}',
-            color: AppColors.textPrimary,
+            color: primaryColor,
           ),
           const SizedBox(width: 8),
           _SummaryCard(
@@ -326,13 +338,16 @@ class _SummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isDark ? AppColors.darkCardBg : Colors.white,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.border),
+          border: Border.all(
+            color: isDark ? AppColors.darkBorder : AppColors.border,
+          ),
         ),
         child: Column(
           children: [
@@ -353,9 +368,11 @@ class _SummaryCard extends StatelessWidget {
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 10.5,
-                color: AppColors.textSecondary,
+                color: isDark
+                    ? AppColors.darkTextSecondary
+                    : AppColors.textSecondary,
               ),
             ),
           ],

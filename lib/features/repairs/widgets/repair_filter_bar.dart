@@ -20,9 +20,10 @@ class RepairFilterBar extends ConsumerWidget {
     final techniciansAsync = ref.watch(techniciansProvider);
     final listState = ref.watch(repairListProvider).valueOrNull;
     final filters = listState?.filters ?? const RepairFilters();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
-      color: AppColors.pageBg,
+      color: isDark ? AppColors.darkPageBg : AppColors.pageBg,
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
       child: Row(
         children: [
@@ -73,8 +74,9 @@ class _FilterButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final borderColor = active ? AppColors.primary : AppColors.border;
-    final textColor = active ? AppColors.primary : AppColors.textSecondary;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final borderColor = active ? AppColors.primary : (isDark ? AppColors.darkBorder : AppColors.border);
+    final textColor = active ? AppColors.primary : (isDark ? AppColors.darkTextSecondary : AppColors.textSecondary);
 
     return GestureDetector(
       onTap: onTap,
@@ -82,14 +84,14 @@ class _FilterButton extends StatelessWidget {
         height: 50,
         padding: const EdgeInsets.symmetric(horizontal: 14),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isDark ? AppColors.darkCardBg : Colors.white,
           borderRadius: BorderRadius.circular(13),
           border: Border.all(color: borderColor, width: active ? 1.6 : 1.0),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 20, color: AppColors.textSecondary),
+            Icon(icon, size: 20, color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
             const SizedBox(width: 10),
             Flexible(
               child: Text(
@@ -195,13 +197,15 @@ class _VehiclePickerSheetState extends State<_VehiclePickerSheet> {
     final media = MediaQuery.of(context);
     final keyboardHeight = media.viewInsets.bottom;
     final maxListHeight = (media.size.height - keyboardHeight) * 0.42;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final borderColor = isDark ? AppColors.darkBorder : AppColors.border;
 
     return AnimatedPadding(
       duration: const Duration(milliseconds: 180),
       curve: Curves.easeOut,
       padding: EdgeInsets.only(bottom: keyboardHeight),
       child: Material(
-        color: Colors.white,
+        color: isDark ? AppColors.darkCardBg : Colors.white,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         child: SafeArea(
           top: false,
@@ -213,7 +217,7 @@ class _VehiclePickerSheetState extends State<_VehiclePickerSheet> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.border,
+                  color: borderColor,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -225,10 +229,10 @@ class _VehiclePickerSheetState extends State<_VehiclePickerSheet> {
                     const SizedBox(width: 8),
                     Text(
                       'Select vehicle (${widget.vehicles.length})',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
+                        color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                       ),
                     ),
                     const Spacer(),
@@ -251,16 +255,16 @@ class _VehiclePickerSheetState extends State<_VehiclePickerSheet> {
                     prefixIcon: const Icon(Icons.search_rounded, size: 20),
                     isDense: true,
                     filled: true,
-                    fillColor: AppColors.pageBg,
+                    fillColor: isDark ? AppColors.darkPageBg : AppColors.pageBg,
                     contentPadding:
                         const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.border),
+                      borderSide: BorderSide(color: borderColor),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.border),
+                      borderSide: BorderSide(color: borderColor),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -275,23 +279,24 @@ class _VehiclePickerSheetState extends State<_VehiclePickerSheet> {
                   maxHeight: maxListHeight.clamp(160.0, 420.0),
                 ),
                 child: filtered.isEmpty
-                    ? const Center(
+                    ? Center(
                         child: Padding(
-                          padding: EdgeInsets.symmetric(vertical: 32),
+                          padding: const EdgeInsets.symmetric(vertical: 32),
                           child: Text(
                             'No vehicles found',
-                            style: TextStyle(color: AppColors.textSecondary),
+                            style: TextStyle(
+                                color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
                           ),
                         ),
                       )
                     : ListView.separated(
                         shrinkWrap: true,
                         itemCount: filtered.length,
-                        separatorBuilder: (_, _) => const Divider(
+                        separatorBuilder: (_, _) => Divider(
                           height: 1,
                           indent: 16,
                           endIndent: 16,
-                          color: AppColors.border,
+                          color: borderColor,
                         ),
                         itemBuilder: (_, i) {
                           final v = filtered[i];
@@ -308,7 +313,7 @@ class _VehiclePickerSheetState extends State<_VehiclePickerSheet> {
                                     selected ? FontWeight.w600 : FontWeight.w400,
                                 color: selected
                                     ? AppColors.primary
-                                    : AppColors.textPrimary,
+                                    : (isDark ? AppColors.darkTextPrimary : AppColors.textPrimary),
                               ),
                             ),
                             subtitle:
@@ -318,9 +323,11 @@ class _VehiclePickerSheetState extends State<_VehiclePickerSheet> {
                                         [v.make, v.model]
                                             .whereType<String>()
                                             .join(' '),
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                             fontSize: 12,
-                                            color: AppColors.textSecondary),
+                                            color: isDark
+                                                ? AppColors.darkTextSecondary
+                                                : AppColors.textSecondary),
                                       ),
                             trailing: selected
                                 ? const Icon(Icons.check_rounded,
@@ -355,6 +362,7 @@ class _MoreFiltersButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
       onTap: () => showModalBottomSheet(
         context: context,
@@ -371,18 +379,21 @@ class _MoreFiltersButton extends StatelessWidget {
         height: 50,
         width: 50,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isDark ? AppColors.darkCardBg : Colors.white,
           borderRadius: BorderRadius.circular(13),
           border: Border.all(
-            color: filters.activeCount > 0 ? AppColors.primary : AppColors.border,
+            color: filters.activeCount > 0
+                ? AppColors.primary
+                : (isDark ? AppColors.darkBorder : AppColors.border),
             width: filters.activeCount > 0 ? 1.6 : 1.0,
           ),
         ),
         child: Stack(
           clipBehavior: Clip.none,
           children: [
-            const Center(
-              child: Icon(Icons.tune_rounded, size: 22, color: AppColors.textSecondary),
+            Center(
+              child: Icon(Icons.tune_rounded,
+                  size: 22, color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
             ),
             if (filters.activeCount > 0)
               Positioned(
@@ -484,12 +495,13 @@ class _MoreFiltersSheetState extends State<_MoreFiltersSheet> {
   @override
   Widget build(BuildContext context) {
     final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return AnimatedPadding(
       duration: const Duration(milliseconds: 180),
       curve: Curves.easeOut,
       padding: EdgeInsets.only(bottom: keyboardHeight),
       child: Material(
-        color: Colors.white,
+        color: isDark ? AppColors.darkCardBg : Colors.white,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         child: SafeArea(
           top: false,
@@ -501,7 +513,7 @@ class _MoreFiltersSheetState extends State<_MoreFiltersSheet> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.border,
+                  color: isDark ? AppColors.darkBorder : AppColors.border,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -509,13 +521,13 @@ class _MoreFiltersSheetState extends State<_MoreFiltersSheet> {
                 padding: const EdgeInsets.fromLTRB(20, 14, 12, 4),
                 child: Row(
                   children: [
-                    const Expanded(
+                    Expanded(
                       child: Text(
                         'Filters',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w800,
-                          color: AppColors.textPrimary,
+                          color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                         ),
                       ),
                     ),
@@ -640,6 +652,8 @@ class _TechnicianFieldButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final mutedColor = isDark ? AppColors.darkTextMuted : AppColors.textMuted;
     return InkWell(
       onTap: () => _showPicker(context),
       borderRadius: BorderRadius.circular(10),
@@ -647,13 +661,13 @@ class _TechnicianFieldButton extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           border: Border.all(
-            color: selectedId != null ? AppColors.primary : AppColors.border,
+            color: selectedId != null ? AppColors.primary : (isDark ? AppColors.darkBorder : AppColors.border),
           ),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Row(
           children: [
-            const Icon(AppIcons.userCog, size: 17, color: AppColors.textMuted),
+            Icon(AppIcons.userCog, size: 17, color: mutedColor),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
@@ -661,12 +675,14 @@ class _TechnicianFieldButton extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: selectedId != null ? FontWeight.w600 : FontWeight.w400,
-                  color: selectedId != null ? AppColors.primary : AppColors.textPrimary,
+                  color: selectedId != null
+                      ? AppColors.primary
+                      : (isDark ? AppColors.darkTextPrimary : AppColors.textPrimary),
                 ),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            const Icon(Icons.expand_more_rounded, size: 18, color: AppColors.textMuted),
+            Icon(Icons.expand_more_rounded, size: 18, color: mutedColor),
           ],
         ),
       ),
@@ -711,13 +727,15 @@ class _TechnicianPickerSheetState extends State<_TechnicianPickerSheet> {
     final media = MediaQuery.of(context);
     final keyboardHeight = media.viewInsets.bottom;
     final maxListHeight = (media.size.height - keyboardHeight) * 0.42;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final borderColor = isDark ? AppColors.darkBorder : AppColors.border;
 
     return AnimatedPadding(
       duration: const Duration(milliseconds: 180),
       curve: Curves.easeOut,
       padding: EdgeInsets.only(bottom: keyboardHeight),
       child: Material(
-        color: Colors.white,
+        color: isDark ? AppColors.darkCardBg : Colors.white,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         child: SafeArea(
           top: false,
@@ -729,7 +747,7 @@ class _TechnicianPickerSheetState extends State<_TechnicianPickerSheet> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.border,
+                  color: borderColor,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -741,10 +759,10 @@ class _TechnicianPickerSheetState extends State<_TechnicianPickerSheet> {
                     const SizedBox(width: 8),
                     Text(
                       'Select technician (${widget.technicians.length})',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
+                        color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                       ),
                     ),
                     const Spacer(),
@@ -767,16 +785,16 @@ class _TechnicianPickerSheetState extends State<_TechnicianPickerSheet> {
                     prefixIcon: const Icon(Icons.search_rounded, size: 20),
                     isDense: true,
                     filled: true,
-                    fillColor: AppColors.pageBg,
+                    fillColor: isDark ? AppColors.darkPageBg : AppColors.pageBg,
                     contentPadding:
                         const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.border),
+                      borderSide: BorderSide(color: borderColor),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.border),
+                      borderSide: BorderSide(color: borderColor),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -791,23 +809,24 @@ class _TechnicianPickerSheetState extends State<_TechnicianPickerSheet> {
                   maxHeight: maxListHeight.clamp(160.0, 420.0),
                 ),
                 child: filtered.isEmpty
-                    ? const Center(
+                    ? Center(
                         child: Padding(
-                          padding: EdgeInsets.symmetric(vertical: 32),
+                          padding: const EdgeInsets.symmetric(vertical: 32),
                           child: Text(
                             'No technicians found',
-                            style: TextStyle(color: AppColors.textSecondary),
+                            style: TextStyle(
+                                color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
                           ),
                         ),
                       )
                     : ListView.separated(
                         shrinkWrap: true,
                         itemCount: filtered.length,
-                        separatorBuilder: (_, _) => const Divider(
+                        separatorBuilder: (_, _) => Divider(
                           height: 1,
                           indent: 16,
                           endIndent: 16,
-                          color: AppColors.border,
+                          color: borderColor,
                         ),
                         itemBuilder: (_, i) {
                           final t = filtered[i];
@@ -824,16 +843,18 @@ class _TechnicianPickerSheetState extends State<_TechnicianPickerSheet> {
                                     selected ? FontWeight.w600 : FontWeight.w400,
                                 color: selected
                                     ? AppColors.primary
-                                    : AppColors.textPrimary,
+                                    : (isDark ? AppColors.darkTextPrimary : AppColors.textPrimary),
                               ),
                             ),
                             subtitle: t.specializations.isEmpty
                                 ? null
                                 : Text(
                                     t.specializations.join(', '),
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                         fontSize: 12,
-                                        color: AppColors.textSecondary),
+                                        color: isDark
+                                            ? AppColors.darkTextSecondary
+                                            : AppColors.textSecondary),
                                   ),
                             trailing: selected
                                 ? const Icon(Icons.check_rounded,
@@ -859,14 +880,15 @@ class _FieldLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Text(
         text,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 13,
           fontWeight: FontWeight.w600,
-          color: AppColors.textPrimary,
+          color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
         ),
       ),
     );
@@ -888,6 +910,7 @@ class _SegmentedRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
       children: options.map((opt) {
         final isSelected = opt == selected;
@@ -900,10 +923,10 @@ class _SegmentedRow extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 decoration: BoxDecoration(
-                  color: isSelected ? AppColors.primary : Colors.white,
+                  color: isSelected ? AppColors.primary : (isDark ? AppColors.darkCardBg : Colors.white),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: isSelected ? AppColors.primary : AppColors.border,
+                    color: isSelected ? AppColors.primary : (isDark ? AppColors.darkBorder : AppColors.border),
                   ),
                 ),
                 child: Center(
@@ -912,7 +935,9 @@ class _SegmentedRow extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: isSelected ? Colors.white : AppColors.textSecondary,
+                      color: isSelected
+                          ? Colors.white
+                          : (isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
                     ),
                   ),
                 ),
@@ -934,30 +959,33 @@ class _DateChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final mutedColor = isDark ? AppColors.darkTextMuted : AppColors.textMuted;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
         decoration: BoxDecoration(
-          border: Border.all(color: AppColors.border),
+          border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.border),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
           children: [
-            const Icon(AppIcons.calendar, size: 15, color: AppColors.textMuted),
+            Icon(AppIcons.calendar, size: 15, color: mutedColor),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
                 label,
-                style: const TextStyle(fontSize: 13, color: AppColors.textPrimary),
+                style: TextStyle(
+                    fontSize: 13, color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
             if (onClear != null)
               GestureDetector(
                 onTap: onClear,
-                child: const Icon(AppIcons.x, size: 15, color: AppColors.textMuted),
+                child: Icon(AppIcons.x, size: 15, color: mutedColor),
               ),
           ],
         ),
@@ -973,10 +1001,11 @@ class _FilterSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       height: 50,
       decoration: BoxDecoration(
-        color: AppColors.border,
+        color: isDark ? AppColors.darkBorder : AppColors.border,
         borderRadius: BorderRadius.circular(13),
       ),
     );

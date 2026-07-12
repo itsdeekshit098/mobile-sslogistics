@@ -21,10 +21,11 @@ class ForceUpdateDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return PopScope(
       canPop: false,
       child: Dialog(
-        backgroundColor: Colors.white,
+        backgroundColor: isDark ? AppColors.darkCardBg : Colors.white,
         insetPadding: const EdgeInsets.symmetric(horizontal: 24),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
         child: Padding(
@@ -34,11 +35,11 @@ class ForceUpdateDialog extends StatelessWidget {
             children: [
               const _IconBadge(),
               const SizedBox(height: 28),
-              const Text(
+              Text(
                 'Update Required',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: AppColors.textPrimary,
+                  color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                   fontSize: 28,
                   fontWeight: FontWeight.w800,
                   height: 1.15,
@@ -49,7 +50,7 @@ class ForceUpdateDialog extends StatelessWidget {
                 'A new version of the app is available with important improvements and bug fixes.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: Colors.grey.shade600,
+                  color: isDark ? AppColors.darkTextSecondary : Colors.grey.shade600,
                   fontSize: 15,
                   height: 1.4,
                 ),
@@ -58,7 +59,7 @@ class ForceUpdateDialog extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppColors.pageBg,
+                  color: isDark ? AppColors.darkPageBg : AppColors.pageBg,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Row(
@@ -83,7 +84,7 @@ class ForceUpdateDialog extends StatelessWidget {
                       child: Text(
                         'For a better experience and security, please update the app to continue.',
                         style: TextStyle(
-                          color: Colors.grey.shade700,
+                          color: isDark ? AppColors.darkTextSecondary : Colors.grey.shade700,
                           fontSize: 13.5,
                           height: 1.4,
                         ),
@@ -98,8 +99,8 @@ class ForceUpdateDialog extends StatelessWidget {
                   alignment: Alignment.centerLeft,
                   child: Text(
                     message!,
-                    style: const TextStyle(
-                      color: AppColors.textPrimary,
+                    style: TextStyle(
+                      color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                       fontSize: 14,
                     ),
                   ),
@@ -140,11 +141,15 @@ class ForceUpdateDialog extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(Icons.lock_outline_rounded,
-                      size: 13, color: Colors.grey.shade500),
+                      size: 13,
+                      color: isDark ? AppColors.darkTextMuted : Colors.grey.shade500),
                   const SizedBox(width: 6),
                   Text(
                     "You'll be redirected to the Play Store",
-                    style: TextStyle(color: Colors.grey.shade500, fontSize: 12.5),
+                    style: TextStyle(
+                      color: isDark ? AppColors.darkTextMuted : Colors.grey.shade500,
+                      fontSize: 12.5,
+                    ),
                   ),
                 ],
               ),

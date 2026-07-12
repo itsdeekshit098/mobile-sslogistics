@@ -45,6 +45,8 @@ class _TripBookingFilterBarState extends ConsumerState<TripBookingFilterBar> {
   Widget build(BuildContext context) {
     final state = ref.watch(tripBookingListProvider).valueOrNull;
     final notifier = ref.read(tripBookingListProvider.notifier);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final borderColor = isDark ? AppColors.darkBorder : AppColors.border;
 
     if (_searchCtrl.text != (state?.search ?? '')) {
       _searchCtrl.text = state?.search ?? '';
@@ -56,7 +58,7 @@ class _TripBookingFilterBarState extends ConsumerState<TripBookingFilterBar> {
     final moreFiltersCount = moreFiltersActive ? 1 : 0;
 
     return Container(
-      color: AppColors.pageBg,
+      color: isDark ? AppColors.darkPageBg : AppColors.pageBg,
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
       child: Column(
         children: [
@@ -70,15 +72,15 @@ class _TripBookingFilterBarState extends ConsumerState<TripBookingFilterBar> {
               prefixIcon: const Icon(Icons.search_rounded, size: 20),
               isDense: true,
               filled: true,
-              fillColor: Colors.white,
+              fillColor: isDark ? AppColors.darkCardBg : Colors.white,
               contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(13),
-                borderSide: const BorderSide(color: AppColors.border),
+                borderSide: BorderSide(color: borderColor),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(13),
-                borderSide: const BorderSide(color: AppColors.border),
+                borderSide: BorderSide(color: borderColor),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(13),
@@ -145,11 +147,15 @@ class _TripBookingFilterBarState extends ConsumerState<TripBookingFilterBar> {
                     height: 46,
                     width: 46,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: isDark ? AppColors.darkCardBg : Colors.white,
                       borderRadius: BorderRadius.circular(13),
-                      border: Border.all(color: AppColors.border),
+                      border: Border.all(color: borderColor),
                     ),
-                    child: const Icon(AppIcons.x, size: 18, color: AppColors.textSecondary),
+                    child: Icon(
+                      AppIcons.x,
+                      size: 18,
+                      color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                    ),
                   ),
                 ),
               ],
@@ -171,8 +177,10 @@ class _FilterButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final borderColor = active ? AppColors.primary : AppColors.border;
-    final textColor = active ? AppColors.primary : AppColors.textSecondary;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final secondaryColor = isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
+    final borderColor = active ? AppColors.primary : (isDark ? AppColors.darkBorder : AppColors.border);
+    final textColor = active ? AppColors.primary : secondaryColor;
 
     return GestureDetector(
       onTap: onTap,
@@ -180,13 +188,13 @@ class _FilterButton extends StatelessWidget {
         height: 46,
         padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isDark ? AppColors.darkCardBg : Colors.white,
           borderRadius: BorderRadius.circular(13),
           border: Border.all(color: borderColor, width: active ? 1.6 : 1.0),
         ),
         child: Row(
           children: [
-            Icon(icon, size: 18, color: AppColors.textSecondary),
+            Icon(icon, size: 18, color: secondaryColor),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
@@ -199,7 +207,11 @@ class _FilterButton extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            const Icon(Icons.keyboard_arrow_down_rounded, size: 20, color: AppColors.textPrimary),
+            Icon(
+              Icons.keyboard_arrow_down_rounded,
+              size: 20,
+              color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+            ),
           ],
         ),
       ),
@@ -216,20 +228,28 @@ class _MoreFiltersButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final borderColor = active ? AppColors.primary : (isDark ? AppColors.darkBorder : AppColors.border);
     return GestureDetector(
       onTap: onTap,
       child: Container(
         height: 46,
         width: 46,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isDark ? AppColors.darkCardBg : Colors.white,
           borderRadius: BorderRadius.circular(13),
-          border: Border.all(color: active ? AppColors.primary : AppColors.border, width: active ? 1.6 : 1.0),
+          border: Border.all(color: borderColor, width: active ? 1.6 : 1.0),
         ),
         child: Stack(
           clipBehavior: Clip.none,
           children: [
-            const Center(child: Icon(AppIcons.calendar, size: 18, color: AppColors.textSecondary)),
+            Center(
+              child: Icon(
+                AppIcons.calendar,
+                size: 18,
+                color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+              ),
+            ),
             if (count > 0)
               Positioned(
                 top: -4,
@@ -258,8 +278,10 @@ class _StatusPickerSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary = isDark ? AppColors.darkTextPrimary : AppColors.textPrimary;
     return Material(
-      color: Colors.white,
+      color: isDark ? AppColors.darkCardBg : Colors.white,
       borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       child: SafeArea(
         top: false,
@@ -270,15 +292,18 @@ class _StatusPickerSheet extends StatelessWidget {
             Container(
               width: 40,
               height: 4,
-              decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.darkBorder : AppColors.border,
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
-            const Padding(
-              padding: EdgeInsets.fromLTRB(16, 14, 16, 8),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
               child: Row(
                 children: [
                   Text(
                     'Status',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: textPrimary),
                   ),
                 ],
               ),
@@ -290,7 +315,7 @@ class _StatusPickerSheet extends StatelessWidget {
                   _statusOptionLabel(status),
                   style: TextStyle(
                     fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
-                    color: isSelected ? AppColors.primary : AppColors.textPrimary,
+                    color: isSelected ? AppColors.primary : textPrimary,
                   ),
                 ),
                 trailing: isSelected ? const Icon(Icons.check_rounded, color: AppColors.primary) : null,
@@ -395,12 +420,16 @@ class _MoreFiltersSheetState extends State<_MoreFiltersSheet> {
   @override
   Widget build(BuildContext context) {
     final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary = isDark ? AppColors.darkTextPrimary : AppColors.textPrimary;
+    final textMuted = isDark ? AppColors.darkTextMuted : AppColors.textMuted;
+    final borderColor = isDark ? AppColors.darkBorder : AppColors.border;
     return AnimatedPadding(
       duration: const Duration(milliseconds: 180),
       curve: Curves.easeOut,
       padding: EdgeInsets.only(bottom: keyboardHeight),
       child: Material(
-        color: Colors.white,
+        color: isDark ? AppColors.darkCardBg : Colors.white,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         child: SafeArea(
           top: false,
@@ -411,16 +440,16 @@ class _MoreFiltersSheetState extends State<_MoreFiltersSheet> {
               Container(
                 width: 40,
                 height: 4,
-                decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)),
+                decoration: BoxDecoration(color: borderColor, borderRadius: BorderRadius.circular(2)),
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 14, 12, 4),
                 child: Row(
                   children: [
-                    const Expanded(
+                    Expanded(
                       child: Text(
                         'Filters',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: textPrimary),
                       ),
                     ),
                     TextButton(onPressed: _clearAll, child: const Text('Clear all')),
@@ -433,11 +462,11 @@ class _MoreFiltersSheetState extends State<_MoreFiltersSheet> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Padding(
-                        padding: EdgeInsets.only(bottom: 8),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
                         child: Text(
                           'On date',
-                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: textPrimary),
                         ),
                       ),
                       InkWell(
@@ -446,34 +475,34 @@ class _MoreFiltersSheetState extends State<_MoreFiltersSheet> {
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                           decoration: BoxDecoration(
-                            border: Border.all(color: AppColors.border),
+                            border: Border.all(color: borderColor),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Row(
                             children: [
-                              const Icon(AppIcons.calendar, size: 17, color: AppColors.textMuted),
+                              Icon(AppIcons.calendar, size: 17, color: textMuted),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
                                   _onDateLabel,
-                                  style: const TextStyle(fontSize: 14, color: AppColors.textPrimary),
+                                  style: TextStyle(fontSize: 14, color: textPrimary),
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                               if (_onDate != null)
                                 GestureDetector(
                                   onTap: () => setState(() => _onDate = null),
-                                  child: const Icon(AppIcons.x, size: 15, color: AppColors.textMuted),
+                                  child: Icon(AppIcons.x, size: 15, color: textMuted),
                                 ),
                             ],
                           ),
                         ),
                       ),
-                      const Padding(
-                        padding: EdgeInsets.only(top: 16, bottom: 8),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 16, bottom: 8),
                         child: Text(
                           'Date range',
-                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: textPrimary),
                         ),
                       ),
                       Opacity(
@@ -484,17 +513,17 @@ class _MoreFiltersSheetState extends State<_MoreFiltersSheet> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                             decoration: BoxDecoration(
-                              border: Border.all(color: AppColors.border),
+                              border: Border.all(color: borderColor),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Row(
                               children: [
-                                const Icon(AppIcons.calendar, size: 17, color: AppColors.textMuted),
+                                Icon(AppIcons.calendar, size: 17, color: textMuted),
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
                                     _dateRangeLabel,
-                                    style: const TextStyle(fontSize: 14, color: AppColors.textPrimary),
+                                    style: TextStyle(fontSize: 14, color: textPrimary),
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
@@ -504,7 +533,7 @@ class _MoreFiltersSheetState extends State<_MoreFiltersSheet> {
                                       _fromDate = null;
                                       _toDate = null;
                                     }),
-                                    child: const Icon(AppIcons.x, size: 15, color: AppColors.textMuted),
+                                    child: Icon(AppIcons.x, size: 15, color: textMuted),
                                   ),
                               ],
                             ),
@@ -512,11 +541,11 @@ class _MoreFiltersSheetState extends State<_MoreFiltersSheet> {
                         ),
                       ),
                       if (_onDate != null)
-                        const Padding(
-                          padding: EdgeInsets.only(top: 6),
+                        Padding(
+                          padding: const EdgeInsets.only(top: 6),
                           child: Text(
                             'Clear "On date" to use a range instead.',
-                            style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                            style: TextStyle(fontSize: 12, color: textMuted),
                           ),
                         ),
                       const SizedBox(height: 12),
