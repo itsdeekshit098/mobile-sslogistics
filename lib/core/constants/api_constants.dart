@@ -12,10 +12,10 @@ class ApiConstants {
   /// localhost), and debug/profile builds switch between the Android
   /// emulator and iOS simulator loopback addresses automatically.
   static String get baseUrl {
-    if (_envBaseUrl.isNotEmpty) return _envBaseUrl;
-    if (kReleaseMode) return 'https://sslogistics.vercel.app';
-    if (Platform.isAndroid) return 'http://10.0.2.2:3000';
-    return 'http://localhost:3000';
+    // if (_envBaseUrl.isNotEmpty) return _envBaseUrl;
+    return 'https://sslogistics.vercel.app';
+    // if (Platform.isAndroid) return 'http://10.0.2.2:3000';
+    // return 'http://localhost:3000';
   }
 
   // ── Auth ──────────────────────────────────────────────────────────────────
