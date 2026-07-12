@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../shared/utils/validated_field.dart';
 import '../../../shared/widgets/form_error_banner.dart';
+import '../../../shared/widgets/server_error_banner.dart';
 import '../data/diesel_models.dart';
 import '../providers/diesel_provider.dart';
 import '../providers/active_drivers_provider.dart';
@@ -38,6 +39,11 @@ class _EditDieselSheetState extends ConsumerState<EditDieselSheet> {
   String? _paymentMethod;
   bool _isSubmitting = false;
   int _errorCount = 0;
+  // Server-side rejection. Shown as a banner inside the sheet rather than a
+  // SnackBar — a SnackBar anchors to the screen underneath and renders
+  // hidden behind this modal bottom sheet, so the user never sees it even
+  // though it technically fired.
+  String? _serverError;
 
   final _driverSectionKey = GlobalKey();
   final _fuelFieldKey = GlobalKey<FormFieldState>();
@@ -145,6 +151,7 @@ class _EditDieselSheetState extends ConsumerState<EditDieselSheet> {
     }
     setState(() {
       _errorCount = 0;
+      _serverError = null;
       _isSubmitting = true;
     });
 
@@ -175,13 +182,10 @@ class _EditDieselSheetState extends ConsumerState<EditDieselSheet> {
       }
     } catch (e) {
       if (mounted) {
-        setState(() => _isSubmitting = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.toString().replaceFirst('Exception: ', '')),
-            backgroundColor: AppColors.error,
-          ),
-        );
+        setState(() {
+          _isSubmitting = false;
+          _serverError = e.toString().replaceFirst('Exception: ', '');
+        });
       }
     }
   }
@@ -249,6 +253,7 @@ class _EditDieselSheetState extends ConsumerState<EditDieselSheet> {
           ),
           const Divider(height: 1),
           if (_errorCount > 0) FormErrorBanner(count: _errorCount),
+          if (_serverError != null) ServerErrorBanner(message: _serverError!),
 
           Expanded(
             child: SingleChildScrollView(
@@ -671,7 +676,9 @@ class _OptionPickerSheet<T> extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 14),
                       decoration: BoxDecoration(
                         color: selected
-                            ? AppColors.tileVehiclesBg
+                            ? (isDark
+                                  ? AppColors.primary.withValues(alpha: 0.18)
+                                  : AppColors.tileVehiclesBg)
                             : (isDark
                                   ? AppColors.darkPageBg
                                   : AppColors.pageBg),

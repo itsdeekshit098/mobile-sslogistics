@@ -11,6 +11,7 @@ import '../providers/active_drivers_provider.dart';
 import '../../../shared/models/vehicle_model.dart';
 import '../../../shared/utils/validated_field.dart';
 import '../../../shared/widgets/form_error_banner.dart';
+import '../../../shared/widgets/server_error_banner.dart';
 import '../../drivers/data/driver_models.dart';
 import '../../drivers/data/driver_repository.dart';
 import '../../drivers/widgets/driver_form_sheet.dart';
@@ -42,6 +43,11 @@ class _CreateDieselSheetState extends ConsumerState<CreateDieselSheet> {
   String? _paymentMethod;
   bool _isSubmitting = false;
   int _errorCount = 0;
+  // Server-side rejection (e.g. date-before-last-entry). Shown as a banner
+  // inside the sheet rather than a SnackBar — a SnackBar anchors to the
+  // screen underneath and renders hidden behind this modal bottom sheet,
+  // so the user never sees it even though it technically fired.
+  String? _serverError;
 
   final _vehicleSectionKey = GlobalKey();
   final _driverSectionKey = GlobalKey();
@@ -223,6 +229,7 @@ class _CreateDieselSheetState extends ConsumerState<CreateDieselSheet> {
 
     setState(() {
       _errorCount = 0;
+      _serverError = null;
       _isSubmitting = true;
     });
 
@@ -273,13 +280,10 @@ class _CreateDieselSheetState extends ConsumerState<CreateDieselSheet> {
       }
     } catch (e) {
       if (mounted) {
-        setState(() => _isSubmitting = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.toString().replaceFirst('Exception: ', '')),
-            backgroundColor: AppColors.error,
-          ),
-        );
+        setState(() {
+          _isSubmitting = false;
+          _serverError = e.toString().replaceFirst('Exception: ', '');
+        });
       }
     }
   }
@@ -290,7 +294,13 @@ class _CreateDieselSheetState extends ConsumerState<CreateDieselSheet> {
     final dateFmt = DateFormat('dd MMM yyyy');
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Material(
+    return PopScope(
+      // While a submit is in flight, block swipe-to-dismiss / back so the
+      // sheet (and any error SnackBar it shows on failure) can't be torn
+      // down before the request resolves — otherwise the `mounted` check in
+      // the catch block silently drops the error.
+      canPop: !_isSubmitting,
+      child: Material(
       color: isDark ? AppColors.darkCardBg : Colors.white,
       borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       child: Column(
@@ -335,6 +345,7 @@ class _CreateDieselSheetState extends ConsumerState<CreateDieselSheet> {
           ),
           const Divider(height: 1),
           if (_errorCount > 0) FormErrorBanner(count: _errorCount),
+          if (_serverError != null) ServerErrorBanner(message: _serverError!),
 
           // Form
           Expanded(
@@ -707,6 +718,7 @@ class _CreateDieselSheetState extends ConsumerState<CreateDieselSheet> {
           ),
         ],
       ),
+      ),
     );
   }
 
@@ -739,10 +751,11 @@ class _CreateWarningBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.warningBg,
+        color: isDark ? AppColors.darkWarningBg : AppColors.warningBg,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
       ),

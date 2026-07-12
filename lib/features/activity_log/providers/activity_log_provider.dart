@@ -17,12 +17,14 @@ class ActivityLogState {
   final int total;
   final int page;
   final bool isLoadingMore;
+  final String? loadMoreError;
 
   const ActivityLogState({
     required this.entries,
     required this.total,
     this.page = 1,
     this.isLoadingMore = false,
+    this.loadMoreError,
   });
 
   bool get hasMore => entries.length < total;
@@ -32,12 +34,16 @@ class ActivityLogState {
     int? total,
     int? page,
     bool? isLoadingMore,
+    String? loadMoreError,
+    bool clearLoadMoreError = false,
   }) {
     return ActivityLogState(
       entries: entries ?? this.entries,
       total: total ?? this.total,
       page: page ?? this.page,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      loadMoreError:
+          clearLoadMoreError ? null : (loadMoreError ?? this.loadMoreError),
     );
   }
 }
@@ -74,7 +80,7 @@ class ActivityLogNotifier extends AutoDisposeAsyncNotifier<ActivityLogState> {
     final cur = state.valueOrNull;
     if (cur == null || cur.isLoadingMore || !cur.hasMore) return;
 
-    state = AsyncData(cur.copyWith(isLoadingMore: true));
+    state = AsyncData(cur.copyWith(isLoadingMore: true, clearLoadMoreError: true));
     try {
       final nextPage = cur.page + 1;
       final data = await ref
@@ -90,10 +96,13 @@ class ActivityLogNotifier extends AutoDisposeAsyncNotifier<ActivityLogState> {
           isLoadingMore: false,
         ),
       );
-    } catch (_) {
+    } catch (e) {
       if (_disposed) return;
       final latest = state.valueOrNull ?? cur;
-      state = AsyncData(latest.copyWith(isLoadingMore: false));
+      state = AsyncData(latest.copyWith(
+        isLoadingMore: false,
+        loadMoreError: e.toString().replaceFirst('Exception: ', ''),
+      ));
     }
   }
 }

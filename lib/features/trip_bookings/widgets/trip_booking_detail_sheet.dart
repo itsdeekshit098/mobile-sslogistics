@@ -33,7 +33,7 @@ class TripBookingDetailSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final accent = statusColor(booking.status);
+    final accent = statusColor(booking.status, isDark: isDark);
     final overdue = isBookingOverdue(booking);
     final today = isBookingToday(booking);
     final isActionable = booking.status == statusConfirmed;
@@ -79,7 +79,7 @@ class TripBookingDetailSheet extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
-                              color: statusBg(booking.status),
+                              color: statusBg(booking.status, isDark: isDark),
                               borderRadius: BorderRadius.circular(5),
                               border: Border.all(color: accent.withValues(alpha: 0.28)),
                             ),

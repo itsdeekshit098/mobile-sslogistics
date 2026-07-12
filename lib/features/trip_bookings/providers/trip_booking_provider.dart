@@ -12,6 +12,7 @@ class TripBookingListState {
   final int page; // last loaded page
   final TripBookingSummary? summary;
   final bool isLoadingMore;
+  final String? loadMoreError;
 
   // Active filters — status defaults to 'confirmed' to match the web page.
   final String status;
@@ -26,6 +27,7 @@ class TripBookingListState {
     this.page = 1,
     this.summary,
     this.isLoadingMore = false,
+    this.loadMoreError,
     this.status = statusConfirmed,
     this.onDate,
     this.fromDate,
@@ -48,6 +50,8 @@ class TripBookingListState {
     int? page,
     TripBookingSummary? summary,
     bool? isLoadingMore,
+    String? loadMoreError,
+    bool clearLoadMoreError = false,
   }) {
     return TripBookingListState(
       bookings: bookings ?? this.bookings,
@@ -55,6 +59,8 @@ class TripBookingListState {
       page: page ?? this.page,
       summary: summary ?? this.summary,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      loadMoreError:
+          clearLoadMoreError ? null : (loadMoreError ?? this.loadMoreError),
       status: status,
       onDate: onDate,
       fromDate: fromDate,
@@ -128,7 +134,7 @@ class TripBookingListNotifier
     final cur = state.valueOrNull;
     if (cur == null || cur.isLoadingMore || !cur.hasMore) return;
 
-    state = AsyncData(cur.copyWith(isLoadingMore: true));
+    state = AsyncData(cur.copyWith(isLoadingMore: true, clearLoadMoreError: true));
     try {
       final data = await ref.read(tripBookingRepositoryProvider).getBookings(
             status: cur.status == 'all' ? null : cur.status,
@@ -147,10 +153,13 @@ class TripBookingListNotifier
         page: cur.page + 1,
         isLoadingMore: false,
       ));
-    } catch (_) {
+    } catch (e) {
       // Keep what's on screen; the scroll trigger will retry naturally.
       if (_disposed) return;
-      state = AsyncData(cur.copyWith(isLoadingMore: false));
+      state = AsyncData(cur.copyWith(
+        isLoadingMore: false,
+        loadMoreError: e.toString().replaceFirst('Exception: ', ''),
+      ));
     }
   }
 

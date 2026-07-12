@@ -16,29 +16,31 @@ bool isBookingOverdue(TripBooking booking) =>
 bool isBookingToday(TripBooking booking) =>
     booking.status == statusConfirmed && booking.startDate == todayIsoStr();
 
-Color statusColor(String status) {
+Color statusColor(String status, {bool isDark = false}) {
   switch (status) {
     case statusConfirmed:
       return AppColors.primary;
     case statusCompleted:
       return AppColors.success;
     case statusCancelled:
-      return AppColors.textMuted;
+      return isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
     default:
-      return AppColors.textMuted;
+      return isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
   }
 }
 
-Color statusBg(String status) {
+Color statusBg(String status, {bool isDark = false}) {
   switch (status) {
     case statusConfirmed:
-      return AppColors.tileVehiclesBg;
+      return isDark
+          ? AppColors.primary.withValues(alpha: 0.16)
+          : AppColors.tileVehiclesBg;
     case statusCompleted:
-      return AppColors.successBg;
+      return isDark ? AppColors.darkSuccessBg : AppColors.successBg;
     case statusCancelled:
-      return AppColors.pageBg;
+      return isDark ? AppColors.darkPageBg : AppColors.pageBg;
     default:
-      return AppColors.pageBg;
+      return isDark ? AppColors.darkPageBg : AppColors.pageBg;
   }
 }
 
@@ -79,7 +81,7 @@ class TripBookingCard extends StatelessWidget {
         ? AppColors.error
         : today
             ? AppColors.warning
-            : statusColor(booking.status);
+            : statusColor(booking.status, isDark: isDark);
     final isActionable = booking.status == statusConfirmed;
     final route = '${booking.fromLocation} → ${booking.toLocation}';
     final vehicleLine = booking.vehicleNumber ??
@@ -221,11 +223,12 @@ class _StatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = statusColor(status);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final color = statusColor(status, isDark: isDark);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: statusBg(status),
+        color: statusBg(status, isDark: isDark),
         borderRadius: BorderRadius.circular(5),
         border: Border.all(color: color.withValues(alpha: 0.28)),
       ),

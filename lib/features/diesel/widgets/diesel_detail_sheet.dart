@@ -588,6 +588,7 @@ class _CycleHint extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final text = isFull
         ? (isClosed
               ? 'This full fill closed the cycle. Mileage and cycle totals are now available.'
@@ -597,7 +598,9 @@ class _CycleHint extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.tileDieselBg,
+        color: isDark
+            ? AppColors.tileDieselIcon.withValues(alpha: 0.16)
+            : AppColors.tileDieselBg,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
           color: AppColors.tileDieselIcon.withValues(alpha: 0.24),
@@ -615,11 +618,13 @@ class _CycleHint extends StatelessWidget {
           Expanded(
             child: Text(
               text,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
                 height: 1.35,
                 fontWeight: FontWeight.w700,
-                color: AppColors.textSecondary,
+                color: isDark
+                    ? AppColors.darkTextSecondary
+                    : AppColors.textSecondary,
               ),
             ),
           ),
@@ -636,10 +641,11 @@ class _WarningBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.warningBg,
+        color: isDark ? AppColors.darkWarningBg : AppColors.warningBg,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
       ),

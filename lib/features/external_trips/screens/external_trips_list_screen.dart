@@ -10,8 +10,8 @@ import '../../../shared/widgets/app_drawer.dart';
 import '../../../shared/widgets/delete_confirmation_dialog.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/error_state.dart';
-import '../../../shared/widgets/loading_spinner.dart';
 import '../../../shared/widgets/notification_bell_button.dart';
+import '../../../shared/widgets/skeleton_loader.dart';
 import '../data/external_trip_models.dart';
 import '../providers/external_trip_provider.dart';
 import '../widgets/external_trip_card.dart';
@@ -62,6 +62,13 @@ class _ExternalTripsListScreenState
     final user = ref.watch(authProvider).valueOrNull;
     final listAsync = ref.watch(externalTripListProvider);
 
+    ref.listen(externalTripListProvider, (previous, next) {
+      final error = next.valueOrNull?.loadMoreError;
+      if (error != null && previous?.valueOrNull?.loadMoreError != error) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
+      }
+    });
+
     // API contract: admin+staff can create, only admin can edit/delete.
     final canCreate = (user?.isAdmin ?? false) || (user?.isStaff ?? false);
     final canManage = user?.isAdmin ?? false;
@@ -111,7 +118,7 @@ class _ExternalTripsListScreenState
           const ExternalTripFilterBar(),
           Expanded(
             child: listAsync.when(
-              loading: () => const LoadingSpinner(message: 'Loading trips...'),
+              loading: () => const SkeletonListCards(shape: SkeletonCardShape.band, infoLines: 2),
               error: (e, _) => ErrorState(
                 message: e.toString().replaceFirst('Exception: ', ''),
                 onRetry: () => ref.invalidate(externalTripListProvider),

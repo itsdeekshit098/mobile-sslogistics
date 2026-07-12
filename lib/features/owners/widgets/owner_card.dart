@@ -52,7 +52,12 @@ class OwnerCard extends StatelessWidget {
                 Container(
                   width: 44,
                   height: 44,
-                  decoration: const BoxDecoration(color: AppColors.tileOwnersBg, shape: BoxShape.circle),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? AppColors.tileOwnersIcon.withValues(alpha: 0.16)
+                        : AppColors.tileOwnersBg,
+                    shape: BoxShape.circle,
+                  ),
                   child: const Icon(AppIcons.badge, color: AppColors.tileOwnersIcon),
                 ),
                 const SizedBox(width: 12),

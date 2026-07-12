@@ -12,9 +12,14 @@ Color tripTypeColor(String tripType) => tripType == tripTypeCompanyOncall
     ? AppColors.tileExternalIcon
     : AppColors.tileClientsIcon;
 
-Color tripTypeBg(String tripType) => tripType == tripTypeCompanyOncall
-    ? AppColors.tileExternalBg
-    : AppColors.tileClientsBg;
+Color tripTypeBg(String tripType, {bool isDark = false}) {
+  if (isDark) {
+    return tripTypeColor(tripType).withValues(alpha: 0.16);
+  }
+  return tripType == tripTypeCompanyOncall
+      ? AppColors.tileExternalBg
+      : AppColors.tileClientsBg;
+}
 
 String formatTripDate(String? isoDate) {
   if (isoDate == null || isoDate.isEmpty) return '—';
@@ -185,11 +190,12 @@ class _TripTypeBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final color = tripTypeColor(tripType);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: tripTypeBg(tripType),
+        color: tripTypeBg(tripType, isDark: isDark),
         borderRadius: BorderRadius.circular(5),
         border: Border.all(color: color.withValues(alpha: 0.28)),
       ),

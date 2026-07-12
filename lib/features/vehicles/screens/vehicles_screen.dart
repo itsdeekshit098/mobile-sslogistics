@@ -11,7 +11,7 @@ import '../../../features/auth/providers/auth_provider.dart';
 import '../../../features/notifications/providers/notification_provider.dart';
 import '../../../shared/widgets/app_drawer.dart';
 import '../../../shared/widgets/error_state.dart';
-import '../../../shared/widgets/loading_spinner.dart';
+import '../../../shared/widgets/skeleton_loader.dart';
 import '../data/vehicle_models.dart';
 import '../providers/vehicles_provider.dart';
 import '../../../shared/widgets/delete_confirmation_dialog.dart';
@@ -110,8 +110,7 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
                   ),
                 ),
                 async.when(
-                  loading: () =>
-                      const LoadingSpinner(message: 'Loading vehicles...'),
+                  loading: () => const _GlassSkeletonList(),
                   error: (e, _) => ErrorState(
                     message: e.toString().replaceFirst('Exception: ', ''),
                     onRetry: () => ref.invalidate(vehiclesListProvider),
@@ -926,6 +925,100 @@ class _GlassEmptyState extends StatelessWidget {
   }
 }
 
+/// Skeleton placeholder for the vehicle list's initial load. Mirrors
+/// VehicleCard's frosted-glass treatment (blurred translucent card over the
+/// hero's color blobs) rather than the flat bordered skeleton used
+/// elsewhere — a flat card here would look glued onto the glass UI instead
+/// of belonging to it.
+class _GlassSkeletonList extends StatelessWidget {
+  const _GlassSkeletonList();
+
+  @override
+  Widget build(BuildContext context) {
+    return Shimmer(
+      child: ListView.builder(
+        padding: const EdgeInsets.only(top: 6, bottom: 90),
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: 5,
+        itemBuilder: (context, i) => const _GlassSkeletonCard(),
+      ),
+    );
+  }
+}
+
+class _GlassSkeletonCard extends StatelessWidget {
+  const _GlassSkeletonCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final stripeColor =
+        isDark ? AppColors.darkTextMuted.withValues(alpha: 0.35) : const Color(0xFFCBD5E1);
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isDark
+              ? AppColors.darkBorder.withValues(alpha: 0.7)
+              : Colors.white.withValues(alpha: 0.7),
+        ),
+      ),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+        child: Container(
+          color: isDark
+              ? AppColors.darkCardBg.withValues(alpha: 0.55)
+              : Colors.white.withValues(alpha: 0.55),
+          child: Stack(
+            children: [
+              // Same colored-left-accent idea as VehicleCard, drawn as a
+              // positioned box rather than a stretched Row child — a Row
+              // with CrossAxisAlignment.stretch inside a ListView item gets
+              // an unbounded height constraint and crashes layout.
+              Positioned(
+                left: 0,
+                top: 0,
+                bottom: 0,
+                width: 4,
+                child: ColoredBox(color: stripeColor),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SkeletonBox(
+                      width: 96,
+                      height: 96,
+                      borderRadius: BorderRadius.all(Radius.circular(14)),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SkeletonBox(height: 16, width: 140, borderRadius: BorderRadius.all(Radius.circular(4))),
+                          const SizedBox(height: 8),
+                          const SkeletonBox(height: 22, width: 84, borderRadius: BorderRadius.all(Radius.circular(8))),
+                          const SizedBox(height: 11),
+                          const SkeletonBox(height: 32, borderRadius: BorderRadius.all(Radius.circular(10))),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _VehicleDetails extends StatelessWidget {
   final FleetVehicle vehicle;
   final bool canWrite;
@@ -1310,7 +1403,9 @@ class _Detail extends StatelessWidget {
             width: 38,
             height: 38,
             decoration: BoxDecoration(
-              color: AppColors.tileVehiclesBg,
+              color: isDark
+                  ? AppColors.primary.withValues(alpha: 0.16)
+                  : AppColors.tileVehiclesBg,
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: AppColors.primary, size: 18),

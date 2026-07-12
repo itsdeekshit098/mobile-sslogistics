@@ -9,8 +9,8 @@ import '../../../shared/widgets/app_drawer.dart';
 import '../../../shared/widgets/delete_confirmation_dialog.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/error_state.dart';
-import '../../../shared/widgets/loading_spinner.dart';
 import '../../../shared/widgets/notification_bell_button.dart';
+import '../../../shared/widgets/skeleton_loader.dart';
 import '../../external_trips/data/external_trip_models.dart' show ExternalTripPrefill;
 import '../../external_trips/widgets/external_trip_form_sheet.dart';
 import '../data/trip_booking_models.dart';
@@ -41,6 +41,13 @@ class _TripBookingsListScreenState extends ConsumerState<TripBookingsListScreen>
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider).valueOrNull;
     final listAsync = ref.watch(tripBookingListProvider);
+
+    ref.listen(tripBookingListProvider, (previous, next) {
+      final error = next.valueOrNull?.loadMoreError;
+      if (error != null && previous?.valueOrNull?.loadMoreError != error) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
+      }
+    });
 
     // API contract: admin+staff can create/complete, only admin can edit/cancel.
     final canCreate = (user?.isAdmin ?? false) || (user?.isStaff ?? false);
@@ -84,7 +91,7 @@ class _TripBookingsListScreenState extends ConsumerState<TripBookingsListScreen>
           const TripBookingFilterBar(),
           Expanded(
             child: listAsync.when(
-              loading: () => const LoadingSpinner(message: 'Loading bookings...'),
+              loading: () => const SkeletonListCards(shape: SkeletonCardShape.band, infoLines: 3),
               error: (e, _) => ErrorState(
                 message: e.toString().replaceFirst('Exception: ', ''),
                 onRetry: () => ref.invalidate(tripBookingListProvider),

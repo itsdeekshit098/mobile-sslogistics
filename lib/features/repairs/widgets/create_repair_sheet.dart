@@ -7,6 +7,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../shared/models/vehicle_model.dart';
 import '../../../shared/utils/validated_field.dart';
 import '../../../shared/widgets/form_error_banner.dart';
+import '../../../shared/widgets/server_error_banner.dart';
 import '../../diesel/providers/vehicle_provider.dart';
 import '../data/repair_models.dart';
 import '../providers/repair_provider.dart';
@@ -31,6 +32,10 @@ class _CreateRepairSheetState extends ConsumerState<CreateRepairSheet> {
   Technician? _technician;
   bool _isSubmitting = false;
   int _errorCount = 0;
+  // Shown as a banner inside the sheet rather than a SnackBar — a SnackBar
+  // anchors to the screen underneath and renders hidden behind this modal
+  // bottom sheet, so the user never sees it even though it technically fired.
+  String? _serverError;
 
   final _vehicleSectionKey = GlobalKey();
   final _issuesSectionKey = GlobalKey();
@@ -141,7 +146,10 @@ class _CreateRepairSheetState extends ConsumerState<CreateRepairSheet> {
       _showError(_firstErrorMessage());
       return;
     }
-    setState(() => _errorCount = 0);
+    setState(() {
+      _errorCount = 0;
+      _serverError = null;
+    });
 
     final cost = double.parse(_costCtrl.text);
 
@@ -182,9 +190,7 @@ class _CreateRepairSheetState extends ConsumerState<CreateRepairSheet> {
   }
 
   void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: AppColors.error),
-    );
+    setState(() => _serverError = message);
   }
 
   @override
@@ -232,6 +238,7 @@ class _CreateRepairSheetState extends ConsumerState<CreateRepairSheet> {
           ),
           const Divider(height: 1),
           if (_errorCount > 0) FormErrorBanner(count: _errorCount),
+          if (_serverError != null) ServerErrorBanner(message: _serverError!),
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
@@ -626,6 +633,10 @@ class _IssuesPickerSheetState extends ConsumerState<IssuesPickerSheet> {
   late final List<String> _options = List.of(widget.options);
   final _newIssueCtrl = TextEditingController();
   bool _adding = false;
+  // Shown as a banner inside the sheet rather than a SnackBar — a SnackBar
+  // anchors to the screen underneath and renders hidden behind this modal
+  // bottom sheet, so the user never sees it even though it technically fired.
+  String? _serverError;
 
   @override
   void dispose() {
@@ -636,7 +647,10 @@ class _IssuesPickerSheetState extends ConsumerState<IssuesPickerSheet> {
   Future<void> _addNew() async {
     final name = _newIssueCtrl.text.trim();
     if (name.isEmpty) return;
-    setState(() => _adding = true);
+    setState(() {
+      _adding = true;
+      _serverError = null;
+    });
     try {
       final repo = ref.read(repairRepositoryProvider);
       await repo.addIssueOption(widget.category, name);
@@ -649,9 +663,10 @@ class _IssuesPickerSheetState extends ConsumerState<IssuesPickerSheet> {
       });
     } catch (e) {
       if (mounted) {
-        setState(() => _adding = false);
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))));
+        setState(() {
+          _adding = false;
+          _serverError = e.toString().replaceFirst('Exception: ', '');
+        });
       }
     }
   }
@@ -702,6 +717,7 @@ class _IssuesPickerSheetState extends ConsumerState<IssuesPickerSheet> {
                   ],
                 ),
               ),
+              if (_serverError != null) ServerErrorBanner(message: _serverError!),
               ConstrainedBox(
                 constraints: const BoxConstraints(maxHeight: 320),
                 child: _options.isEmpty

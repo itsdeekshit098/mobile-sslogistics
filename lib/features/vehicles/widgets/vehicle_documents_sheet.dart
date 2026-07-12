@@ -143,7 +143,11 @@ class _VehicleDocumentsSheetState extends State<VehicleDocumentsSheet> {
                                   width: 38,
                                   height: 38,
                                   decoration: BoxDecoration(
-                                    color: AppColors.tileVehiclesBg,
+                                    color: isDark
+                                        ? AppColors.primary.withValues(
+                                            alpha: 0.16,
+                                          )
+                                        : AppColors.tileVehiclesBg,
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: const Icon(

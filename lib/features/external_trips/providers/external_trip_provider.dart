@@ -12,6 +12,7 @@ class ExternalTripListState {
   final int page; // last loaded page
   final ExternalTripSummary? summary;
   final bool isLoadingMore;
+  final String? loadMoreError;
 
   // Active filters
   final String? fromDate; // 'YYYY-MM-DD'
@@ -25,6 +26,7 @@ class ExternalTripListState {
     this.page = 1,
     this.summary,
     this.isLoadingMore = false,
+    this.loadMoreError,
     this.fromDate,
     this.toDate,
     this.vehicleId,
@@ -42,6 +44,8 @@ class ExternalTripListState {
     int? page,
     ExternalTripSummary? summary,
     bool? isLoadingMore,
+    String? loadMoreError,
+    bool clearLoadMoreError = false,
   }) {
     return ExternalTripListState(
       trips: trips ?? this.trips,
@@ -49,6 +53,8 @@ class ExternalTripListState {
       page: page ?? this.page,
       summary: summary ?? this.summary,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      loadMoreError:
+          clearLoadMoreError ? null : (loadMoreError ?? this.loadMoreError),
       fromDate: fromDate,
       toDate: toDate,
       vehicleId: vehicleId,
@@ -123,7 +129,7 @@ class ExternalTripListNotifier
     final cur = state.valueOrNull;
     if (cur == null || cur.isLoadingMore || !cur.hasMore) return;
 
-    state = AsyncData(cur.copyWith(isLoadingMore: true));
+    state = AsyncData(cur.copyWith(isLoadingMore: true, clearLoadMoreError: true));
     try {
       final data = await ref.read(externalTripRepositoryProvider).getTrips(
             fromDate: cur.fromDate,
@@ -141,10 +147,13 @@ class ExternalTripListNotifier
         page: cur.page + 1,
         isLoadingMore: false,
       ));
-    } catch (_) {
+    } catch (e) {
       // Keep what's on screen; the scroll trigger will retry naturally.
       if (_disposed) return;
-      state = AsyncData(cur.copyWith(isLoadingMore: false));
+      state = AsyncData(cur.copyWith(
+        isLoadingMore: false,
+        loadMoreError: e.toString().replaceFirst('Exception: ', ''),
+      ));
     }
   }
 

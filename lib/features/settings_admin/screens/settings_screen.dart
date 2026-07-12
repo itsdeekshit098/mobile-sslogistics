@@ -7,6 +7,7 @@ import '../../../core/constants/app_icons.dart';
 import '../../../shared/widgets/app_drawer.dart';
 import '../../../shared/widgets/error_state.dart';
 import '../../../shared/widgets/notification_bell_button.dart';
+import '../../../shared/widgets/skeleton_loader.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../providers/settings_provider.dart';
 import '../widgets/app_version_card.dart';
@@ -76,7 +77,7 @@ class _SettingsBody extends ConsumerWidget {
     final async = ref.watch(settingsProvider);
 
     return async.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const SkeletonListCards(shape: SkeletonCardShape.plain, itemCount: 2, infoLines: 2),
       error: (e, _) => ErrorState(
         message: e.toString().replaceFirst('Exception: ', ''),
         onRetry: () => ref.invalidate(settingsProvider),

@@ -50,8 +50,8 @@ class _AppSplashState extends State<AppSplash>
                   scale: breathe,
                   child: Image.asset(
                     'assets/images/s-logo-native-splash.png',
-                    width: 112,
-                    height: 112,
+                    width: 256,
+                    height: 256,
                   ),
                 ),
                 const SizedBox(height: 32),

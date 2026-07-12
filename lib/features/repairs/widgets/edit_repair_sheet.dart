@@ -6,6 +6,7 @@ import 'package:mobile_sslogistics/core/constants/app_icons.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../shared/utils/validated_field.dart';
 import '../../../shared/widgets/form_error_banner.dart';
+import '../../../shared/widgets/server_error_banner.dart';
 import '../data/repair_models.dart';
 import '../providers/repair_provider.dart';
 import 'create_repair_sheet.dart';
@@ -31,6 +32,10 @@ class _EditRepairSheetState extends ConsumerState<EditRepairSheet> {
   bool _isSubmitting = false;
   bool _techInitialized = false;
   int _errorCount = 0;
+  // Shown as a banner inside the sheet rather than a SnackBar — a SnackBar
+  // anchors to the screen underneath and renders hidden behind this modal
+  // bottom sheet, so the user never sees it even though it technically fired.
+  String? _serverError;
 
   final _issuesSectionKey = GlobalKey();
   final _technicianSectionKey = GlobalKey();
@@ -131,7 +136,10 @@ class _EditRepairSheetState extends ConsumerState<EditRepairSheet> {
       _showError(_firstErrorMessage());
       return;
     }
-    setState(() => _errorCount = 0);
+    setState(() {
+      _errorCount = 0;
+      _serverError = null;
+    });
 
     final cost = double.parse(_costCtrl.text);
 
@@ -162,9 +170,7 @@ class _EditRepairSheetState extends ConsumerState<EditRepairSheet> {
   }
 
   void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: AppColors.error),
-    );
+    setState(() => _serverError = message);
   }
 
   @override
@@ -213,6 +219,7 @@ class _EditRepairSheetState extends ConsumerState<EditRepairSheet> {
           ),
           const Divider(height: 1),
           if (_errorCount > 0) FormErrorBanner(count: _errorCount),
+          if (_serverError != null) ServerErrorBanner(message: _serverError!),
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),

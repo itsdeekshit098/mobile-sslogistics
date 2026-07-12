@@ -7,6 +7,7 @@ import '../../../core/constants/app_icons.dart';
 import '../../../shared/models/vehicle_model.dart';
 import '../../../shared/utils/validated_field.dart';
 import '../../../shared/widgets/form_error_banner.dart';
+import '../../../shared/widgets/server_error_banner.dart';
 import '../../diesel/providers/vehicle_provider.dart';
 import '../../repairs/data/repair_models.dart';
 import '../../repairs/providers/repair_provider.dart';
@@ -50,6 +51,10 @@ class _WarrantyFormSheetState extends ConsumerState<WarrantyFormSheet> {
 
   bool _isSubmitting = false;
   int _errorCount = 0;
+  // Shown as a banner inside the sheet rather than a SnackBar — a SnackBar
+  // anchors to the screen underneath and renders hidden behind this modal
+  // bottom sheet, so the user never sees it even though it technically fired.
+  String? _serverError;
 
   bool get _isEdit => widget.item != null;
   bool get _vehicleLocked => widget.item?.isLinkedToRepair ?? false;
@@ -253,6 +258,7 @@ class _WarrantyFormSheetState extends ConsumerState<WarrantyFormSheet> {
     }
     setState(() {
       _errorCount = 0;
+      _serverError = null;
       _isSubmitting = true;
     });
 
@@ -273,13 +279,10 @@ class _WarrantyFormSheetState extends ConsumerState<WarrantyFormSheet> {
       if (mounted) Navigator.pop(context);
     } catch (e) {
       if (mounted) {
-        setState(() => _isSubmitting = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.toString().replaceFirst('Exception: ', '')),
-            backgroundColor: AppColors.error,
-          ),
-        );
+        setState(() {
+          _isSubmitting = false;
+          _serverError = e.toString().replaceFirst('Exception: ', '');
+        });
       }
     }
   }
@@ -329,6 +332,7 @@ class _WarrantyFormSheetState extends ConsumerState<WarrantyFormSheet> {
           ),
           const Divider(height: 1),
           if (_errorCount > 0) FormErrorBanner(count: _errorCount),
+          if (_serverError != null) ServerErrorBanner(message: _serverError!),
           Flexible(
             child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
@@ -828,6 +832,10 @@ class _SearchAddSheet extends StatefulWidget {
 class _SearchAddSheetState extends State<_SearchAddSheet> {
   String _query = '';
   bool _adding = false;
+  // Shown as a banner inside the sheet rather than a SnackBar — a SnackBar
+  // anchors to the screen underneath and renders hidden behind this modal
+  // bottom sheet, so the user never sees it even though it technically fired.
+  String? _serverError;
 
   List<String> get _filtered {
     final q = _query.trim().toLowerCase();
@@ -838,16 +846,19 @@ class _SearchAddSheetState extends State<_SearchAddSheet> {
   bool get _hasExactMatch => widget.options.any((o) => o.toLowerCase() == _query.trim().toLowerCase());
 
   Future<void> _addNew() async {
-    setState(() => _adding = true);
+    setState(() {
+      _adding = true;
+      _serverError = null;
+    });
     try {
       final name = await widget.onAddNew(_query.trim());
       if (mounted) Navigator.pop(context, name);
     } catch (e) {
       if (mounted) {
-        setState(() => _adding = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
-        );
+        setState(() {
+          _adding = false;
+          _serverError = e.toString().replaceFirst('Exception: ', '');
+        });
       }
     }
   }
@@ -861,6 +872,7 @@ class _SearchAddSheetState extends State<_SearchAddSheet> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          if (_serverError != null) ServerErrorBanner(message: _serverError!),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
             child: TextField(

@@ -53,7 +53,12 @@ class TechnicianCard extends StatelessWidget {
                 Container(
                   width: 44,
                   height: 44,
-                  decoration: const BoxDecoration(color: AppColors.tileTechBg, shape: BoxShape.circle),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? AppColors.tileTechIcon.withValues(alpha: 0.16)
+                        : AppColors.tileTechBg,
+                    shape: BoxShape.circle,
+                  ),
                   child: const Icon(AppIcons.userCog, color: AppColors.tileTechIcon),
                 ),
                 const SizedBox(width: 12),

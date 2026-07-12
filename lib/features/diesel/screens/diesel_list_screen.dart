@@ -7,8 +7,8 @@ import 'package:intl/intl.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../features/auth/providers/auth_provider.dart';
 import '../../../shared/widgets/app_drawer.dart';
-import '../../../shared/widgets/loading_spinner.dart';
 import '../../../shared/widgets/error_state.dart';
+import '../../../shared/widgets/skeleton_loader.dart';
 import '../../../shared/widgets/notification_bell_button.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../providers/diesel_provider.dart';
@@ -98,7 +98,7 @@ class _DieselListScreenState extends ConsumerState<DieselListScreen> {
           Expanded(
             child: listAsync.when(
               loading: () =>
-                  const LoadingSpinner(message: 'Loading records...'),
+                  const SkeletonListCards(shape: SkeletonCardShape.band, infoLines: 2),
               error: (e, _) => ErrorState(
                 message: e.toString().replaceFirst('Exception: ', ''),
                 onRetry: () => ref.invalidate(dieselListProvider),

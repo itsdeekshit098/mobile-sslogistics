@@ -40,11 +40,11 @@ class _SignOutConfirmationDialogState
     try {
       await ref.read(authProvider.notifier).logout();
       if (mounted) Navigator.pop(context);
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
       setState(() {
         _signingOut = false;
-        _error = 'Something went wrong. Please try again.';
+        _error = e.toString().replaceFirst('Exception: ', '');
       });
     }
   }

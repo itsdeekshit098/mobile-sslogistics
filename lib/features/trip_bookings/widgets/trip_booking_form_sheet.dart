@@ -7,6 +7,8 @@ import '../../../core/constants/app_colors.dart';
 import '../../../shared/models/vehicle_model.dart';
 import '../../../shared/utils/validated_field.dart';
 import '../../../shared/widgets/form_error_banner.dart';
+import '../../../shared/widgets/server_error_banner.dart';
+import '../../../shared/widgets/location_autocomplete_field.dart';
 import '../../diesel/providers/vehicle_provider.dart';
 import '../../external_trips/data/external_trip_models.dart' show Driver;
 import '../../external_trips/providers/external_trip_provider.dart'
@@ -55,6 +57,10 @@ class _TripBookingFormSheetState extends ConsumerState<TripBookingFormSheet> {
   final _seatingCapacityFieldKey = GlobalKey<FormFieldState>();
   final _seatingCapacityFocus = FocusNode();
   int _errorCount = 0;
+  // Shown as a banner inside the sheet rather than a SnackBar — a SnackBar
+  // anchors to the screen underneath and renders hidden behind this modal
+  // bottom sheet, so the user never sees it even though it technically fired.
+  String? _serverError;
 
   String _vehicleType = vehicleTypeCar;
   DateTime? _startDate;
@@ -180,10 +186,17 @@ class _TripBookingFormSheetState extends ConsumerState<TripBookingFormSheet> {
     }
   }
 
+  void _swapLocations() {
+    final from = _fromLocationCtrl.text;
+    final to = _toLocationCtrl.text;
+    setState(() {
+      _fromLocationCtrl.text = to;
+      _toLocationCtrl.text = from;
+    });
+  }
+
   void _snack(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: AppColors.error),
-    );
+    setState(() => _serverError = message);
   }
 
   List<ValidatedField> get _validatedFields => [
@@ -241,6 +254,7 @@ class _TripBookingFormSheetState extends ConsumerState<TripBookingFormSheet> {
 
     setState(() {
       _errorCount = 0;
+      _serverError = null;
       _isSubmitting = true;
     });
 
@@ -354,6 +368,7 @@ class _TripBookingFormSheetState extends ConsumerState<TripBookingFormSheet> {
           ),
           const Divider(height: 1),
           if (_errorCount > 0) FormErrorBanner(count: _errorCount),
+          if (_serverError != null) ServerErrorBanner(message: _serverError!),
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
@@ -396,38 +411,28 @@ class _TripBookingFormSheetState extends ConsumerState<TripBookingFormSheet> {
                     const SizedBox(height: 14),
 
                     // ── Route ────────────────────────────────────────────
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _Section(
-                            label: 'From *',
-                            child: TextFormField(
-                              key: _fromLocationFieldKey,
-                              controller: _fromLocationCtrl,
-                              focusNode: _fromLocationFocus,
-                              decoration: _inputDecor(hint: 'Origin'),
-                              textCapitalization: TextCapitalization.words,
-                              validator: (v) =>
-                                  (v == null || v.trim().isEmpty) ? 'Required' : null,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _Section(
-                            label: 'To *',
-                            child: TextFormField(
-                              key: _toLocationFieldKey,
-                              controller: _toLocationCtrl,
-                              focusNode: _toLocationFocus,
-                              decoration: _inputDecor(hint: 'Destination'),
-                              textCapitalization: TextCapitalization.words,
-                              validator: (v) =>
-                                  (v == null || v.trim().isEmpty) ? 'Required' : null,
-                            ),
-                          ),
-                        ),
-                      ],
+                    _Section(
+                      label: 'From *',
+                      child: LocationAutocompleteField(
+                        fieldKey: _fromLocationFieldKey,
+                        controller: _fromLocationCtrl,
+                        focusNode: _fromLocationFocus,
+                        decoration: _inputDecor(hint: 'Origin'),
+                        validator: (v) =>
+                            (v == null || v.trim().isEmpty) ? 'Required' : null,
+                      ),
+                    ),
+                    _RouteSwapButton(onTap: _swapLocations),
+                    _Section(
+                      label: 'To *',
+                      child: LocationAutocompleteField(
+                        fieldKey: _toLocationFieldKey,
+                        controller: _toLocationCtrl,
+                        focusNode: _toLocationFocus,
+                        decoration: _inputDecor(hint: 'Destination'),
+                        validator: (v) =>
+                            (v == null || v.trim().isEmpty) ? 'Required' : null,
+                      ),
                     ),
                     const SizedBox(height: 14),
 
@@ -645,6 +650,43 @@ class _TripBookingFormSheetState extends ConsumerState<TripBookingFormSheet> {
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
         borderSide: const BorderSide(color: AppColors.primary, width: 2),
+      ),
+    );
+  }
+}
+
+/// Small centered affordance between the From/To fields to swap their
+/// values — sits in place of the side-by-side layout so each location
+/// field gets the sheet's full width for its suggestion dropdown.
+class _RouteSwapButton extends StatelessWidget {
+  final VoidCallback onTap;
+  const _RouteSwapButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Center(
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(14),
+          child: Container(
+            width: 28,
+            height: 28,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: isDark ? AppColors.darkCardBg : Colors.white,
+              border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.border),
+            ),
+            child: Icon(
+              Icons.swap_vert_rounded,
+              size: 16,
+              color: isDark ? AppColors.darkTextMuted : AppColors.textMuted,
+            ),
+          ),
+        ),
       ),
     );
   }

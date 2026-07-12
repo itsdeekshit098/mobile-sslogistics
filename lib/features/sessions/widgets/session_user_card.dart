@@ -53,8 +53,10 @@ class _SessionUserCardState extends State<SessionUserCard> {
                     Container(
                       width: 40,
                       height: 40,
-                      decoration: const BoxDecoration(
-                        color: AppColors.tileSessionsBg,
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? AppColors.tileSessionsIcon.withValues(alpha: 0.16)
+                            : AppColors.tileSessionsBg,
                         shape: BoxShape.circle,
                       ),
                       alignment: Alignment.center,

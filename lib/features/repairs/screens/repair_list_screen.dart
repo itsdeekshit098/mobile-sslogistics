@@ -11,6 +11,7 @@ import '../../../shared/widgets/delete_confirmation_dialog.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/error_state.dart';
 import '../../../shared/widgets/notification_bell_button.dart';
+import '../../../shared/widgets/skeleton_loader.dart';
 import '../data/repair_models.dart';
 import '../providers/repair_provider.dart';
 import '../widgets/create_repair_sheet.dart';
@@ -58,6 +59,13 @@ class _RepairListScreenState extends ConsumerState<RepairListScreen> {
     final user = ref.watch(authProvider).valueOrNull;
     final listAsync = ref.watch(repairListProvider);
 
+    ref.listen(repairListProvider, (previous, next) {
+      final error = next.valueOrNull?.loadMoreError;
+      if (error != null && previous?.valueOrNull?.loadMoreError != error) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
+      }
+    });
+
     final canCreate = (user?.isAdmin ?? false) || (user?.isStaff ?? false);
     final canEdit = user?.isAdmin ?? false;
     final canDelete = user?.isAdmin ?? false;
@@ -99,7 +107,7 @@ class _RepairListScreenState extends ConsumerState<RepairListScreen> {
           const RepairFilterBar(),
           Expanded(
             child: listAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
+              loading: () => const SkeletonListCards(shape: SkeletonCardShape.band, infoLines: 1),
               error: (e, _) => ErrorState(
                 message: e.toString().replaceFirst('Exception: ', ''),
                 onRetry: () => ref.invalidate(repairListProvider),

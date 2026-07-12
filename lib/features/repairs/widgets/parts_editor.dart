@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:mobile_sslogistics/core/constants/app_icons.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../shared/widgets/server_error_banner.dart';
 import '../data/repair_models.dart';
 import '../providers/repair_provider.dart';
 
@@ -538,6 +539,10 @@ class _SearchAddSheet extends StatefulWidget {
 class _SearchAddSheetState extends State<_SearchAddSheet> {
   String _query = '';
   bool _adding = false;
+  // Shown as a banner inside the sheet rather than a SnackBar — a SnackBar
+  // anchors to the screen underneath and renders hidden behind this modal
+  // bottom sheet, so the user never sees it even though it technically fired.
+  String? _serverError;
 
   List<String> get _filtered {
     final q = _query.trim().toLowerCase();
@@ -549,16 +554,19 @@ class _SearchAddSheetState extends State<_SearchAddSheet> {
       widget.options.any((o) => o.toLowerCase() == _query.trim().toLowerCase());
 
   Future<void> _addNew() async {
-    setState(() => _adding = true);
+    setState(() {
+      _adding = true;
+      _serverError = null;
+    });
     try {
       final name = await widget.onAddNew(_query.trim());
       if (mounted) Navigator.pop(context, name);
     } catch (e) {
       if (mounted) {
-        setState(() => _adding = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
-        );
+        setState(() {
+          _adding = false;
+          _serverError = e.toString().replaceFirst('Exception: ', '');
+        });
       }
     }
   }
@@ -603,6 +611,7 @@ class _SearchAddSheetState extends State<_SearchAddSheet> {
                   ),
                 ),
               ),
+              if (_serverError != null) ServerErrorBanner(message: _serverError!),
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                 child: TextField(

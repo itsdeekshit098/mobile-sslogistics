@@ -71,7 +71,7 @@ class ExternalTripDetailSheet extends StatelessWidget {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: tripTypeBg(trip.tripType),
+                          color: tripTypeBg(trip.tripType, isDark: isDark),
                           borderRadius: BorderRadius.circular(5),
                           border: Border.all(
                             color: accent.withValues(alpha: 0.28),

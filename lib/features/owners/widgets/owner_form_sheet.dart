@@ -4,6 +4,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_icons.dart';
 import '../../../shared/utils/validated_field.dart';
 import '../../../shared/widgets/form_error_banner.dart';
+import '../../../shared/widgets/server_error_banner.dart';
 import '../data/owner_models.dart';
 
 /// Create + edit in one sheet (mirrors the web's single addVehicleOwnerModal).
@@ -26,6 +27,10 @@ class _OwnerFormSheetState extends State<OwnerFormSheet> {
 
   bool _isSubmitting = false;
   int _errorCount = 0;
+  // Shown as a banner inside the sheet rather than a SnackBar — a SnackBar
+  // anchors to the screen underneath and renders hidden behind this modal
+  // bottom sheet, so the user never sees it even though it technically fired.
+  String? _serverError;
 
   List<ValidatedField> get _validatedFields => [
         ValidatedField(key: _nameKey, hasError: () => _nameCtrl.text.trim().isEmpty, focusNode: _nameFocus),
@@ -48,7 +53,10 @@ class _OwnerFormSheetState extends State<OwnerFormSheet> {
       await scrollToFirstError(fields);
       return;
     }
-    setState(() => _errorCount = 0);
+    setState(() {
+      _errorCount = 0;
+      _serverError = null;
+    });
 
     setState(() => _isSubmitting = true);
     try {
@@ -64,13 +72,10 @@ class _OwnerFormSheetState extends State<OwnerFormSheet> {
       if (mounted) Navigator.pop(context);
     } catch (e) {
       if (mounted) {
-        setState(() => _isSubmitting = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.toString().replaceFirst('Exception: ', '')),
-            backgroundColor: AppColors.error,
-          ),
-        );
+        setState(() {
+          _isSubmitting = false;
+          _serverError = e.toString().replaceFirst('Exception: ', '');
+        });
       }
     }
   }
@@ -117,6 +122,7 @@ class _OwnerFormSheetState extends State<OwnerFormSheet> {
           ),
           const Divider(height: 1),
           if (_errorCount > 0) FormErrorBanner(count: _errorCount),
+          if (_serverError != null) ServerErrorBanner(message: _serverError!),
           Flexible(
             child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),

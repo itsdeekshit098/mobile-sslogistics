@@ -251,28 +251,6 @@ class _RecordHeader extends StatelessWidget {
               label: isClosed ? 'CLOSED' : 'OPEN',
               color: cycleColor,
             ),
-            if (canEdit || canDelete) ...[
-              const SizedBox(height: 10),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (canEdit)
-                    _IconActionBtn(
-                      icon: AppIcons.pencil,
-                      color: AppColors.primary,
-                      onTap: onEdit,
-                    ),
-                  if (canDelete) ...[
-                    const SizedBox(width: 8),
-                    _IconActionBtn(
-                      icon: AppIcons.trash2,
-                      color: AppColors.error,
-                      onTap: onDelete,
-                    ),
-                  ],
-                ],
-              ),
-            ],
           ],
         ),
       ],
@@ -418,36 +396,6 @@ class _StatusBadge extends StatelessWidget {
   }
 }
 
-class _IconActionBtn extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  final VoidCallback? onTap;
-
-  const _IconActionBtn({
-    required this.icon,
-    required this.color,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        width: 34,
-        height: 34,
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: color.withValues(alpha: 0.32)),
-        ),
-        child: Icon(icon, size: 17, color: color),
-      ),
-    );
-  }
-}
-
 class _FillTypeBadge extends StatelessWidget {
   final bool isFull;
   const _FillTypeBadge({required this.isFull});
@@ -499,7 +447,9 @@ class _CycleSummaryBand extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
       decoration: BoxDecoration(
-        color: AppColors.successBg.withValues(alpha: 0.45),
+        color: isDark
+            ? AppColors.darkSuccessBg
+            : AppColors.successBg.withValues(alpha: 0.45),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.success.withValues(alpha: 0.25)),
       ),
@@ -610,11 +560,12 @@ class _WarningPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
-        color: AppColors.warningBg,
+        color: isDark ? AppColors.darkWarningBg : AppColors.warningBg,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
       ),

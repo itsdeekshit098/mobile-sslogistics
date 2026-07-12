@@ -52,8 +52,10 @@ class DriverCard extends StatelessWidget {
                 Container(
                   width: 44,
                   height: 44,
-                  decoration: const BoxDecoration(
-                    color: AppColors.tileDriversBg,
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? AppColors.tileDriversIcon.withValues(alpha: 0.16)
+                        : AppColors.tileDriversBg,
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(AppIcons.user, color: AppColors.tileDriversIcon),

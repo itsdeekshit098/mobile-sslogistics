@@ -9,6 +9,7 @@ import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/error_state.dart';
 import '../../../shared/widgets/list_pagination_bar.dart';
 import '../../../shared/widgets/notification_bell_button.dart';
+import '../../../shared/widgets/skeleton_loader.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../data/session_models.dart';
 import '../providers/sessions_provider.dart';
@@ -73,7 +74,7 @@ class _SessionsBody extends ConsumerWidget {
     final notifier = ref.read(sessionsProvider.notifier);
 
     return async.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const SkeletonListCards(infoLines: 1),
       error: (e, _) => ErrorState(
         message: e.toString().replaceFirst('Exception: ', ''),
         onRetry: () => ref.invalidate(sessionsProvider),

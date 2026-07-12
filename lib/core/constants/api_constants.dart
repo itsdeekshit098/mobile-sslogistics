@@ -38,6 +38,7 @@ class ApiConstants {
   static const String technicians = '/api/technicians';
   static const String specializations = '/api/specializations';
   static const String vendors = '/api/vendors';
+  static const String locationsAutocomplete = '/api/locations/autocomplete';
 
   // ── Notifications ─────────────────────────────────────────────────────────
   static const String notifications = '/api/notifications';

@@ -88,6 +88,21 @@ class DioClient {
               ),
             );
           }
+          // 5xx responses skip validateStatus and land here rather than in
+          // unwrapResponse, so its `{success:false, error}` parsing never
+          // runs. Surface the server-provided message the same way so
+          // callers' `e.toString()` shows real text instead of Dio's raw
+          // "DioException [bad response]: ..." string.
+          final serverError = data is Map ? data['error'] as String? : null;
+          if (serverError != null) {
+            return handler.reject(
+              NetworkException(
+                requestOptions: e.requestOptions,
+                customMessage: serverError,
+                response: e.response,
+              ),
+            );
+          }
           return handler.next(e);
         },
       ),
@@ -136,6 +151,7 @@ class NetworkException extends DioException {
   NetworkException({
     required super.requestOptions,
     required this.customMessage,
+    super.response,
   });
 
   @override

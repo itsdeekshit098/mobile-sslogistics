@@ -152,24 +152,6 @@ class VehicleCard extends StatelessWidget {
                                 color: AppColors.warning,
                               ),
                             ],
-                            if (canWrite) ...[
-                              const SizedBox(width: 8),
-                              _IconActionButton(
-                                icon: AppIcons.pencil,
-                                color: AppColors.primary,
-                                onTap: onEdit,
-                                compact: true,
-                              ),
-                            ],
-                            if (canDelete) ...[
-                              const SizedBox(width: 8),
-                              _IconActionButton(
-                                icon: AppIcons.trash2,
-                                color: AppColors.error,
-                                onTap: onDelete,
-                                compact: true,
-                              ),
-                            ],
                           ],
                         ),
                         const SizedBox(height: 11),
@@ -554,35 +536,3 @@ class _DocumentsButton extends StatelessWidget {
   }
 }
 
-class _IconActionButton extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  final VoidCallback? onTap;
-  final bool compact;
-
-  const _IconActionButton({
-    required this.icon,
-    required this.color,
-    this.onTap,
-    this.compact = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final size = compact ? 32.0 : 44.0;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(compact ? 9 : 12),
-      child: Container(
-        width: compact ? size : 46,
-        height: size,
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(compact ? 9 : 12),
-          border: Border.all(color: color.withValues(alpha: 0.25)),
-        ),
-        child: Icon(icon, color: color, size: compact ? 16 : 20),
-      ),
-    );
-  }
-}

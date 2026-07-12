@@ -12,6 +12,7 @@ class RepairListState {
   final int page;
   final RepairFilters filters;
   final bool isLoadingMore;
+  final String? loadMoreError;
 
   const RepairListState({
     required this.records,
@@ -20,6 +21,7 @@ class RepairListState {
     this.page = 1,
     this.filters = const RepairFilters(),
     this.isLoadingMore = false,
+    this.loadMoreError,
   });
 
   bool get hasMore => records.length < total;
@@ -32,6 +34,8 @@ class RepairListState {
     int? page,
     RepairFilters? filters,
     bool? isLoadingMore,
+    String? loadMoreError,
+    bool clearLoadMoreError = false,
   }) {
     return RepairListState(
       records: records ?? this.records,
@@ -40,6 +44,8 @@ class RepairListState {
       page: page ?? this.page,
       filters: filters ?? this.filters,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      loadMoreError:
+          clearLoadMoreError ? null : (loadMoreError ?? this.loadMoreError),
     );
   }
 }
@@ -102,7 +108,7 @@ class RepairListNotifier extends AutoDisposeAsyncNotifier<RepairListState> {
     final cur = state.valueOrNull;
     if (cur == null || cur.isLoadingMore || !cur.hasMore) return;
 
-    state = AsyncData(cur.copyWith(isLoadingMore: true));
+    state = AsyncData(cur.copyWith(isLoadingMore: true, clearLoadMoreError: true));
     try {
       final nextPage = cur.page + 1;
       final data = await ref.read(repairRepositoryProvider).getRecords(
@@ -121,10 +127,13 @@ class RepairListNotifier extends AutoDisposeAsyncNotifier<RepairListState> {
           isLoadingMore: false,
         ),
       );
-    } catch (_) {
+    } catch (e) {
       if (_disposed) return;
       final latest = state.valueOrNull ?? cur;
-      state = AsyncData(latest.copyWith(isLoadingMore: false));
+      state = AsyncData(latest.copyWith(
+        isLoadingMore: false,
+        loadMoreError: e.toString().replaceFirst('Exception: ', ''),
+      ));
     }
   }
 

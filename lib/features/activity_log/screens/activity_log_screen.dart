@@ -8,6 +8,7 @@ import '../../../shared/widgets/app_drawer.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/error_state.dart';
 import '../../../shared/widgets/notification_bell_button.dart';
+import '../../../shared/widgets/skeleton_loader.dart';
 import '../providers/activity_log_provider.dart';
 import '../widgets/activity_log_card.dart';
 
@@ -30,6 +31,13 @@ class _ActivityLogScreenState extends ConsumerState<ActivityLogScreen> {
   Widget build(BuildContext context) {
     final async = ref.watch(activityLogProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    ref.listen(activityLogProvider, (previous, next) {
+      final error = next.valueOrNull?.loadMoreError;
+      if (error != null && previous?.valueOrNull?.loadMoreError != error) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
+      }
+    });
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.darkPageBg : AppColors.pageBg,
@@ -78,7 +86,7 @@ class _ActivityLogScreenState extends ConsumerState<ActivityLogScreen> {
       ),
       drawer: const AppDrawer(currentPath: '/activity-log'),
       body: async.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const SkeletonListCards(shape: SkeletonCardShape.plain, infoLines: 1),
         error: (e, _) => ErrorState(
           message: e.toString().replaceFirst('Exception: ', ''),
           onRetry: () => ref.invalidate(activityLogProvider),

@@ -6,8 +6,8 @@ import 'package:mobile_sslogistics/core/constants/app_icons.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/notifications/notification_routes.dart';
-import '../../../shared/widgets/loading_spinner.dart';
 import '../../../shared/widgets/error_state.dart';
+import '../../../shared/widgets/skeleton_loader.dart';
 import '../providers/notification_provider.dart';
 import '../data/notification_models.dart';
 
@@ -51,8 +51,11 @@ class NotificationListScreen extends ConsumerWidget {
         ],
       ),
       body: listAsync.when(
-        loading: () =>
-            const LoadingSpinner(message: 'Loading notifications...'),
+        loading: () => const SkeletonListCards(
+          shape: SkeletonCardShape.plain,
+          infoLines: 2,
+          padding: EdgeInsets.all(12),
+        ),
         error: (e, _) => ErrorState(
           message: e.toString().replaceFirst('Exception: ', ''),
           onRetry: () => ref.read(notificationListProvider.notifier).refresh(),
