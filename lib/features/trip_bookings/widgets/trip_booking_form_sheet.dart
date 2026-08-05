@@ -173,6 +173,25 @@ class _TripBookingFormSheetState extends ConsumerState<TripBookingFormSheet> {
     setState(() => _selectedDriver = picked is Driver ? picked : null);
   }
 
+  Future<void> _pickVehicleType() async {
+    final picked = await showModalBottomSheet<VehicleTypeOption>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _OptionPickerSheet<VehicleTypeOption>(
+        title: 'Vehicle Type',
+        items: vehicleTypeOptions,
+        selected: vehicleTypeOptions.firstWhere((o) => o.value == _vehicleType),
+        labelBuilder: (o) => o.label,
+      ),
+    );
+    if (picked == null) return;
+    setState(() {
+      _vehicleType = picked.value;
+      if (!_showsSeatingCapacity) _seatingCapacityCtrl.clear();
+    });
+  }
+
   Future<void> _pickDate({required bool isStart}) async {
     final now = DateTime.now();
     final picked = await showDatePicker(
@@ -477,19 +496,10 @@ class _TripBookingFormSheetState extends ConsumerState<TripBookingFormSheet> {
                     // ── Vehicle type & seating ───────────────────────────
                     _Section(
                       label: 'Vehicle Type *',
-                      child: DropdownButtonFormField<String>(
-                        initialValue: _vehicleType,
-                        decoration: _inputDecor(),
-                        items: vehicleTypeOptions
-                            .map((o) => DropdownMenuItem(value: o.value, child: Text(o.label)))
-                            .toList(),
-                        onChanged: (v) {
-                          if (v == null) return;
-                          setState(() {
-                            _vehicleType = v;
-                            if (!_showsSeatingCapacity) _seatingCapacityCtrl.clear();
-                          });
-                        },
+                      child: _TapField(
+                        value: vehicleTypeOptions.firstWhere((o) => o.value == _vehicleType).label,
+                        icon: AppIcons.truck,
+                        onTap: _pickVehicleType,
                       ),
                     ),
                     if (_showsSeatingCapacity) ...[
@@ -790,6 +800,90 @@ class _TapField extends StatelessWidget {
 /// Marker returned when the user taps the "clear" row in a picker.
 class _ClearPick {
   const _ClearPick();
+}
+
+/// Fixed-option picker sheet (no search) for small enumerations like
+/// vehicle type — matches the styling of [_SearchPickerSheet] used for
+/// searchable pickers elsewhere in this form, instead of Flutter's default
+/// [DropdownButtonFormField] menu which ignores the app's dark theme.
+class _OptionPickerSheet<T> extends StatelessWidget {
+  final String title;
+  final List<T> items;
+  final T? selected;
+  final String Function(T item) labelBuilder;
+
+  const _OptionPickerSheet({
+    required this.title,
+    required this.items,
+    required this.selected,
+    required this.labelBuilder,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final borderColor = isDark ? AppColors.darkBorder : AppColors.border;
+
+    return Material(
+      color: isDark ? AppColors.darkCardBg : Colors.white,
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      child: SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 10),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(color: borderColor, borderRadius: BorderRadius.circular(2)),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 8, 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(AppIcons.x, size: 20),
+                  ),
+                ],
+              ),
+            ),
+            ListView(
+              shrinkWrap: true,
+              children: items.map((item) {
+                final isSelected = selected == item;
+                return ListTile(
+                  title: Text(
+                    labelBuilder(item),
+                    style: TextStyle(
+                      fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                      color: isSelected
+                          ? AppColors.primary
+                          : (isDark ? AppColors.darkTextPrimary : AppColors.textPrimary),
+                    ),
+                  ),
+                  trailing: isSelected ? const Icon(Icons.check_rounded, color: AppColors.primary) : null,
+                  onTap: () => Navigator.pop(context, item),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 12),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _SearchPickerSheet<T> extends StatefulWidget {
