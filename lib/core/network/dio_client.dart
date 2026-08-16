@@ -126,6 +126,16 @@ class DioClient {
     await _cookieJar?.deleteAll();
   }
 
+  /// A `Cookie:` header value for [uri], for HTTP clients that don't go
+  /// through [dio] — namely `CachedNetworkImage`, which uses its own client
+  /// and would otherwise hit an authenticated endpoint with no session
+  /// cookie attached and get a silent 401.
+  static Future<String?> cookieHeaderFor(Uri uri) async {
+    final cookies = await _cookieJar?.loadForRequest(uri) ?? const [];
+    if (cookies.isEmpty) return null;
+    return cookies.map((c) => '${c.name}=${c.value}').join('; ');
+  }
+
   /// One-time cleanup for installs that predate [SecureCookieStorage]:
   /// the session cookie was previously written as a plain file under the
   /// app's documents directory. Best-effort — if this fails or the

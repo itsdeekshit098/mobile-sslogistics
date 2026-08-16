@@ -56,6 +56,7 @@ class TripBookingCard extends StatelessWidget {
   final TripBooking booking;
   final bool canComplete;
   final bool canManage;
+  final bool showFinancials;
   final VoidCallback? onTap;
   final VoidCallback? onComplete;
   final VoidCallback? onEdit;
@@ -66,6 +67,7 @@ class TripBookingCard extends StatelessWidget {
     required this.booking,
     this.canComplete = false,
     this.canManage = false,
+    this.showFinancials = false,
     this.onTap,
     this.onComplete,
     this.onEdit,
@@ -179,7 +181,11 @@ class TripBookingCard extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 14),
-                    _MoneyBand(quoted: booking.quotedAmount, advance: booking.advanceAmount),
+                    _MoneyBand(
+                      quoted: booking.quotedAmount,
+                      advance: booking.advanceAmount,
+                      showFinancials: showFinancials,
+                    ),
                     if (isActionable && (canComplete || canManage)) ...[
                       const SizedBox(height: 12),
                       Row(
@@ -304,8 +310,13 @@ class _InfoRow extends StatelessWidget {
 class _MoneyBand extends StatelessWidget {
   final double? quoted;
   final double advance;
+  final bool showFinancials;
 
-  const _MoneyBand({required this.quoted, required this.advance});
+  const _MoneyBand({
+    required this.quoted,
+    required this.advance,
+    required this.showFinancials,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -324,12 +335,17 @@ class _MoneyBand extends StatelessWidget {
             Expanded(
               child: _MoneyItem(
                 label: 'Quoted',
-                value: quoted != null ? formatBookingMoney(quoted!) : '—',
+                value: quoted != null
+                    ? (showFinancials ? formatBookingMoney(quoted!) : '•••••')
+                    : '—',
               ),
             ),
             VerticalDivider(color: borderColor, width: 18),
             Expanded(
-              child: _MoneyItem(label: 'Advance', value: formatBookingMoney(advance)),
+              child: _MoneyItem(
+                label: 'Advance',
+                value: showFinancials ? formatBookingMoney(advance) : '•••••',
+              ),
             ),
           ],
         ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:mobile_sslogistics/core/constants/app_icons.dart';
 
 import '../../../core/constants/app_colors.dart';
@@ -20,6 +21,8 @@ import '../widgets/trip_booking_detail_sheet.dart';
 import '../widgets/trip_booking_filter_bar.dart';
 import '../widgets/trip_booking_form_sheet.dart';
 
+final _summaryMoneyFmt = NumberFormat('#,##0', 'en_IN');
+
 class TripBookingsListScreen extends ConsumerStatefulWidget {
   const TripBookingsListScreen({super.key});
 
@@ -28,6 +31,8 @@ class TripBookingsListScreen extends ConsumerStatefulWidget {
 }
 
 class _TripBookingsListScreenState extends ConsumerState<TripBookingsListScreen> {
+  bool _showFinancials = false;
+
   bool _onScrollNotification(ScrollNotification notification) {
     // Trigger the next page well before the user hits the bottom so the
     // scroll never visibly stalls.
@@ -67,7 +72,7 @@ class _TripBookingsListScreenState extends ConsumerState<TripBookingsListScreen>
           tooltip: 'Back',
         ),
         title: Text(
-          'Trip Bookings',
+          'Trips',
           style: TextStyle(
             color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
             fontSize: 18,
@@ -75,6 +80,17 @@ class _TripBookingsListScreenState extends ConsumerState<TripBookingsListScreen>
           ),
         ),
         actions: [
+          if (canManage)
+            IconButton(
+              icon: Icon(
+                _showFinancials ? AppIcons.eyeOff : AppIcons.eye,
+                color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+              ),
+              onPressed: () => setState(() => _showFinancials = !_showFinancials),
+              tooltip: _showFinancials
+                  ? 'Hide financial values'
+                  : 'Show financial values',
+            ),
           NotificationBellButton(color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary),
           Builder(
             builder: (ctx) => IconButton(
@@ -105,7 +121,12 @@ class _TripBookingsListScreenState extends ConsumerState<TripBookingsListScreen>
                     physics: const AlwaysScrollableScrollPhysics(),
                     slivers: [
                       if (state.summary != null)
-                        SliverToBoxAdapter(child: _SummaryStrip(summary: state.summary!)),
+                        SliverToBoxAdapter(
+                          child: _SummaryStrip(
+                            summary: state.summary!,
+                            showFinancials: _showFinancials,
+                          ),
+                        ),
                       if (state.bookings.isEmpty)
                         SliverFillRemaining(
                           hasScrollBody: false,
@@ -144,6 +165,7 @@ class _TripBookingsListScreenState extends ConsumerState<TripBookingsListScreen>
                                 booking: booking,
                                 canComplete: canComplete,
                                 canManage: canManage,
+                                showFinancials: _showFinancials,
                                 onTap: () => _showDetailSheet(
                                   context,
                                   booking,
@@ -166,11 +188,28 @@ class _TripBookingsListScreenState extends ConsumerState<TripBookingsListScreen>
         ],
       ),
       floatingActionButton: canCreate
-          ? FloatingActionButton(
-              onPressed: () => _showCreateSheet(context),
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              child: const Icon(AppIcons.plus),
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                FloatingActionButton.small(
+                  heroTag: 'recordCompletedTrip',
+                  onPressed: () => _showDirectCompleteSheet(context),
+                  backgroundColor: AppColors.success,
+                  foregroundColor: Colors.white,
+                  tooltip: 'Record completed trip',
+                  child: const Icon(AppIcons.checkCircle),
+                ),
+                const SizedBox(height: 12),
+                FloatingActionButton(
+                  heroTag: 'newTripBooking',
+                  onPressed: () => _showCreateSheet(context),
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  tooltip: 'New booking',
+                  child: const Icon(AppIcons.plus),
+                ),
+              ],
             )
           : null,
     );
@@ -187,6 +226,22 @@ class _TripBookingsListScreenState extends ConsumerState<TripBookingsListScreen>
         child: TripBookingFormSheet(),
       ),
     );
+  }
+
+  Future<void> _showDirectCompleteSheet(BuildContext context) async {
+    final completed = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const FractionallySizedBox(
+        heightFactor: 0.93,
+        child: ExternalTripFormSheet(isDirectCompletion: true),
+      ),
+    );
+    if (completed == true && mounted) {
+      ref.read(tripBookingListProvider.notifier).refresh();
+    }
   }
 
   void _showEditSheet(BuildContext context, TripBooking booking) {
@@ -219,6 +274,7 @@ class _TripBookingsListScreenState extends ConsumerState<TripBookingsListScreen>
           booking: booking,
           canComplete: canComplete,
           canManage: canManage,
+          showFinancials: _showFinancials,
           onComplete: canComplete
               ? () {
                   Navigator.pop(context);
@@ -245,8 +301,11 @@ class _TripBookingsListScreenState extends ConsumerState<TripBookingsListScreen>
   /// Opens the (shared) external trip creation form pre-filled from the
   /// booking, with `booking_id` wired through so the server completes the
   /// booking atomically once the trip is submitted.
-  void _showCompleteSheet(BuildContext context, TripBooking booking) {
-    showModalBottomSheet(
+  Future<void> _showCompleteSheet(
+    BuildContext context,
+    TripBooking booking,
+  ) async {
+    final completed = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
@@ -273,6 +332,9 @@ class _TripBookingsListScreenState extends ConsumerState<TripBookingsListScreen>
         ),
       ),
     );
+    if (completed == true && mounted) {
+      ref.read(tripBookingListProvider.notifier).refresh();
+    }
   }
 
   void _showCancelDialog(BuildContext context, TripBooking booking) {
@@ -296,22 +358,57 @@ class _TripBookingsListScreenState extends ConsumerState<TripBookingsListScreen>
 
 class _SummaryStrip extends StatelessWidget {
   final TripBookingSummary summary;
+  final bool showFinancials;
 
-  const _SummaryStrip({required this.summary});
+  const _SummaryStrip({required this.summary, required this.showFinancials});
 
   @override
   Widget build(BuildContext context) {
+    final profitColor =
+        summary.totalProfit >= 0 ? AppColors.success : AppColors.error;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor =
+        isDark ? AppColors.darkTextPrimary : AppColors.textPrimary;
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 4, 12, 6),
-      child: Row(
+      child: Column(
         children: [
-          _SummaryCard(label: 'Upcoming', value: '${summary.upcomingCount}', color: AppColors.primary),
-          const SizedBox(width: 8),
-          _SummaryCard(label: 'Overdue', value: '${summary.overdueCount}', color: AppColors.error),
-          const SizedBox(width: 8),
-          _SummaryCard(label: 'Completed', value: '${summary.completedCount}', color: AppColors.success),
-          const SizedBox(width: 8),
-          _SummaryCard(label: 'Cancelled', value: '${summary.cancelledCount}', color: AppColors.textMuted),
+          Row(
+            children: [
+              _SummaryCard(label: 'Upcoming', value: '${summary.upcomingCount}', color: AppColors.primary),
+              const SizedBox(width: 8),
+              _SummaryCard(label: 'Overdue', value: '${summary.overdueCount}', color: AppColors.error),
+              const SizedBox(width: 8),
+              _SummaryCard(label: 'Completed', value: '${summary.completedCount}', color: AppColors.success),
+              const SizedBox(width: 8),
+              _SummaryCard(label: 'Cancelled', value: '${summary.cancelledCount}', color: AppColors.textMuted),
+            ],
+          ),
+          if (showFinancials) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                _SummaryCard(
+                  label: 'Cost',
+                  value: '₹${_summaryMoneyFmt.format(summary.totalCost)}',
+                  color: primaryColor,
+                ),
+                const SizedBox(width: 8),
+                _SummaryCard(
+                  label: 'Received',
+                  value: '₹${_summaryMoneyFmt.format(summary.totalReceived)}',
+                  color: primaryColor,
+                ),
+                const SizedBox(width: 8),
+                _SummaryCard(
+                  label: 'Profit',
+                  value:
+                      '${summary.totalProfit >= 0 ? '+' : '−'}₹${_summaryMoneyFmt.format(summary.totalProfit.abs())}',
+                  color: profitColor,
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );

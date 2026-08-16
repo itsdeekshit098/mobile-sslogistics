@@ -30,12 +30,14 @@ class ExternalTripFormSheet extends ConsumerStatefulWidget {
   final ExternalTrip? trip;
   final int? bookingId;
   final ExternalTripPrefill? prefill;
+  final bool isDirectCompletion;
 
   const ExternalTripFormSheet({
     super.key,
     this.trip,
     this.bookingId,
     this.prefill,
+    this.isDirectCompletion = false,
   });
 
   @override
@@ -76,12 +78,19 @@ class _ExternalTripFormSheetState extends ConsumerState<ExternalTripFormSheet> {
 
   bool get _isEdit => widget.trip != null;
   bool get _isCompletingBooking => widget.bookingId != null;
+  bool get _isDirectCompletion => widget.isDirectCompletion;
 
   double get _totalCost =>
       _costEntries.fold(0, (sum, e) => sum + e.amount);
 
-  double get _amountReceived =>
+    double get _enteredAmountReceived =>
       double.tryParse(_amountReceivedCtrl.text) ?? 0;
+
+    double get _advanceReceived =>
+      _isCompletingBooking ? widget.prefill?.advanceAmount ?? 0 : 0;
+
+    double get _totalAmountReceived =>
+      _enteredAmountReceived + _advanceReceived;
 
   @override
   void initState() {
@@ -122,10 +131,12 @@ class _ExternalTripFormSheetState extends ConsumerState<ExternalTripFormSheet> {
       _endDate =
           prefill.endDate != null ? DateTime.tryParse(prefill.endDate!) : null;
       final advance = prefill.advanceAmount ?? 0;
-      if (advance != 0) {
-        _amountReceivedCtrl.text = advance == advance.roundToDouble()
-            ? advance.toInt().toString()
-            : advance.toString();
+      final quoted = prefill.quotedAmount;
+      if (quoted != null) {
+        final balance = (quoted - advance).clamp(0, double.infinity);
+        _amountReceivedCtrl.text = balance == balance.roundToDouble()
+            ? balance.toInt().toString()
+            : balance.toString();
       }
       if (prefill.vehicleId != null) {
         _selectedVehicle = Vehicle(
@@ -272,15 +283,22 @@ class _ExternalTripFormSheetState extends ConsumerState<ExternalTripFormSheet> {
 
   Future<void> _submit() async {
     final noVehicleSelected = !_isEdit && _selectedVehicle == null;
+    final missingDirectTripDetails = _isDirectCompletion &&
+        (_customerNameCtrl.text.trim().isEmpty ||
+            _fromLocationCtrl.text.trim().isEmpty ||
+            _toLocationCtrl.text.trim().isEmpty ||
+            _startDate == null);
     final formValid = _formKey.currentState!.validate();
 
-    if (!formValid || noVehicleSelected) {
+    if (!formValid || noVehicleSelected || missingDirectTripDetails) {
       final fields = _validatedFields;
       setState(() => _errorCount = countFormErrors(fields));
 
       final scrolled = await scrollToFirstError(fields);
       if (noVehicleSelected && !scrolled) {
         _snack('Please select a vehicle');
+      } else if (missingDirectTripDetails && !scrolled) {
+        _snack('Customer, route, and start date are required');
       }
       return;
     }
@@ -297,6 +315,7 @@ class _ExternalTripFormSheetState extends ConsumerState<ExternalTripFormSheet> {
       _serverError = null;
       _isSubmitting = true;
     });
+    FocusScope.of(context).unfocus();
 
     final costItems = _costEntries.map((e) => e.toCostItem()).toList();
     final notifier = ref.read(externalTripListProvider.notifier);
@@ -315,7 +334,7 @@ class _ExternalTripFormSheetState extends ConsumerState<ExternalTripFormSheet> {
           driverId: _selectedDriver?.id,
           notes: _textOrNull(_notesCtrl),
           costItems: costItems,
-          amountReceived: _amountReceived,
+          amountReceived: _enteredAmountReceived,
         ));
       } else {
         await notifier.createTrip(CreateExternalTripDto(
@@ -331,13 +350,14 @@ class _ExternalTripFormSheetState extends ConsumerState<ExternalTripFormSheet> {
           driverId: _selectedDriver?.id,
           notes: _textOrNull(_notesCtrl),
           costItems: costItems,
-          amountReceived: _amountReceived,
+          amountReceived: _totalAmountReceived,
           bookingId: widget.bookingId,
+          isDirectCompletion: _isDirectCompletion,
         ));
       }
 
       if (mounted) {
-        Navigator.pop(context);
+        Navigator.pop(context, true);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(_isEdit
@@ -365,8 +385,15 @@ class _ExternalTripFormSheetState extends ConsumerState<ExternalTripFormSheet> {
     final vehiclesAsync = ref.watch(vehiclesProvider);
     final driversAsync = ref.watch(driversProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final profit = _amountReceived - _totalCost;
+    final profit = _totalAmountReceived - _totalCost;
     final profitColor = profit >= 0 ? AppColors.success : AppColors.error;
+    final sheetTitle = _isEdit
+      ? 'Edit Trip'
+      : _isCompletingBooking
+        ? 'Complete Booking'
+        : _isDirectCompletion
+          ? 'Record Completed Trip'
+          : 'New External Trip';
 
     return Material(
       color: isDark ? AppColors.darkCardBg : Colors.white,
@@ -391,11 +418,7 @@ class _ExternalTripFormSheetState extends ConsumerState<ExternalTripFormSheet> {
             child: Row(
               children: [
                 Text(
-                  _isEdit
-                      ? 'Edit Trip'
-                      : (_isCompletingBooking
-                          ? 'Complete Booking'
-                          : 'New External Trip'),
+                  sheetTitle,
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
@@ -407,26 +430,30 @@ class _ExternalTripFormSheetState extends ConsumerState<ExternalTripFormSheet> {
                 const Spacer(),
                 IconButton(
                   icon: const Icon(AppIcons.x, size: 20),
-                  onPressed: () => Navigator.pop(context),
+                  onPressed:
+                      _isSubmitting ? null : () => Navigator.pop(context),
                 ),
               ],
             ),
           ),
           const Divider(height: 1),
+          if (widget.prefill != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+              child: _BookingReferenceBanner(prefill: widget.prefill!),
+            ),
           if (_errorCount > 0) FormErrorBanner(count: _errorCount),
           if (_serverError != null) ServerErrorBanner(message: _serverError!),
           Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-              child: Form(
-                key: _formKey,
-                child: Column(
+            child: AbsorbPointer(
+              absorbing: _isSubmitting,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    if (widget.prefill != null) ...[
-                      _BookingReferenceBanner(prefill: widget.prefill!),
-                      const SizedBox(height: 14),
-                    ],
                     // ── Vehicle ──────────────────────────────────────────
                     _Section(
                       key: _vehicleSectionKey,
@@ -520,11 +547,15 @@ class _ExternalTripFormSheetState extends ConsumerState<ExternalTripFormSheet> {
 
                     // ── Customer ─────────────────────────────────────────
                     _Section(
-                      label: 'Customer Name',
+                      label: _isDirectCompletion ? 'Customer Name *' : 'Customer Name',
                       child: TextFormField(
                         controller: _customerNameCtrl,
                         decoration: _inputDecor(hint: 'Enter customer name'),
                         textCapitalization: TextCapitalization.words,
+                        validator: (v) => _isDirectCompletion &&
+                                (v == null || v.trim().isEmpty)
+                            ? 'Required'
+                            : null,
                       ),
                     ),
                     const SizedBox(height: 14),
@@ -549,18 +580,26 @@ class _ExternalTripFormSheetState extends ConsumerState<ExternalTripFormSheet> {
 
                     // ── Route ────────────────────────────────────────────
                     _Section(
-                      label: 'From',
+                      label: _isDirectCompletion ? 'From *' : 'From',
                       child: LocationAutocompleteField(
                         controller: _fromLocationCtrl,
                         decoration: _inputDecor(hint: 'Origin'),
+                        validator: (v) => _isDirectCompletion &&
+                                (v == null || v.trim().isEmpty)
+                            ? 'Required'
+                            : null,
                       ),
                     ),
                     _RouteSwapButton(onTap: _swapLocations),
                     _Section(
-                      label: 'To',
+                      label: _isDirectCompletion ? 'To *' : 'To',
                       child: LocationAutocompleteField(
                         controller: _toLocationCtrl,
                         decoration: _inputDecor(hint: 'Destination'),
+                        validator: (v) => _isDirectCompletion &&
+                                (v == null || v.trim().isEmpty)
+                            ? 'Required'
+                            : null,
                       ),
                     ),
                     const SizedBox(height: 14),
@@ -570,7 +609,9 @@ class _ExternalTripFormSheetState extends ConsumerState<ExternalTripFormSheet> {
                       children: [
                         Expanded(
                           child: _Section(
-                            label: 'Start Date',
+                            label: _isDirectCompletion
+                              ? 'Start Date *'
+                              : 'Start Date',
                             child: _TapField(
                               value: _startDate != null
                                   ? _displayDateFmt.format(_startDate!)
@@ -644,13 +685,25 @@ class _ExternalTripFormSheetState extends ConsumerState<ExternalTripFormSheet> {
                     ),
                     const SizedBox(height: 14),
 
-                    // ── Amount received & profit preview ─────────────────
+                    if (_isCompletingBooking) ...[
+                      _Section(
+                        label: 'Advance Received (₹)',
+                        child: _ReadOnlyField(
+                          value: '₹${_moneyFmt.format(_advanceReceived)}',
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                    ],
+
+                    // ── Receipt & profit preview ─────────────────────────
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(
                           child: _Section(
-                            label: 'Amount Received (₹) *',
+                            label: _isCompletingBooking
+                              ? 'Balance Received Now (₹) *'
+                              : 'Amount Received (₹) *',
                             child: TextFormField(
                               key: _amountReceivedFieldKey,
                               controller: _amountReceivedCtrl,
@@ -705,6 +758,15 @@ class _ExternalTripFormSheetState extends ConsumerState<ExternalTripFormSheet> {
                         ),
                       ],
                     ),
+                    if (_isCompletingBooking) ...[
+                      const SizedBox(height: 14),
+                      _Section(
+                        label: 'Total Received for Trip (₹)',
+                        child: _ReadOnlyField(
+                          value: '₹${_moneyFmt.format(_totalAmountReceived)}',
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 14),
 
                     // ── Notes ────────────────────────────────────────────
@@ -719,6 +781,7 @@ class _ExternalTripFormSheetState extends ConsumerState<ExternalTripFormSheet> {
                     ),
                     const SizedBox(height: 24),
                   ],
+                  ),
                 ),
               ),
             ),
@@ -744,7 +807,13 @@ class _ExternalTripFormSheetState extends ConsumerState<ExternalTripFormSheet> {
                         color: Colors.white,
                       ),
                     )
-                  : Text(_isEdit ? 'Save Changes' : 'Create Trip'),
+                  : Text(_isEdit
+                      ? 'Save Changes'
+                      : (_isCompletingBooking
+                        ? 'Complete Booking'
+                        : (_isDirectCompletion
+                          ? 'Record Completed Trip'
+                          : 'Create Trip'))),
             ),
           ),
         ],
@@ -828,27 +897,32 @@ class _RouteSwapButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
+    return SizedBox(
+      width: double.infinity,
+      height: 44,
       child: Center(
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(14),
-          child: Container(
-            width: 28,
-            height: 28,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: isDark ? AppColors.darkCardBg : Colors.white,
-              border: Border.all(
-                color: isDark ? AppColors.darkBorder : AppColors.border,
+        child: Semantics(
+          button: true,
+          label: 'Swap origin and destination',
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(20),
+            child: Container(
+              width: 40,
+              height: 40,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.primary.withValues(alpha: isDark ? 0.18 : 0.10),
+                border: Border.all(
+                  color: AppColors.primary.withValues(alpha: 0.35),
+                ),
               ),
-            ),
-            child: Icon(
-              Icons.swap_vert_rounded,
-              size: 16,
-              color: isDark ? AppColors.darkTextMuted : AppColors.textMuted,
+              child: const Icon(
+                AppIcons.swapVertical,
+                size: 22,
+                color: AppColors.primary,
+              ),
             ),
           ),
         ),

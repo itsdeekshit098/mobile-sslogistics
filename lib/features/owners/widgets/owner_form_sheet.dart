@@ -2,79 +2,193 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_icons.dart';
-import '../../../shared/utils/validated_field.dart';
-import '../../../shared/widgets/form_error_banner.dart';
+import '../../../shared/data/entity_models.dart';
+import '../../../shared/data/entity_repository.dart';
+import '../../../shared/widgets/option_picker_sheet.dart';
+import '../../../shared/widgets/search_picker_sheet.dart';
 import '../../../shared/widgets/server_error_banner.dart';
-import '../data/owner_models.dart';
+import '../../../shared/widgets/tap_field.dart';
 
-/// Create + edit in one sheet (mirrors the web's single addVehicleOwnerModal).
+final _phoneRegex = RegExp(r'^[6-9]\d{9}$');
+final _emailRegex = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
+
+/// Create + edit in one sheet, mirroring the web's `entityModal.tsx`. A firm
+/// can point at its proprietor (a person); a person never carries one — the
+/// server enforces this too, but the field is hidden here to avoid asking a
+/// question that has no answer.
 class OwnerFormSheet extends StatefulWidget {
-  final VehicleOwner? owner;
-  final Future<void> Function(CreateOwnerDto? create, UpdateOwnerDto? update) onSubmit;
+  final Entity? entity;
+  final Future<void> Function({
+    required String name,
+    required String entityKind,
+    required String relationship,
+    int? proprietorEntityId,
+    required bool clearProprietor,
+    String? phone,
+    String? email,
+    String? pan,
+    String? gstNumber,
+    String? address,
+    String? notes,
+  }) onSubmit;
 
-  const OwnerFormSheet({super.key, this.owner, required this.onSubmit});
+  const OwnerFormSheet({super.key, this.entity, required this.onSubmit});
 
   @override
   State<OwnerFormSheet> createState() => _OwnerFormSheetState();
 }
 
 class _OwnerFormSheetState extends State<OwnerFormSheet> {
-  late final _nameCtrl = TextEditingController(text: widget.owner?.name ?? '');
-  late String _ownerType = widget.owner?.ownerType ?? ownerTypeOwn;
+  final _nameCtrl = TextEditingController();
+  final _phoneCtrl = TextEditingController();
+  final _emailCtrl = TextEditingController();
+  final _panCtrl = TextEditingController();
+  final _gstCtrl = TextEditingController();
+  final _addressCtrl = TextEditingController();
+  final _notesCtrl = TextEditingController();
 
-  final _nameKey = GlobalKey<FormFieldState>();
-  final _nameFocus = FocusNode();
+  String _entityKind = 'FIRM';
+  String _relationship = 'INTERNAL';
+  Entity? _proprietor;
 
-  bool _isSubmitting = false;
-  int _errorCount = 0;
-  // Shown as a banner inside the sheet rather than a SnackBar — a SnackBar
-  // anchors to the screen underneath and renders hidden behind this modal
-  // bottom sheet, so the user never sees it even though it technically fired.
-  String? _serverError;
+  List<Entity> _people = [];
+  bool _peopleLoading = false;
 
-  List<ValidatedField> get _validatedFields => [
-        ValidatedField(key: _nameKey, hasError: () => _nameCtrl.text.trim().isEmpty, focusNode: _nameFocus),
-      ];
+  bool _submitting = false;
+  String? _error;
+  final Map<String, String> _fieldErrors = {};
+
+  bool get _isEdit => widget.entity != null;
+  bool get _isFirm => _entityKind == 'FIRM';
+
+  @override
+  void initState() {
+    super.initState();
+    final e = widget.entity;
+    if (e != null) {
+      _nameCtrl.text = e.name;
+      _entityKind = e.entityKind;
+      _relationship = e.relationship;
+      _phoneCtrl.text = e.phone ?? '';
+      _emailCtrl.text = e.email ?? '';
+      _panCtrl.text = e.pan ?? '';
+      _gstCtrl.text = e.gstNumber ?? '';
+      _addressCtrl.text = e.address ?? '';
+      _notesCtrl.text = e.notes ?? '';
+      if (e.proprietorEntityId != null) {
+        _proprietor = Entity(
+          id: e.proprietorEntityId!,
+          name: e.proprietorName ?? '',
+          entityKind: 'PERSON',
+          relationship: 'INTERNAL',
+          isActive: true,
+        );
+      }
+    }
+    if (_isFirm) _loadPeople();
+  }
 
   @override
   void dispose() {
     _nameCtrl.dispose();
-    _nameFocus.dispose();
+    _phoneCtrl.dispose();
+    _emailCtrl.dispose();
+    _panCtrl.dispose();
+    _gstCtrl.dispose();
+    _addressCtrl.dispose();
+    _notesCtrl.dispose();
     super.dispose();
   }
 
-  Future<void> _submit() async {
-    _nameKey.currentState?.validate();
+  Future<void> _loadPeople() async {
+    if (_peopleLoading || _people.isNotEmpty) return;
+    setState(() => _peopleLoading = true);
+    try {
+      final people = await EntityRepository().fetchAll(entityKind: 'PERSON');
+      if (mounted) setState(() => _people = people);
+    } finally {
+      if (mounted) setState(() => _peopleLoading = false);
+    }
+  }
 
-    final fields = _validatedFields;
-    final errorCount = countFormErrors(fields);
-    if (errorCount > 0) {
-      setState(() => _errorCount = errorCount);
-      await scrollToFirstError(fields);
+  Future<void> _pickKind() async {
+    final result = await showOptionPicker<String>(
+      context,
+      title: 'Firm or Person',
+      options: kEntityKinds,
+      selected: _entityKind,
+      labelBuilder: entityKindLabel,
+    );
+    if (result != null) {
+      setState(() {
+        _entityKind = result;
+        if (result == 'PERSON') _proprietor = null;
+      });
+      if (result == 'FIRM') _loadPeople();
+    }
+  }
+
+  Future<void> _pickProprietor() async {
+    final result = await showSearchPicker<Entity>(
+      context,
+      title: 'Proprietor',
+      icon: AppIcons.badge,
+      items: _people,
+      selected: _proprietor,
+      searchHint: 'Search people...',
+      labelBuilder: (e) => e.name,
+      subtitleBuilder: (_) => '',
+      matcher: (e, q) => e.name.toLowerCase().contains(q),
+      clearLabel: 'None',
+      isLoading: _peopleLoading,
+    );
+    if (!mounted || result == null) return;
+    setState(() => _proprietor = result is ClearPick ? null : result as Entity);
+  }
+
+  Future<void> _submit() async {
+    final errors = <String, String>{};
+    if (_nameCtrl.text.trim().isEmpty) errors['name'] = 'Name is required';
+    if (_phoneCtrl.text.trim().isNotEmpty && !_phoneRegex.hasMatch(_phoneCtrl.text.trim())) {
+      errors['phone'] = 'Enter a valid 10-digit mobile number';
+    }
+    if (_emailCtrl.text.trim().isNotEmpty && !_emailRegex.hasMatch(_emailCtrl.text.trim())) {
+      errors['email'] = 'Enter a valid email address';
+    }
+
+    if (errors.isNotEmpty) {
+      setState(() => _fieldErrors
+        ..clear()
+        ..addAll(errors));
       return;
     }
+
     setState(() {
-      _errorCount = 0;
-      _serverError = null;
+      _submitting = true;
+      _error = null;
+      _fieldErrors.clear();
     });
 
-    setState(() => _isSubmitting = true);
     try {
-      final name = _nameCtrl.text.trim();
-      if (widget.owner == null) {
-        await widget.onSubmit(CreateOwnerDto(name: name, ownerType: _ownerType), null);
-      } else {
-        await widget.onSubmit(
-          null,
-          UpdateOwnerDto(id: widget.owner!.id, name: name, ownerType: _ownerType),
-        );
-      }
+      await widget.onSubmit(
+        name: _nameCtrl.text.trim(),
+        entityKind: _entityKind,
+        relationship: _relationship,
+        proprietorEntityId: _isFirm ? _proprietor?.id : null,
+        clearProprietor: !_isFirm || _proprietor == null,
+        phone: _phoneCtrl.text.trim().isEmpty ? null : _phoneCtrl.text.trim(),
+        email: _emailCtrl.text.trim().isEmpty ? null : _emailCtrl.text.trim(),
+        pan: _panCtrl.text.trim().isEmpty ? null : _panCtrl.text.trim(),
+        gstNumber: _gstCtrl.text.trim().isEmpty ? null : _gstCtrl.text.trim(),
+        address: _addressCtrl.text.trim().isEmpty ? null : _addressCtrl.text.trim(),
+        notes: _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
+      );
       if (mounted) Navigator.pop(context);
     } catch (e) {
       if (mounted) {
         setState(() {
-          _isSubmitting = false;
-          _serverError = e.toString().replaceFirst('Exception: ', '');
+          _submitting = false;
+          _error = e.toString().replaceFirst('Exception: ', '');
         });
       }
     }
@@ -83,171 +197,179 @@ class _OwnerFormSheetState extends State<OwnerFormSheet> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final isEdit = widget.owner != null;
 
     return Material(
       color: isDark ? AppColors.darkCardBg : Colors.white,
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const SizedBox(height: 10),
-          Center(
-            child: Container(
-              width: 36,
+      child: SafeArea(
+        top: false,
+        child: Column(
+          children: [
+            Container(
+              width: 40,
               height: 4,
+              margin: const EdgeInsets.symmetric(vertical: 10),
               decoration: BoxDecoration(
                 color: isDark ? AppColors.darkBorder : AppColors.border,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-          ),
-          const SizedBox(height: 4),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            child: Row(
-              children: [
-                Text(
-                  isEdit ? 'Edit Owner' : 'Add Owner',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
-                  ),
-                ),
-                const Spacer(),
-                IconButton(icon: const Icon(AppIcons.x, size: 20), onPressed: () => Navigator.pop(context)),
-              ],
-            ),
-          ),
-          const Divider(height: 1),
-          if (_errorCount > 0) FormErrorBanner(count: _errorCount),
-          if (_serverError != null) ServerErrorBanner(message: _serverError!),
-          Flexible(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+              child: Row(
                 children: [
-                  _Label('Owner Type *'),
-                  Row(
-                    children: [ownerTypeOwn, ownerTypeExternal].map((type) {
-                      final isSelected = _ownerType == type;
-                      return Expanded(
-                        child: Padding(
-                          padding: EdgeInsets.only(right: type == ownerTypeOwn ? 8 : 0),
-                          child: InkWell(
-                            onTap: () => setState(() => _ownerType = type),
-                            borderRadius: BorderRadius.circular(8),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              decoration: BoxDecoration(
-                                color: isSelected
-                                    ? AppColors.primary
-                                    : (isDark ? AppColors.darkCardBg : Colors.white),
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: isSelected
-                                      ? AppColors.primary
-                                      : (isDark ? AppColors.darkBorder : AppColors.border),
-                                ),
-                              ),
-                              child: Center(
-                                child: Text(
-                                  ownerTypeLabels[type]!,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    color: isSelected
-                                        ? Colors.white
-                                        : (isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                    }).toList(),
+                  Expanded(
+                    child: Text(
+                      _isEdit ? 'Edit Entity' : 'New Firm or Person',
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
+                        color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: 14),
-                  _Label('Owner Name *'),
-                  TextFormField(
-                    key: _nameKey,
-                    controller: _nameCtrl,
-                    focusNode: _nameFocus,
-                    decoration: _inputDecor(context, hint: 'Owner name'),
-                    validator: (v) => (v == null || v.trim().isEmpty) ? 'Name is required' : null,
+                  IconButton(
+                    // Disabled mid-submit: closing here doesn't cancel the
+                    // in-flight create/update — it's already running against
+                    // a captured `ref.read(...)` — it would just hide the
+                    // sheet while the request completes behind it with no
+                    // feedback, making a save look cancelled when it wasn't.
+                    onPressed: _submitting ? null : () => Navigator.pop(context),
+                    icon: const Icon(AppIcons.x),
                   ),
-                  const SizedBox(height: 8),
                 ],
               ),
             ),
-          ),
-          const Divider(height: 1),
-          Padding(
-            padding: EdgeInsets.fromLTRB(20, 12, 20, 12 + MediaQuery.of(context).viewInsets.bottom),
-            child: ElevatedButton(
-              onPressed: _isSubmitting ? null : _submit,
-              child: _isSubmitting
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
-                    )
-                  : Text(isEdit ? 'Save Changes' : 'Add Owner'),
+            const Divider(height: 1),
+            if (_error != null) ServerErrorBanner(message: _error!),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    FormSection(
+                      label: 'Name *',
+                      child: TextField(
+                        controller: _nameCtrl,
+                        autofocus: !_isEdit,
+                        decoration: const InputDecoration(hintText: 'e.g. SS LOGISTICS - DEEKSHITH'),
+                      ),
+                      errorText: _fieldErrors['name'],
+                    ),
+                    const SizedBox(height: 14),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: FormSection(
+                            label: 'Type *',
+                            child: TapField(
+                              value: entityKindLabel(_entityKind),
+                              icon: AppIcons.badge,
+                              onTap: _pickKind,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: FormSection(
+                            label: 'Relationship',
+                            child: TapField(
+                              value: entityRelationshipLabel(_relationship),
+                              icon: AppIcons.building2,
+                              onTap: () => setState(() =>
+                                  _relationship = _relationship == 'INTERNAL' ? 'EXTERNAL' : 'INTERNAL'),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (_isFirm) ...[
+                      const SizedBox(height: 14),
+                      FormSection(
+                        label: 'Proprietor',
+                        child: TapField(
+                          value: _proprietor?.name ?? 'Select proprietor (optional)',
+                          icon: AppIcons.badge,
+                          muted: _proprietor == null,
+                          onTap: _pickProprietor,
+                          onClear: _proprietor != null ? () => setState(() => _proprietor = null) : null,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 14),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: FormSection(
+                            label: 'Phone',
+                            child: TextField(controller: _phoneCtrl, keyboardType: TextInputType.phone),
+                            errorText: _fieldErrors['phone'],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: FormSection(
+                            label: 'Email',
+                            child: TextField(controller: _emailCtrl, keyboardType: TextInputType.emailAddress),
+                            errorText: _fieldErrors['email'],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: FormSection(
+                            label: 'PAN',
+                            child: TextField(
+                              controller: _panCtrl,
+                              textCapitalization: TextCapitalization.characters,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: FormSection(
+                            label: 'GST Number',
+                            child: TextField(
+                              controller: _gstCtrl,
+                              textCapitalization: TextCapitalization.characters,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    FormSection(label: 'Address', child: TextField(controller: _addressCtrl)),
+                    const SizedBox(height: 14),
+                    FormSection(
+                      label: 'Notes',
+                      child: TextField(controller: _notesCtrl, maxLength: 500, maxLines: 3),
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Label extends StatelessWidget {
-  final String text;
-  const _Label(this.text);
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final isRequired = text.endsWith(' *');
-    final base = isRequired ? text.substring(0, text.length - 2) : text;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 5),
-      child: Text.rich(
-        TextSpan(
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
-            color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
-          ),
-          children: [
-            TextSpan(text: base),
-            if (isRequired) const TextSpan(text: ' *', style: TextStyle(color: AppColors.error)),
+            const Divider(height: 1),
+            Padding(
+              padding: EdgeInsets.fromLTRB(20, 12, 20, 12 + MediaQuery.of(context).viewInsets.bottom),
+              child: ElevatedButton(
+                onPressed: _submitting ? null : _submit,
+                child: _submitting
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
+                      )
+                    : Text(_isEdit ? 'Save Changes' : 'Add'),
+              ),
+            ),
           ],
         ),
       ),
     );
   }
-}
-
-InputDecoration _inputDecor(BuildContext context, {String? hint}) {
-  final isDark = Theme.of(context).brightness == Brightness.dark;
-  final borderColor = isDark ? AppColors.darkBorder : AppColors.border;
-  return InputDecoration(
-    hintText: hint,
-    isDense: true,
-    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: borderColor)),
-    enabledBorder:
-        OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: borderColor)),
-    focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(8),
-      borderSide: const BorderSide(color: AppColors.primary, width: 2),
-    ),
-    errorBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(8),
-      borderSide: const BorderSide(color: AppColors.error),
-    ),
-  );
 }

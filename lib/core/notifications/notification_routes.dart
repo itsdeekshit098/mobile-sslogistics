@@ -20,6 +20,14 @@ String? mobileRouteForNotification(String type, [Map<String, dynamic>? data]) {
       return '/vehicles';
     case 'trip_booking_reminder':
       return '/trip-bookings';
+    case 'loan_emi_due':
+    case 'loan_emi_overdue':
+    case 'loan_nearing_closure':
+      // Carries the specific loan when the reminder is about one (every
+      // case above does); falling back to the due-soon list only matters if
+      // a future reminder type reuses these without loan_id.
+      final loanId = data?['loan_id'];
+      return loanId != null ? '/loans/detail?id=$loanId' : '/loans/due-soon';
     default:
       // Unrecognized/future notification types still land somewhere useful
       // instead of a dead tap.

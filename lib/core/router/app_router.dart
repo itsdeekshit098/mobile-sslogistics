@@ -9,9 +9,16 @@ import '../../features/auth/screens/login_screen.dart';
 import '../../features/dashboard/screens/dashboard_screen.dart';
 import '../../features/diesel/screens/diesel_list_screen.dart';
 import '../../features/drivers/screens/drivers_screen.dart';
-import '../../features/external_trips/screens/external_trips_list_screen.dart';
+import '../../features/clients/screens/client_detail_screen.dart';
+import '../../features/clients/screens/clients_list_screen.dart';
+import '../../features/fundings/screens/funding_detail_screen.dart';
+import '../../features/fundings/screens/fundings_list_screen.dart';
+import '../../features/loans/screens/due_soon_screen.dart';
+import '../../features/loans/screens/loan_detail_screen.dart';
+import '../../features/loans/screens/loans_list_screen.dart';
 import '../../features/notifications/screens/notification_list_screen.dart';
 import '../../features/owners/screens/owners_screen.dart';
+import '../../features/bank_accounts/screens/bank_accounts_screen.dart';
 import '../../features/repairs/screens/repair_list_screen.dart';
 import '../../features/sessions/screens/sessions_screen.dart';
 import '../../features/settings_admin/screens/settings_screen.dart';
@@ -118,15 +125,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/external-trips',
-        builder: (context, state) {
-          final vehicleId = int.tryParse(
-            state.uri.queryParameters['vehicle_id'] ?? '',
-          );
-          return _backToDashboard(
-            context,
-            ExternalTripsListScreen(initialVehicleId: vehicleId),
-          );
-        },
+        redirect: (context, state) => '/trip-bookings',
       ),
       GoRoute(
         path: '/repair-records',
@@ -138,6 +137,48 @@ final routerProvider = Provider<GoRouter>((ref) {
             context,
             RepairListScreen(initialVehicleId: vehicleId),
           );
+        },
+      ),
+      GoRoute(
+        path: '/loans',
+        builder: (context, state) => _backToDashboard(context, const LoansListScreen()),
+      ),
+      GoRoute(
+        // Pushed (not go'd) from the list, the calendar, and a notification
+        // tap, so PopScope must let a real pop happen — see _backToDashboard.
+        path: '/loans/detail',
+        builder: (context, state) {
+          final id = int.tryParse(state.uri.queryParameters['id'] ?? '');
+          if (id == null) return const LoansListScreen();
+          return _backToDashboard(context, LoanDetailScreen(loanId: id));
+        },
+      ),
+      GoRoute(
+        path: '/loans/due-soon',
+        builder: (context, state) => _backToDashboard(context, const DueSoonScreen()),
+      ),
+      GoRoute(
+        path: '/fundings',
+        builder: (context, state) => _backToDashboard(context, const FundingsListScreen()),
+      ),
+      GoRoute(
+        path: '/fundings/detail',
+        builder: (context, state) {
+          final id = int.tryParse(state.uri.queryParameters['id'] ?? '');
+          if (id == null) return const FundingsListScreen();
+          return _backToDashboard(context, FundingDetailScreen(fundingId: id));
+        },
+      ),
+      GoRoute(
+        path: '/clients',
+        builder: (context, state) => _backToDashboard(context, const ClientsListScreen()),
+      ),
+      GoRoute(
+        path: '/clients/detail',
+        builder: (context, state) {
+          final id = int.tryParse(state.uri.queryParameters['id'] ?? '');
+          if (id == null) return const ClientsListScreen();
+          return _backToDashboard(context, ClientDetailScreen(clientId: id));
         },
       ),
       GoRoute(
@@ -164,6 +205,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/vehicle-owners',
         builder: (context, state) =>
             _backToDashboard(context, const OwnersScreen()),
+      ),
+      GoRoute(
+        path: '/bank-accounts',
+        builder: (context, state) =>
+            _backToDashboard(context, const BankAccountsScreen()),
       ),
       GoRoute(
         path: '/notifications',

@@ -16,6 +16,7 @@ class TripBookingDetailSheet extends StatelessWidget {
   final TripBooking booking;
   final bool canComplete;
   final bool canManage;
+  final bool showFinancials;
   final VoidCallback? onComplete;
   final VoidCallback? onEdit;
   final VoidCallback? onCancel;
@@ -25,6 +26,7 @@ class TripBookingDetailSheet extends StatelessWidget {
     required this.booking,
     this.canComplete = false,
     this.canManage = false,
+    this.showFinancials = false,
     this.onComplete,
     this.onEdit,
     this.onCancel,
@@ -164,11 +166,50 @@ class TripBookingDetailSheet extends StatelessWidget {
                     rows: [
                       _DetailRowData(
                         'Quoted Amount',
-                        booking.quotedAmount != null ? formatBookingMoney(booking.quotedAmount!) : '—',
+                        booking.quotedAmount != null
+                            ? (showFinancials
+                                ? formatBookingMoney(booking.quotedAmount!)
+                                : '•••••')
+                            : '—',
                       ),
-                      _DetailRowData('Advance Received', formatBookingMoney(booking.advanceAmount)),
+                      _DetailRowData(
+                        'Advance Received',
+                        showFinancials
+                            ? formatBookingMoney(booking.advanceAmount)
+                            : '•••••',
+                      ),
                     ],
                   ),
+                  if (booking.status == statusCompleted &&
+                      booking.totalCost != null &&
+                      booking.amountReceived != null) ...[
+                    const SizedBox(height: 14),
+                    _DetailGroup(
+                      title: 'Completion',
+                      rows: [
+                        _DetailRowData(
+                          'Total Received',
+                          showFinancials
+                              ? formatBookingMoney(booking.amountReceived!)
+                              : '•••••',
+                        ),
+                        _DetailRowData(
+                          'Total Cost',
+                          showFinancials
+                              ? formatBookingMoney(booking.totalCost!)
+                              : '•••••',
+                        ),
+                        _DetailRowData(
+                          'Profit',
+                          showFinancials
+                              ? formatBookingMoney(
+                                  booking.amountReceived! - booking.totalCost!,
+                                )
+                              : '•••••',
+                        ),
+                      ],
+                    ),
+                  ],
                   if (booking.notes != null && booking.notes!.isNotEmpty) ...[
                     const SizedBox(height: 14),
                     _DetailGroup(title: 'Notes', rows: [_DetailRowData(null, booking.notes!)]),

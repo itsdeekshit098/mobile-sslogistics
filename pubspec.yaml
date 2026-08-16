@@ -2,7 +2,7 @@ name: mobile_sslogistics
 description: "SS Logistics mobile app — Flutter client for the SSLogistics platform."
 publish_to: 'none'
 
-version: 1.1.0+6
+version: 1.1.0+7
 
 environment:
   sdk: ^3.12.1
@@ -52,6 +52,7 @@ dependencies:
   # Crash / error reporting
   sentry_flutter: ^9.23.0
   sentry_dio: ^9.23.0
+  archive: ^4.0.9
 
 dev_dependencies:
   flutter_test:

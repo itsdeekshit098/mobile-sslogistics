@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_icons.dart';
-import '../data/owner_models.dart';
+import '../../../shared/data/entity_models.dart';
 
 class OwnerCard extends StatelessWidget {
-  final VehicleOwner owner;
+  final Entity entity;
   final bool canManage;
   final VoidCallback onTap;
   final VoidCallback? onEdit;
@@ -13,7 +13,7 @@ class OwnerCard extends StatelessWidget {
 
   const OwnerCard({
     super.key,
-    required this.owner,
+    required this.entity,
     required this.canManage,
     required this.onTap,
     this.onEdit,
@@ -23,8 +23,9 @@ class OwnerCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final isOwn = owner.ownerType == ownerTypeOwn;
-    final badgeColor = isOwn ? AppColors.tileOwnersIcon : AppColors.warning;
+    final isInternal = entity.relationship == 'INTERNAL';
+    final badgeColor = isInternal ? AppColors.tileOwnersIcon : AppColors.warning;
+    final isFirm = entity.entityKind == 'FIRM';
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -33,11 +34,7 @@ class OwnerCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.border),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8, offset: const Offset(0, 2)),
         ],
       ),
       clipBehavior: Clip.antiAlias,
@@ -58,19 +55,39 @@ class OwnerCard extends StatelessWidget {
                         : AppColors.tileOwnersBg,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(AppIcons.badge, color: AppColors.tileOwnersIcon),
+                  child: Icon(isFirm ? AppIcons.building2 : AppIcons.badge, color: AppColors.tileOwnersIcon),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Text(
-                    owner.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 15.5,
-                      fontWeight: FontWeight.w800,
-                      color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        entity.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 15.5,
+                          fontWeight: FontWeight.w800,
+                          color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                        ),
+                      ),
+                      Text(
+                        [
+                          entityKindLabel(entity.entityKind),
+                          if (!entity.isActive) 'Inactive',
+                          if (entity.proprietorName != null) 'Prop: ${entity.proprietorName}',
+                          if (entity.vehicleCount != null && entity.vehicleCount! > 0)
+                            '${entity.vehicleCount} vehicle${entity.vehicleCount == 1 ? '' : 's'}',
+                        ].join(' · '),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          color: isDark ? AppColors.darkTextMuted : AppColors.textMuted,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -82,7 +99,7 @@ class OwnerCard extends StatelessWidget {
                     border: Border.all(color: badgeColor.withValues(alpha: 0.24)),
                   ),
                   child: Text(
-                    ownerTypeLabels[owner.ownerType] ?? owner.ownerType,
+                    entityRelationshipLabel(entity.relationship),
                     style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: badgeColor),
                   ),
                 ),

@@ -22,6 +22,15 @@ class AppColors {
   static const Color tileClientsIcon = Color(0xFF9333EA);
   static const Color tileClientsBg = Color(0xFFFAF5FF);
 
+  static const Color tileLoansIcon = Color(0xFF1E40AF);
+  static const Color tileLoansBg = Color(0xFFEFF6FF);
+
+  static const Color tileFundingsIcon = Color(0xFFB45309);
+  static const Color tileFundingsBg = Color(0xFFFFFBEB);
+
+  static const Color tileBankIcon = Color(0xFF0F766E);
+  static const Color tileBankBg = Color(0xFFF0FDFA);
+
   static const Color tileDieselIcon = Color(0xFFEA580C);
   static const Color tileDieselBg = Color(0xFFFFF7ED);
 

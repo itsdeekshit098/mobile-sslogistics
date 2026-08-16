@@ -40,6 +40,18 @@ const Map<String, String> tripBookingStatusLabels = {
   statusCancelled: 'Cancelled',
 };
 
+class TripCostItem {
+  final String label;
+  final double amount;
+
+  const TripCostItem({required this.label, required this.amount});
+
+  factory TripCostItem.fromJson(Map<String, dynamic> json) => TripCostItem(
+        label: json['label'] as String? ?? '',
+        amount: (json['amount'] as num?)?.toDouble() ?? 0,
+      );
+}
+
 String vehicleTypeLabel(String vehicleType) {
   for (final option in vehicleTypeOptions) {
     if (option.value == vehicleType) return option.label;
@@ -64,6 +76,11 @@ class TripBooking {
   final String status; // 'confirmed' | 'completed' | 'cancelled'
   final double? quotedAmount;
   final double advanceAmount;
+  final String? tripType;
+  final List<TripCostItem>? costItems;
+  final double? totalCost;
+  final double? amountReceived;
+  final String? completedAt;
   final String? notes;
   final int? externalTripId;
   final String? createdAt;
@@ -91,6 +108,11 @@ class TripBooking {
     required this.status,
     this.quotedAmount,
     required this.advanceAmount,
+    this.tripType,
+    this.costItems,
+    this.totalCost,
+    this.amountReceived,
+    this.completedAt,
     this.notes,
     this.externalTripId,
     this.createdAt,
@@ -126,6 +148,14 @@ class TripBooking {
       status: json['status'] as String? ?? statusConfirmed,
       quotedAmount: (json['quoted_amount'] as num?)?.toDouble(),
       advanceAmount: (json['advance_amount'] as num?)?.toDouble() ?? 0,
+        tripType: json['trip_type'] as String?,
+        costItems: (json['cost_items'] as List?)
+          ?.whereType<Map<String, dynamic>>()
+          .map(TripCostItem.fromJson)
+          .toList(),
+        totalCost: (json['total_cost'] as num?)?.toDouble(),
+        amountReceived: (json['amount_received'] as num?)?.toDouble(),
+        completedAt: json['completed_at'] as String?,
       notes: json['notes'] as String?,
       externalTripId: json['external_trip_id'] as int?,
       createdAt: json['created_at'] as String?,
@@ -145,12 +175,18 @@ class TripBookingSummary {
   final int overdueCount;
   final int completedCount;
   final int cancelledCount;
+  final double totalCost;
+  final double totalReceived;
+  final double totalProfit;
 
   const TripBookingSummary({
     required this.upcomingCount,
     required this.overdueCount,
     required this.completedCount,
     required this.cancelledCount,
+    required this.totalCost,
+    required this.totalReceived,
+    required this.totalProfit,
   });
 
   factory TripBookingSummary.fromJson(Map<String, dynamic> json) =>
@@ -159,6 +195,9 @@ class TripBookingSummary {
         overdueCount: json['overdueCount'] as int? ?? 0,
         completedCount: json['completedCount'] as int? ?? 0,
         cancelledCount: json['cancelledCount'] as int? ?? 0,
+        totalCost: (json['totalCost'] as num?)?.toDouble() ?? 0,
+        totalReceived: (json['totalReceived'] as num?)?.toDouble() ?? 0,
+        totalProfit: (json['totalProfit'] as num?)?.toDouble() ?? 0,
       );
 }
 

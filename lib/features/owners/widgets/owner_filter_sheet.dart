@@ -1,28 +1,22 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../shared/data/entity_models.dart';
 import '../../../shared/widgets/selectable_chip.dart';
-import '../data/owner_models.dart';
-
-/// Distinguishes "sheet dismissed without a choice" (null) from an explicit
-/// Reset/Apply, since `ownerType: null` (All) is itself a valid result.
-class OwnerFilterResult {
-  final String? ownerType;
-
-  const OwnerFilterResult(this.ownerType);
-}
+import '../providers/owners_provider.dart';
 
 class OwnerFilterSheet extends StatefulWidget {
-  final String? ownerType;
+  final OwnerFilters initial;
 
-  const OwnerFilterSheet({super.key, this.ownerType});
+  const OwnerFilterSheet({super.key, required this.initial});
 
   @override
   State<OwnerFilterSheet> createState() => _OwnerFilterSheetState();
 }
 
 class _OwnerFilterSheetState extends State<OwnerFilterSheet> {
-  late String? _ownerType = widget.ownerType;
+  late String? _entityKind = widget.initial.entityKind;
+  late String? _relationship = widget.initial.relationship;
 
   @override
   Widget build(BuildContext context) {
@@ -57,7 +51,7 @@ class _OwnerFilterSheetState extends State<OwnerFilterSheet> {
               ),
               const SizedBox(height: 16),
               Text(
-                'Filter Owners',
+                'Filter',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w800,
@@ -65,7 +59,7 @@ class _OwnerFilterSheetState extends State<OwnerFilterSheet> {
                 ),
               ),
               const SizedBox(height: 16),
-              Text('Owner Type', style: labelStyle),
+              Text('Type', style: labelStyle),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
@@ -73,19 +67,35 @@ class _OwnerFilterSheetState extends State<OwnerFilterSheet> {
                 children: [
                   SelectableChip(
                     label: 'All',
-                    selected: _ownerType == null,
-                    onTap: () => setState(() => _ownerType = null),
+                    selected: _entityKind == null,
+                    onTap: () => setState(() => _entityKind = null),
                   ),
+                  for (final kind in kEntityKinds)
+                    SelectableChip(
+                      label: entityKindLabel(kind),
+                      selected: _entityKind == kind,
+                      onTap: () => setState(() => _entityKind = kind),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Text('Relationship', style: labelStyle),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
                   SelectableChip(
-                    label: 'Own',
-                    selected: _ownerType == ownerTypeOwn,
-                    onTap: () => setState(() => _ownerType = ownerTypeOwn),
+                    label: 'All',
+                    selected: _relationship == null,
+                    onTap: () => setState(() => _relationship = null),
                   ),
-                  SelectableChip(
-                    label: 'External',
-                    selected: _ownerType == ownerTypeExternal,
-                    onTap: () => setState(() => _ownerType = ownerTypeExternal),
-                  ),
+                  for (final rel in kEntityRelationships)
+                    SelectableChip(
+                      label: entityRelationshipLabel(rel),
+                      selected: _relationship == rel,
+                      onTap: () => setState(() => _relationship = rel),
+                    ),
                 ],
               ),
               const SizedBox(height: 20),
@@ -93,14 +103,17 @@ class _OwnerFilterSheetState extends State<OwnerFilterSheet> {
                 children: [
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: () => Navigator.pop(context, const OwnerFilterResult(null)),
+                      onPressed: () => Navigator.pop(context, const OwnerFilters()),
                       child: const Text('Reset'),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () => Navigator.pop(context, OwnerFilterResult(_ownerType)),
+                      onPressed: () => Navigator.pop(
+                        context,
+                        OwnerFilters(entityKind: _entityKind, relationship: _relationship),
+                      ),
                       child: const Text('Apply'),
                     ),
                   ),

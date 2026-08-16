@@ -49,7 +49,10 @@ class ExternalTripRepository {
 
   Future<void> createTrip(CreateExternalTripDto dto) async {
     final response = await _dio.post(
-      ApiConstants.externalTrips,
+      dto.bookingId != null
+          || dto.isDirectCompletion
+          ? ApiConstants.tripBookingsComplete
+          : ApiConstants.externalTrips,
       data: dto.toJson(),
     );
 

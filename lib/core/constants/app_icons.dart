@@ -12,6 +12,7 @@ class AppIcons {
   static const arrowLeft = Icons.arrow_back;
   static const chevronLeft = Icons.chevron_left;
   static const chevronRight = Icons.chevron_right;
+  static const swapVertical = Icons.swap_vertical_circle_outlined;
   static const x = Icons.close;
   static const lock = Icons.lock_outline;
   static const logOut = Icons.logout;
@@ -63,4 +64,15 @@ class AppIcons {
   static const ban = Icons.block_outlined;
   static const key = Icons.vpn_key_outlined;
   static const uploadCloud = Icons.cloud_upload_outlined;
+
+  // Finance (loans, private fundings, client receivables)
+  static const landmark = Icons.account_balance_outlined;
+  static const handCoins = Icons.payments_outlined;
+  static const receipt = Icons.receipt_long_outlined;
+  static const banknote = Icons.money_outlined;
+  static const undo = Icons.undo_rounded;
+  static const creditCard = Icons.credit_card_outlined;
+  static const phone = Icons.phone_outlined;
+  static const mail = Icons.mail_outline;
+  static const moreVert = Icons.more_vert;
 }

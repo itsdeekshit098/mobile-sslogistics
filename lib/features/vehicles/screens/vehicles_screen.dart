@@ -9,7 +9,9 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_icons.dart';
 import '../../../features/auth/providers/auth_provider.dart';
 import '../../../features/notifications/providers/notification_provider.dart';
+import '../../../shared/data/attachment_models.dart';
 import '../../../shared/widgets/app_drawer.dart';
+import '../../../shared/widgets/attachments_sheet.dart';
 import '../../../shared/widgets/error_state.dart';
 import '../../../shared/widgets/skeleton_loader.dart';
 import '../data/vehicle_models.dart';
@@ -326,6 +328,28 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
             Navigator.pop(context);
             _showDocuments(vehicle, canWrite);
           },
+          onImages: () {
+            Navigator.pop(context);
+            _showImages(vehicle, canWrite);
+          },
+        ),
+      ),
+    );
+  }
+
+  void _showImages(FleetVehicle vehicle, bool canManage) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => FractionallySizedBox(
+        heightFactor: 0.88,
+        child: AttachmentsSheet(
+          ownerType: AttachmentOwnerType.vehicle,
+          ownerId: vehicle.id,
+          title: 'Images - ${vehicle.vehicleNumber}',
+          canManage: canManage,
         ),
       ),
     );
@@ -1026,6 +1050,7 @@ class _VehicleDetails extends StatelessWidget {
   final VoidCallback onEdit;
   final VoidCallback onDelete;
   final VoidCallback onDocuments;
+  final VoidCallback onImages;
   const _VehicleDetails({
     required this.vehicle,
     required this.canWrite,
@@ -1033,6 +1058,7 @@ class _VehicleDetails extends StatelessWidget {
     required this.onEdit,
     required this.onDelete,
     required this.onDocuments,
+    required this.onImages,
   });
   @override
   Widget build(BuildContext context) {
@@ -1198,6 +1224,11 @@ class _VehicleDetails extends StatelessWidget {
             onPressed: onDocuments,
             icon: const Icon(AppIcons.fileText),
             label: 'Documents',
+          ),
+          _SheetActionButton(
+            onPressed: onImages,
+            icon: const Icon(Icons.photo_library_outlined),
+            label: 'Images',
           ),
           if (canWrite)
             _SheetActionButton(

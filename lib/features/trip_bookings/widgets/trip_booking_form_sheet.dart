@@ -8,7 +8,6 @@ import '../../../shared/models/vehicle_model.dart';
 import '../../../shared/utils/validated_field.dart';
 import '../../../shared/widgets/form_error_banner.dart';
 import '../../../shared/widgets/server_error_banner.dart';
-import '../../../shared/widgets/location_autocomplete_field.dart';
 import '../../diesel/providers/vehicle_provider.dart';
 import '../../external_trips/data/external_trip_models.dart' show Driver;
 import '../../external_trips/providers/external_trip_provider.dart'
@@ -432,11 +431,12 @@ class _TripBookingFormSheetState extends ConsumerState<TripBookingFormSheet> {
                     // ── Route ────────────────────────────────────────────
                     _Section(
                       label: 'From *',
-                      child: LocationAutocompleteField(
-                        fieldKey: _fromLocationFieldKey,
+                      child: TextFormField(
+                        key: _fromLocationFieldKey,
                         controller: _fromLocationCtrl,
                         focusNode: _fromLocationFocus,
                         decoration: _inputDecor(hint: 'Origin'),
+                        textCapitalization: TextCapitalization.words,
                         validator: (v) =>
                             (v == null || v.trim().isEmpty) ? 'Required' : null,
                       ),
@@ -444,11 +444,12 @@ class _TripBookingFormSheetState extends ConsumerState<TripBookingFormSheet> {
                     _RouteSwapButton(onTap: _swapLocations),
                     _Section(
                       label: 'To *',
-                      child: LocationAutocompleteField(
-                        fieldKey: _toLocationFieldKey,
+                      child: TextFormField(
+                        key: _toLocationFieldKey,
                         controller: _toLocationCtrl,
                         focusNode: _toLocationFocus,
                         decoration: _inputDecor(hint: 'Destination'),
+                        textCapitalization: TextCapitalization.words,
                         validator: (v) =>
                             (v == null || v.trim().isEmpty) ? 'Required' : null,
                       ),
@@ -675,25 +676,30 @@ class _RouteSwapButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
+    return SizedBox(
+      width: double.infinity,
+      height: 44,
       child: Center(
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(14),
-          child: Container(
-            width: 28,
-            height: 28,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: isDark ? AppColors.darkCardBg : Colors.white,
-              border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.border),
-            ),
-            child: Icon(
-              Icons.swap_vert_rounded,
-              size: 16,
-              color: isDark ? AppColors.darkTextMuted : AppColors.textMuted,
+        child: Semantics(
+          button: true,
+          label: 'Swap origin and destination',
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(20),
+            child: Container(
+              width: 40,
+              height: 40,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.primary.withValues(alpha: isDark ? 0.18 : 0.10),
+                border: Border.all(color: AppColors.primary.withValues(alpha: 0.35)),
+              ),
+              child: const Icon(
+                AppIcons.swapVertical,
+                size: 22,
+                color: AppColors.primary,
+              ),
             ),
           ),
         ),

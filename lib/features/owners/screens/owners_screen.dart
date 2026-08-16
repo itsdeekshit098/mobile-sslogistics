@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_icons.dart';
+import '../../../shared/data/entity_models.dart';
 import '../../../shared/widgets/app_drawer.dart';
 import '../../../shared/widgets/debounced_search_field.dart';
 import '../../../shared/widgets/delete_confirmation_dialog.dart';
@@ -13,12 +14,15 @@ import '../../../shared/widgets/list_pagination_bar.dart';
 import '../../../shared/widgets/notification_bell_button.dart';
 import '../../../shared/widgets/skeleton_loader.dart';
 import '../../auth/providers/auth_provider.dart';
-import '../data/owner_models.dart';
 import '../providers/owners_provider.dart';
 import '../widgets/owner_card.dart';
 import '../widgets/owner_filter_sheet.dart';
 import '../widgets/owner_form_sheet.dart';
 
+/// "Firms & Owners" — the family's proprietorships, the people behind them,
+/// and external parties whose vehicles are hired in. Renamed from "Vehicle
+/// Owners" when the underlying table was absorbed into `entities`; the route
+/// stays `/vehicle-owners` so nothing that links here breaks.
 class OwnersScreen extends ConsumerWidget {
   const OwnersScreen({super.key});
 
@@ -43,7 +47,7 @@ class OwnersScreen extends ConsumerWidget {
           tooltip: 'Back',
         ),
         title: Text(
-          'Vehicle Owners',
+          'Firms & Owners',
           style: TextStyle(
             color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
             fontSize: 18,
@@ -72,33 +76,33 @@ class OwnersScreen extends ConsumerWidget {
               children: [
                 Expanded(
                   child: DebouncedSearchField(
-                    hintText: 'Search owner name',
+                    hintText: 'Search name or phone',
                     onDebouncedChanged: (q) => ref.read(ownersListProvider.notifier).search(q),
                   ),
                 ),
                 const SizedBox(width: 10),
                 _FilterButton(
-                  activeCount: state?.ownerTypeFilter != null ? 1 : 0,
-                  onTap: () => _showFilterSheet(context, ref, state?.ownerTypeFilter),
+                  activeCount: (state?.filters.isActive ?? false) ? 1 : 0,
+                  onTap: () => _showFilterSheet(context, ref, state?.filters ?? const OwnerFilters()),
                 ),
               ],
             ),
           ),
           Expanded(
             child: async.when(
-              loading: () => const SkeletonListCards(infoLines: 0),
+              loading: () => const SkeletonListCards(infoLines: 1),
               error: (e, _) => ErrorState(
                 message: e.toString().replaceFirst('Exception: ', ''),
                 onRetry: () => ref.invalidate(ownersListProvider),
               ),
               data: (state) {
-                if (state.owners.isEmpty) {
+                if (state.items.isEmpty) {
                   return EmptyState(
-                    title: 'No owners found',
-                    subtitle: state.search.isEmpty
-                        ? 'No vehicle owners have been added yet.'
-                        : 'No owners match your search.',
-                    actionLabel: canWrite ? 'Add Owner' : null,
+                    title: 'No entities found',
+                    subtitle: state.hasFilters
+                        ? 'No entities match your filters.'
+                        : 'Add a proprietorship, a family member, or an external party.',
+                    actionLabel: canWrite ? 'Add' : null,
                     onAction: canWrite ? () => _showForm(context, ref, null) : null,
                   );
                 }
@@ -109,16 +113,16 @@ class OwnersScreen extends ConsumerWidget {
                         onRefresh: () => ref.read(ownersListProvider.notifier).refresh(),
                         child: ListView.builder(
                           padding: const EdgeInsets.only(top: 4, bottom: 8),
-                          itemCount: state.owners.length,
+                          itemCount: state.items.length,
                           itemBuilder: (context, i) {
-                            final owner = state.owners[i];
+                            final entity = state.items[i];
                             return OwnerCard(
-                              key: ValueKey(owner.id),
-                              owner: owner,
+                              key: ValueKey(entity.id),
+                              entity: entity,
                               canManage: canManage,
-                              onTap: canWrite ? () => _showForm(context, ref, owner) : () {},
-                              onEdit: () => _showForm(context, ref, owner),
-                              onDelete: () => _delete(context, ref, owner),
+                              onTap: canWrite ? () => _showForm(context, ref, entity) : () {},
+                              onEdit: () => _showForm(context, ref, entity),
+                              onDelete: () => _delete(context, ref, entity),
                             );
                           },
                         ),
@@ -129,7 +133,7 @@ class OwnersScreen extends ConsumerWidget {
                       totalPages: state.totalPages,
                       total: state.total,
                       pageSize: state.pageSize,
-                      itemLabel: 'owners',
+                      itemLabel: 'entities',
                       endPadding: 86,
                       onPageChange: ref.read(ownersListProvider.notifier).changePage,
                       onPageSizeChange: ref.read(ownersListProvider.notifier).changePageSize,
@@ -152,51 +156,86 @@ class OwnersScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _showFilterSheet(BuildContext context, WidgetRef ref, String? ownerType) async {
-    final result = await showModalBottomSheet<OwnerFilterResult>(
+  Future<void> _showFilterSheet(BuildContext context, WidgetRef ref, OwnerFilters current) async {
+    final result = await showModalBottomSheet<OwnerFilters>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => OwnerFilterSheet(ownerType: ownerType),
+      builder: (_) => OwnerFilterSheet(initial: current),
     );
     if (result != null) {
-      ref.read(ownersListProvider.notifier).setOwnerTypeFilter(result.ownerType);
+      ref.read(ownersListProvider.notifier).setFilters(result);
     }
   }
 
-  void _showForm(BuildContext context, WidgetRef ref, VehicleOwner? owner) {
+  void _showForm(BuildContext context, WidgetRef ref, Entity? entity) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Colors.transparent,
       builder: (_) => FractionallySizedBox(
-        heightFactor: 0.55,
+        heightFactor: 0.9,
         child: OwnerFormSheet(
-          owner: owner,
-          onSubmit: (create, update) async {
+          entity: entity,
+          onSubmit: ({
+            required name,
+            required entityKind,
+            required relationship,
+            proprietorEntityId,
+            required clearProprietor,
+            phone,
+            email,
+            pan,
+            gstNumber,
+            address,
+            notes,
+          }) {
             final notifier = ref.read(ownersListProvider.notifier);
-            if (create != null) {
-              await notifier.createOwner(create);
-            } else if (update != null) {
-              await notifier.updateOwner(update);
+            if (entity == null) {
+              return notifier.createEntity(
+                name: name,
+                entityKind: entityKind,
+                relationship: relationship,
+                proprietorEntityId: proprietorEntityId,
+                phone: phone,
+                email: email,
+                pan: pan,
+                gstNumber: gstNumber,
+                address: address,
+                notes: notes,
+              );
             }
+            return notifier.updateEntity(
+              id: entity.id,
+              name: name,
+              entityKind: entityKind,
+              relationship: relationship,
+              proprietorEntityId: proprietorEntityId,
+              clearProprietor: clearProprietor,
+              phone: phone,
+              email: email,
+              pan: pan,
+              gstNumber: gstNumber,
+              address: address,
+              notes: notes,
+            );
           },
         ),
       ),
     );
   }
 
-  void _delete(BuildContext context, WidgetRef ref, VehicleOwner owner) {
+  void _delete(BuildContext context, WidgetRef ref, Entity entity) {
     showDialog<bool>(
       context: context,
       barrierDismissible: false,
       builder: (_) => DeleteConfirmationDialog(
-        title: 'Delete Owner',
-        targetName: owner.name,
+        title: 'Delete Entity',
+        targetName: entity.name,
         warningText: 'This action cannot be undone.',
-        warningSubtext: 'Owners referenced by vehicles must be reassigned first.',
-        onConfirm: () => ref.read(ownersListProvider.notifier).deleteOwner(owner.id),
+        warningSubtext: 'Entities referenced by vehicles or loans must be reassigned first.',
+        onConfirm: () => ref.read(ownersListProvider.notifier).deleteEntity(entity.id),
       ),
     );
   }
@@ -254,4 +293,3 @@ class _FilterButton extends StatelessWidget {
     );
   }
 }
-

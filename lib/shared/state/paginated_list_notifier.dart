@@ -63,10 +63,21 @@ abstract class PaginatedListNotifier<T, F extends ListFilters, X>
       page = lastPage < 1 ? 1 : lastPage;
       result = await fetchPage(page: page, pageSize: pageSize, search: search, filters: filters);
     }
+    // Some features (loans, fundings) only ask fetchPage for a portfolio-wide
+    // summary on page 1, to avoid recomputing it on every page turn. Without
+    // this fallback, paging to page 2+ would overwrite a real summary with
+    // page 2's null one and the stat strip would go blank until the next
+    // search/filter change resets back to page 1.
+    final X extras;
+    if (result.extras != null || page == 1) {
+      extras = result.extras;
+    } else {
+      extras = state.valueOrNull?.extras ?? result.extras;
+    }
     return PaginatedListState<T, F, X>(
       items: result.items,
       total: result.total,
-      extras: result.extras,
+      extras: extras,
       page: page,
       pageSize: pageSize,
       search: search,

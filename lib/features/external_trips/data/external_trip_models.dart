@@ -167,6 +167,7 @@ class CreateExternalTripDto {
   /// 'completed' (and stamps its external_trip_id) once this trip is
   /// created — see /api/external-trips `booking_id`.
   final int? bookingId;
+  final bool isDirectCompletion;
 
   const CreateExternalTripDto({
     required this.vehicleId,
@@ -182,6 +183,7 @@ class CreateExternalTripDto {
     required this.costItems,
     required this.amountReceived,
     this.bookingId,
+    this.isDirectCompletion = false,
   });
 
   Map<String, dynamic> toJson() => {

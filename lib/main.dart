@@ -34,7 +34,7 @@ Future<void> main() async {
         const ProviderScope(
           // One observer auto-captures every failing provider.
           observers: [SentryProviderObserver()],
-          child: SSLogisticsApp(),
+          child: SSLogisticsApp()
         ),
       );
     },
