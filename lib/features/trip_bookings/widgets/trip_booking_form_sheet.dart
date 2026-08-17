@@ -204,15 +204,6 @@ class _TripBookingFormSheetState extends ConsumerState<TripBookingFormSheet> {
     }
   }
 
-  void _swapLocations() {
-    final from = _fromLocationCtrl.text;
-    final to = _toLocationCtrl.text;
-    setState(() {
-      _fromLocationCtrl.text = to;
-      _toLocationCtrl.text = from;
-    });
-  }
-
   void _snack(String message) {
     setState(() => _serverError = message);
   }
@@ -441,7 +432,7 @@ class _TripBookingFormSheetState extends ConsumerState<TripBookingFormSheet> {
                             (v == null || v.trim().isEmpty) ? 'Required' : null,
                       ),
                     ),
-                    _RouteSwapButton(onTap: _swapLocations),
+                    const SizedBox(height: 14),
                     _Section(
                       label: 'To *',
                       child: TextFormField(
@@ -661,48 +652,6 @@ class _TripBookingFormSheetState extends ConsumerState<TripBookingFormSheet> {
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
         borderSide: const BorderSide(color: AppColors.primary, width: 2),
-      ),
-    );
-  }
-}
-
-/// Small centered affordance between the From/To fields to swap their
-/// values — sits in place of the side-by-side layout so each location
-/// field gets the sheet's full width for its suggestion dropdown.
-class _RouteSwapButton extends StatelessWidget {
-  final VoidCallback onTap;
-  const _RouteSwapButton({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return SizedBox(
-      width: double.infinity,
-      height: 44,
-      child: Center(
-        child: Semantics(
-          button: true,
-          label: 'Swap origin and destination',
-          child: InkWell(
-            onTap: onTap,
-            borderRadius: BorderRadius.circular(20),
-            child: Container(
-              width: 40,
-              height: 40,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.primary.withValues(alpha: isDark ? 0.18 : 0.10),
-                border: Border.all(color: AppColors.primary.withValues(alpha: 0.35)),
-              ),
-              child: const Icon(
-                AppIcons.swapVertical,
-                size: 22,
-                color: AppColors.primary,
-              ),
-            ),
-          ),
-        ),
       ),
     );
   }
