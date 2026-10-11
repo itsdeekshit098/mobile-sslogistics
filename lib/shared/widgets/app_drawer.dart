@@ -60,6 +60,12 @@ const _navItems = [
     enabled: true,
   ),
   _NavItem(
+    title: 'Attendance',
+    icon: AppIcons.calendar,
+    path: '/attendance',
+    enabled: true,
+  ),
+  _NavItem(
     title: 'Repair Records',
     icon: AppIcons.wrench,
     path: '/repair-records',

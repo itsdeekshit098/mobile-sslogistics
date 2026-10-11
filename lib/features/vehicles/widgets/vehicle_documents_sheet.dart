@@ -356,7 +356,7 @@ class _VehicleDocumentsSheetState extends State<VehicleDocumentsSheet> {
     if (_loadingKey != null) return;
     final result = await FilePicker.pickFiles(
       type: FileType.custom,
-      allowedExtensions: ['pdf', 'png', 'jpg', 'jpeg', 'webp', 'xls', 'xlsx'],
+      allowedExtensions: ['pdf', 'png', 'jpg', 'jpeg', 'webp', 'heic', 'heif', 'xls', 'xlsx'],
     );
     final file = result?.files.single;
     final path = file?.path;
@@ -548,6 +548,10 @@ class _VehicleDocumentsSheetState extends State<VehicleDocumentsSheet> {
         return (mimeType: MimeType.jpeg, customMimeType: null);
       case 'webp':
         return (mimeType: MimeType.webp, customMimeType: null);
+      case 'heic':
+        return (mimeType: MimeType.heic, customMimeType: null);
+      case 'heif':
+        return (mimeType: MimeType.heif, customMimeType: null);
       case 'xlsx':
         return (mimeType: MimeType.microsoftExcel, customMimeType: null);
       case 'xls':

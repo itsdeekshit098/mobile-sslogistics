@@ -4,8 +4,10 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_icons.dart';
+import '../../../shared/data/attachment_models.dart';
 import '../../../shared/data/bank_account_models.dart' show mandateTypeLabel;
 import '../../../shared/utils/money_format.dart';
+import '../../../shared/widgets/attachments_sheet.dart';
 import '../../../shared/widgets/delete_confirmation_dialog.dart';
 import '../../../shared/widgets/detail_section_card.dart';
 import '../../../shared/widgets/error_state.dart';
@@ -57,12 +59,14 @@ class LoanDetailScreen extends ConsumerWidget {
               PopupMenuButton<String>(
                 icon: Icon(AppIcons.moreVert,
                     color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary),
-                onSelected: (action) => _handleMenuAction(context, ref, action, async.requireValue),
+                onSelected: (action) =>
+                    _handleMenuAction(context, ref, action, async.requireValue, canManage),
                 itemBuilder: (_) => [
                   const PopupMenuItem(value: 'prepayment', child: Text('Prepayment')),
                   const PopupMenuItem(value: 'foreclosure', child: Text('Foreclosure')),
                   const PopupMenuItem(value: 'charge', child: Text('Record Charge')),
                   const PopupMenuDivider(),
+                  const PopupMenuItem(value: 'documents', child: Text('Documents')),
                   const PopupMenuItem(value: 'edit', child: Text('Edit')),
                   const PopupMenuItem(value: 'delete', child: Text('Delete')),
                 ],
@@ -96,7 +100,13 @@ class LoanDetailScreen extends ConsumerWidget {
     );
   }
 
-  void _handleMenuAction(BuildContext context, WidgetRef ref, String action, LoanDetail detail) {
+  void _handleMenuAction(
+    BuildContext context,
+    WidgetRef ref,
+    String action,
+    LoanDetail detail,
+    bool canManage,
+  ) {
     switch (action) {
       case 'prepayment':
         _showPaymentSheet(context, ref, 'PREPAYMENT', null);
@@ -104,6 +114,23 @@ class LoanDetailScreen extends ConsumerWidget {
         _showPaymentSheet(context, ref, 'FORECLOSURE', null);
       case 'charge':
         _showPaymentSheet(context, ref, 'CHARGE', null);
+      case 'documents':
+        showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          useSafeArea: true,
+          backgroundColor: Colors.transparent,
+          builder: (_) => FractionallySizedBox(
+            heightFactor: 0.75,
+            child: AttachmentsSheet(
+              ownerType: AttachmentOwnerType.loan,
+              ownerId: loanId,
+              title: 'Loan Documents',
+              canManage: canManage,
+              allowPdf: true,
+            ),
+          ),
+        );
       case 'edit':
         showModalBottomSheet(
           context: context,
@@ -204,6 +231,20 @@ class _SummaryCard extends StatelessWidget {
                   : loan.bankAccount!.displayLabel,
             ),
           DetailRowData('Principal', formatRupees(loan.principalAmount)),
+          if (loan.disbursedAmount != null && loan.disbursedAmount != loan.principalAmount)
+            DetailRowData('Disbursed', formatRupees(loan.disbursedAmount)),
+          DetailRowData('Total Payable', formatRupees(balance.totalPayable)),
+          DetailRowData(
+            'Flat ROI',
+            () {
+              final roi = flatRoiFromSchedule(
+                loan.principalAmount,
+                balance.totalPayable,
+                loan.totalInstallments,
+              );
+              return roi != null ? '${roi.toStringAsFixed(2)}% p.a.' : '—';
+            }(),
+          ),
           DetailRowData(
             'Outstanding',
             formatRupees(balance.outstanding),

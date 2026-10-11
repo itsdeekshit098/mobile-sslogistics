@@ -28,6 +28,7 @@ class FundingRepository {
         'page': page,
         'page_size': pageSize,
         'direction': filters.direction,
+        'sort': filters.sort,
         if (filters.status != null) 'status': filters.status,
         if (filters.funderId != null) 'funder_id': filters.funderId,
         if (includeSummary) 'include_summary': 'true',

@@ -110,10 +110,28 @@ class FundingCard extends StatelessWidget {
                         ],
                       ),
                     ),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Monthly Int.',
+                              style: TextStyle(fontSize: 10.5,
+                                  color: isDark ? AppColors.darkTextMuted : AppColors.textMuted)),
+                          Text(
+                            formatRupees(computed.monthlyInterest),
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                              color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Text(funding.direction == 'LENT' ? 'Interest Recv.' : 'Interest Due',
+                        Text('Interest Till Date',
                             style: TextStyle(fontSize: 10.5,
                                 color: interestDue
                                     ? AppColors.warning

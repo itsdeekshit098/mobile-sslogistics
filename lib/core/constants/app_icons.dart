@@ -13,6 +13,7 @@ class AppIcons {
   static const chevronLeft = Icons.chevron_left;
   static const chevronRight = Icons.chevron_right;
   static const swapVertical = Icons.swap_vertical_circle_outlined;
+  static const arrowUpDown = Icons.swap_vert;
   static const x = Icons.close;
   static const lock = Icons.lock_outline;
   static const logOut = Icons.logout;

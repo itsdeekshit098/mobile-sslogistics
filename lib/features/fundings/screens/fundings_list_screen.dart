@@ -11,6 +11,7 @@ import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/error_state.dart';
 import '../../../shared/widgets/list_pagination_bar.dart';
 import '../../../shared/widgets/notification_bell_button.dart';
+import '../../../shared/widgets/option_picker_sheet.dart';
 import '../../../shared/widgets/selectable_chip.dart';
 import '../../../shared/widgets/skeleton_loader.dart';
 import '../../../shared/widgets/summary_strip.dart';
@@ -94,6 +95,8 @@ class _FundingsListScreenState extends ConsumerState<FundingsListScreen> {
                   selected: _isLent,
                   onTap: () => setState(() => _direction = 'LENT'),
                 ),
+                const Spacer(),
+                if (state != null) _sortButton(context, provider, state.filters, isDark),
               ],
             ),
           ),
@@ -169,6 +172,38 @@ class _FundingsListScreenState extends ConsumerState<FundingsListScreen> {
               child: const Icon(AppIcons.plus),
             )
           : null,
+    );
+  }
+
+  /// Borrowed and Lent Out each keep their own sort, since each tab has its
+  /// own provider. Changing it reloads from page 1 via applyFilters.
+  Widget _sortButton(
+    BuildContext context,
+    AutoDisposeAsyncNotifierProvider<FundingNotifier, FundingState> provider,
+    FundingFilters filters,
+    bool isDark,
+  ) {
+    final sorted = filters.sort != 'newest';
+    final color = sorted
+        ? AppColors.primary
+        : (isDark ? AppColors.darkTextSecondary : AppColors.textSecondary);
+    return TextButton.icon(
+      onPressed: () async {
+        final choice = await showOptionPicker<String>(
+          context,
+          title: 'Sort by',
+          options: kFundingSorts,
+          selected: filters.sort,
+          labelBuilder: fundingSortLabel,
+        );
+        if (choice == null || choice == filters.sort) return;
+        await ref.read(provider.notifier).applyFilters(filters.copyWith(sort: choice));
+      },
+      icon: Icon(AppIcons.arrowUpDown, size: 18, color: color),
+      label: Text(
+        'Sort',
+        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: color),
+      ),
     );
   }
 

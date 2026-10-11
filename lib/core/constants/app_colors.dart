@@ -19,6 +19,9 @@ class AppColors {
   static const Color tileDriversIcon = Color(0xFF16A34A);
   static const Color tileDriversBg = Color(0xFFF0FDF4);
 
+  static const Color tileAttendanceIcon = Color(0xFF0D9488);
+  static const Color tileAttendanceBg = Color(0xFFF0FDFA);
+
   static const Color tileClientsIcon = Color(0xFF9333EA);
   static const Color tileClientsBg = Color(0xFFFAF5FF);
 

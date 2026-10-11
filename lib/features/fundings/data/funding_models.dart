@@ -157,6 +157,9 @@ class FundingComputation {
   final num interestAccrued;
   final num interestPaid;
   final num interestDue;
+
+  /// One full month's interest on today's principal at today's rate.
+  final num monthlyInterest;
   final num totalDue;
   final List<MonthlyBreakdownRow> monthlyBreakdown;
 
@@ -169,6 +172,7 @@ class FundingComputation {
     required this.interestDue,
     required this.totalDue,
     required this.monthlyBreakdown,
+    this.monthlyInterest = 0,
   });
 
   static const empty = FundingComputation(
@@ -189,6 +193,7 @@ class FundingComputation {
         interestAccrued: parseNum(json['interest_accrued']) ?? 0,
         interestPaid: parseNum(json['interest_paid']) ?? 0,
         interestDue: parseNum(json['interest_due']) ?? 0,
+        monthlyInterest: parseNum(json['monthly_interest']) ?? 0,
         totalDue: parseNum(json['total_due']) ?? 0,
         monthlyBreakdown: (json['monthly_breakdown'] as List<dynamic>? ?? [])
             .map((e) => MonthlyBreakdownRow.fromJson(e as Map<String, dynamic>))
@@ -370,16 +375,55 @@ class FundingSummary {
       );
 }
 
+/// List orderings the API accepts as `sort` (FUNDING_SORTS in the web app's
+/// api/fundings/fundings.utils.ts). The server sorts, not the device: the
+/// money ones are computed per request and the list is paged, so only the
+/// server can order across every funding rather than just the loaded page.
+const List<String> kFundingSorts = [
+  'newest',
+  'oldest',
+  'principal',
+  'rate',
+  'monthly_interest',
+  'interest_due',
+];
+
+String fundingSortLabel(String sort) {
+  switch (sort) {
+    case 'newest':
+      return 'Newest first';
+    case 'oldest':
+      return 'Oldest first';
+    case 'principal':
+      return 'Principal: high to low';
+    case 'rate':
+      return 'Rate: high to low';
+    case 'monthly_interest':
+      return 'Monthly interest: high to low';
+    case 'interest_due':
+      return 'Interest till date: high to low';
+    default:
+      return sort;
+  }
+}
+
 class FundingFilters implements ListFilters {
   final String? status;
   final int? funderId;
   final String direction;
+  final String sort;
 
-  const FundingFilters({this.status, this.funderId, this.direction = 'BORROWED'});
+  const FundingFilters({
+    this.status,
+    this.funderId,
+    this.direction = 'BORROWED',
+    this.sort = 'newest',
+  });
 
   static const none = FundingFilters();
   static const lent = FundingFilters(direction: 'LENT');
 
+  /// Sort is an ordering, not a filter, so it doesn't count as "filtered".
   @override
   bool get isActive => status != null || funderId != null;
 
@@ -389,11 +433,13 @@ class FundingFilters implements ListFilters {
     int? funderId,
     bool clearFunder = false,
     String? direction,
+    String? sort,
   }) {
     return FundingFilters(
       status: clearStatus ? null : (status ?? this.status),
       funderId: clearFunder ? null : (funderId ?? this.funderId),
       direction: direction ?? this.direction,
+      sort: sort ?? this.sort,
     );
   }
 }

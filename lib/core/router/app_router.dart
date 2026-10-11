@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 import '../../features/activity_log/screens/activity_log_screen.dart';
+import '../../features/attendance/screens/attendance_screen.dart';
 import '../../features/auth/providers/auth_provider.dart';
 import '../../features/auth/screens/login_screen.dart';
 import '../../features/dashboard/screens/dashboard_screen.dart';
@@ -195,6 +196,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/drivers',
         builder: (context, state) =>
             _backToDashboard(context, const DriversScreen()),
+      ),
+      GoRoute(
+        path: '/attendance',
+        builder: (context, state) =>
+            _backToDashboard(context, const AttendanceScreen()),
       ),
       GoRoute(
         path: '/technicians',

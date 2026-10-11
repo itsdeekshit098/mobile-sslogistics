@@ -120,6 +120,17 @@ const allTiles = [
     allowedRoles: ['admin', 'staff', 'superadmin'],
   ),
   DashboardTileData(
+    title: 'Attendance',
+    description: 'Daily driver attendance by shift',
+    icon: AppIcons.calendar,
+    iconColor: AppColors.tileAttendanceIcon,
+    iconBgColor: AppColors.tileAttendanceBg,
+    route: '/attendance',
+    isMobileReady: true,
+    // Everyone can read it; the API lets only admins mark.
+    allowedRoles: ['admin', 'staff', 'driver', 'superadmin'],
+  ),
+  DashboardTileData(
     title: 'Firms & Owners',
     description: 'Proprietorships, family and external parties',
     icon: AppIcons.badge,

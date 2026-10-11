@@ -55,6 +55,21 @@ String installmentStatusLabel(String status) {
   }
 }
 
+/// Implied flat annual rate from the schedule alone — EMI × tenure vs
+/// principal — not the reducing-balance rate a lender actually applies.
+/// Display-only, for cross-checking the stored interestRate; never fed back
+/// into the schedule or a stored column. Mirrors the web app's
+/// `flatRoiFromSchedule` (loansPage.utils.ts) exactly, including returning
+/// null (rather than a negative/NaN rate) whenever the schedule's total
+/// payable doesn't exceed the principal.
+num? flatRoiFromSchedule(num principal, num totalPayable, int totalInstallments) {
+  if (principal <= 0 || totalInstallments <= 0) return null;
+  final totalInterest = totalPayable - principal;
+  if (totalInterest < 0) return null;
+  final tenureYears = totalInstallments / 12;
+  return (totalInterest / principal / tenureYears) * 100;
+}
+
 String paymentTypeLabel(String type) {
   switch (type) {
     case 'EMI':
@@ -251,6 +266,7 @@ class Loan {
   final int? vehicleId;
   final String? collateralDescription;
   final num principalAmount;
+  final num? disbursedAmount;
   final num? interestRate;
   final num? processingFee;
   final String startDate;
@@ -286,6 +302,7 @@ class Loan {
     this.loanNumber,
     this.vehicleId,
     this.collateralDescription,
+    this.disbursedAmount,
     this.interestRate,
     this.processingFee,
     this.outstandingOverride,
@@ -319,6 +336,7 @@ class Loan {
         vehicleId: parseId(json['vehicle_id']),
         collateralDescription: json['collateral_description'] as String?,
         principalAmount: parseNum(json['principal_amount']) ?? 0,
+        disbursedAmount: parseNum(json['disbursed_amount']),
         interestRate: parseNum(json['interest_rate']),
         processingFee: parseNum(json['processing_fee']),
         startDate: json['start_date'] as String? ?? '',
@@ -565,6 +583,7 @@ class LoanDto {
   final int? vehicleId;
   final String? collateralDescription;
   final num principalAmount;
+  final num? disbursedAmount;
   final num? interestRate;
   final num? processingFee;
   final String startDate;
@@ -590,6 +609,7 @@ class LoanDto {
     this.loanNumber,
     this.vehicleId,
     this.collateralDescription,
+    this.disbursedAmount,
     this.interestRate,
     this.processingFee,
     this.outstandingOverride,
@@ -606,6 +626,7 @@ class LoanDto {
         'vehicle_id': vehicleId,
         'collateral_description': collateralDescription,
         'principal_amount': principalAmount,
+        'disbursed_amount': disbursedAmount,
         'interest_rate': interestRate,
         'processing_fee': processingFee,
         'start_date': startDate,

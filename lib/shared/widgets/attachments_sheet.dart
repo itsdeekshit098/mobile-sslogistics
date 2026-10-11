@@ -398,7 +398,7 @@ class _AttachmentsSheetState extends State<AttachmentsSheet> {
     final result = await FilePicker.pickFiles(
       type: widget.allowPdf ? FileType.custom : FileType.image,
       allowedExtensions: widget.allowPdf
-          ? ['pdf', 'png', 'jpg', 'jpeg', 'webp', 'gif']
+          ? ['pdf', 'txt', 'png', 'jpg', 'jpeg', 'webp', 'gif', 'heic', 'heif']
           : null,
       allowMultiple: true,
     );
@@ -586,6 +586,12 @@ class _AttachmentsSheetState extends State<AttachmentsSheet> {
         return (mimeType: MimeType.jpeg, customMimeType: null);
       case 'webp':
         return (mimeType: MimeType.webp, customMimeType: null);
+      case 'txt':
+        return (mimeType: MimeType.text, customMimeType: null);
+      case 'heic':
+        return (mimeType: MimeType.heic, customMimeType: null);
+      case 'heif':
+        return (mimeType: MimeType.heif, customMimeType: null);
       default:
         return (mimeType: MimeType.other, customMimeType: null);
     }

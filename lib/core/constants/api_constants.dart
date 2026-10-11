@@ -29,6 +29,8 @@ class ApiConstants {
   static const String vehicleDocumentView = '/api/vehicles/documents/view';
   static const String vehicleOwners = '/api/vehicle-owners';
   static const String drivers = '/api/drivers';
+  static const String driverAttendance = '/api/driver-attendance';
+  static const String driverAttendanceExport = '/api/driver-attendance/export';
   static const String dieselRecords = '/api/diesel-records';
   static const String externalTrips = '/api/external-trips';
   static const String tripBookings = '/api/trip-bookings';

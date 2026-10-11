@@ -47,6 +47,7 @@ class _LoanFormSheetState extends ConsumerState<LoanFormSheet> {
   final _loanNumberCtrl = TextEditingController();
   final _collateralCtrl = TextEditingController();
   final _principalCtrl = TextEditingController();
+  final _disbursedCtrl = TextEditingController();
   final _interestRateCtrl = TextEditingController();
   final _processingFeeCtrl = TextEditingController();
   final _emiAmountCtrl = TextEditingController();
@@ -76,6 +77,7 @@ class _LoanFormSheetState extends ConsumerState<LoanFormSheet> {
     _mandateType = loan?.mandateType;
     _collateralCtrl.text = loan?.collateralDescription ?? '';
     _principalCtrl.text = loan != null ? loan.principalAmount.toString() : '';
+    _disbursedCtrl.text = loan?.disbursedAmount?.toString() ?? '';
     _interestRateCtrl.text = loan?.interestRate?.toString() ?? '';
     _processingFeeCtrl.text = loan?.processingFee?.toString() ?? '';
     _emiAmountCtrl.text = loan != null ? loan.emiAmount.toString() : '';
@@ -93,6 +95,7 @@ class _LoanFormSheetState extends ConsumerState<LoanFormSheet> {
     _loanNumberCtrl.dispose();
     _collateralCtrl.dispose();
     _principalCtrl.dispose();
+    _disbursedCtrl.dispose();
     _interestRateCtrl.dispose();
     _processingFeeCtrl.dispose();
     _emiAmountCtrl.dispose();
@@ -352,6 +355,7 @@ class _LoanFormSheetState extends ConsumerState<LoanFormSheet> {
       collateralDescription:
           _collateralCtrl.text.trim().isEmpty ? null : _collateralCtrl.text.trim(),
       principalAmount: principal!,
+      disbursedAmount: num.tryParse(_disbursedCtrl.text),
       interestRate: num.tryParse(_interestRateCtrl.text),
       processingFee: num.tryParse(_processingFeeCtrl.text),
       startDate: formatApiDate(_startDate!),
@@ -562,12 +566,30 @@ class _LoanFormSheetState extends ConsumerState<LoanFormSheet> {
                       ],
                     ),
                     const SizedBox(height: 14),
-                    FormSection(
-                      label: 'Processing Fee (₹)',
-                      child: TextField(
-                        controller: _processingFeeCtrl,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      ),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: FormSection(
+                            label: 'Processing Fee (₹)',
+                            child: TextField(
+                              controller: _processingFeeCtrl,
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: FormSection(
+                            label: 'Disbursed Amount (₹)',
+                            child: TextField(
+                              controller: _disbursedCtrl,
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              decoration: const InputDecoration(hintText: 'If different from principal'),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 14),
                     Row(
