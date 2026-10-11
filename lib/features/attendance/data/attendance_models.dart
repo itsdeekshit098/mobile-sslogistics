@@ -129,7 +129,18 @@ class AttendanceDay {
             .toList(),
       );
 
-  bool get isToday => date == today;
+  /// [today] moved forward to the device's IST date if the day has rolled
+  /// over since this was loaded — a screen left open past midnight would
+  /// otherwise keep "next day" disabled until a reload. It can only move
+  /// forward; the server still decides what may be edited.
+  String get currentDay {
+    final device = formatDateOnly(
+      DateTime.now().toUtc().add(const Duration(hours: 5, minutes: 30)),
+    );
+    return device.compareTo(today) > 0 ? device : today;
+  }
+
+  bool get isToday => date == currentDay;
 }
 
 class AttendanceTotals {
@@ -243,6 +254,13 @@ List<String> datesInMonth(String month) {
 
 /// "Sun, 11 Oct"
 String formatDayLabel(String date) => DateFormat('EEE, d MMM').format(parseDateOnly(date));
+
+/// "Sunday"
+String formatWeekdayLabel(String date) => DateFormat('EEEE').format(parseDateOnly(date));
+
+/// "Oct 2026" — the header has no room for the full month name.
+String formatMonthShortLabel(String month) =>
+    DateFormat('MMM yyyy').format(parseDateOnly('$month-01'));
 
 /// "October 2026"
 String formatMonthLabel(String month) => DateFormat('MMMM yyyy').format(parseDateOnly('$month-01'));

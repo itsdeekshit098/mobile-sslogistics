@@ -124,7 +124,7 @@ Color _stripColor(AttendanceMark? mark, bool future, bool isDark) {
   if (mark == null) return idle;
   if (mark.isAbsent) return AppColors.error;
   if (mark.isLeave) return AppColors.warning;
-  return mark.isFullDay ? AppColors.primary : AppColors.primary.withValues(alpha: 0.45);
+  return mark.isFullDay ? AppColors.success : AppColors.success.withValues(alpha: 0.45);
 }
 
 /// The strip's colour key, shown once above the list.
@@ -151,8 +151,8 @@ class AttendanceMonthLegend extends StatelessWidget {
       spacing: 12,
       runSpacing: 4,
       children: [
-        item(AppColors.primary, 'Full day'),
-        item(AppColors.primary.withValues(alpha: 0.45), 'Part'),
+        item(AppColors.success, 'Full day'),
+        item(AppColors.success.withValues(alpha: 0.45), 'Part'),
         item(AppColors.error, 'Absent'),
         item(AppColors.warning, 'Leave'),
       ],
@@ -278,7 +278,7 @@ class _DayCell extends StatelessWidget {
               height: 14,
               margin: const EdgeInsets.symmetric(horizontal: 1),
               decoration: BoxDecoration(
-                color: current.has(shift) ? AppColors.primary : idle,
+                color: current.has(shift) ? AppColors.success : idle,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),

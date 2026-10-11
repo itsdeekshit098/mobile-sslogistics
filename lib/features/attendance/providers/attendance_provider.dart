@@ -74,6 +74,10 @@ class AttendanceDayNotifier extends AutoDisposeAsyncNotifier<AttendanceDayState>
   // resolve after the screen is gone, and writing `state` then throws.
   bool _disposed = false;
 
+  // Stepping through dates quickly overlaps requests, and a slow early one
+  // can land after a fast later one; only the newest may update the screen.
+  int _dateRequest = 0;
+
   AttendanceRepository get _repo => ref.read(attendanceRepositoryProvider);
 
   @override
@@ -87,13 +91,15 @@ class AttendanceDayNotifier extends AutoDisposeAsyncNotifier<AttendanceDayState>
   Future<void> goToDate(String date) async {
     final current = state.valueOrNull;
     if (current == null) return;
+    final request = ++_dateRequest;
     state = AsyncData(current.copyWith(loading: true));
     try {
       final day = await _repo.getDay(date: date);
-      if (_disposed) return;
+      if (_disposed || request != _dateRequest) return;
       state = AsyncData(AttendanceDayState.fromDay(day));
     } catch (_) {
-      if (!_disposed) state = AsyncData(current);
+      if (_disposed || request != _dateRequest) return;
+      state = AsyncData(current.copyWith(loading: false));
       rethrow;
     }
   }

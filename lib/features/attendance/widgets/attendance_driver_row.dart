@@ -5,6 +5,10 @@ import '../../../core/constants/app_icons.dart';
 import '../../../core/theme/theme_extensions.dart';
 import '../data/attendance_models.dart';
 
+/// Colour carries meaning here: green is present (the tick and the shifts
+/// worked), red is absent, amber is leave or not yet marked. Blue stays for
+/// things you act on, so it never means "status".
+///
 /// One driver, one line: a tick for "present all day", the three shifts for
 /// part days, and a menu for absent / leave / clear.
 ///
@@ -145,16 +149,16 @@ class _Tick extends StatelessWidget {
               height: 26,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: full ? AppColors.primary : Colors.transparent,
+                color: full ? AppColors.success : Colors.transparent,
                 border: Border.all(
                   width: 2,
-                  color: full || partial ? AppColors.primary : idle,
+                  color: full || partial ? AppColors.success : idle,
                 ),
               ),
               child: full
                   ? const Icon(Icons.check, size: 16, color: Colors.white)
                   : partial
-                      ? const Icon(Icons.remove, size: 16, color: AppColors.primary)
+                      ? const Icon(Icons.remove, size: 16, color: AppColors.success)
                       : null,
             ),
           ),
@@ -197,13 +201,17 @@ class _ShiftBlock extends StatelessWidget {
                   height: 40,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: mark.has(shift) ? AppColors.primary : Colors.transparent,
+                    // Tinted, not solid: the solid tick already says "present
+                    // all day", so a full roster isn't a wall of colour.
+                    color: mark.has(shift)
+                        ? (isDark ? AppColors.darkSuccessBg : AppColors.successBg)
+                        : Colors.transparent,
                     border: shift == kShifts.first
                         ? null
                         : Border(
                             left: BorderSide(
                               color: mark.has(shift)
-                                  ? Colors.white.withValues(alpha: 0.35)
+                                  ? AppColors.success.withValues(alpha: 0.3)
                                   : border,
                             ),
                           ),
@@ -215,7 +223,7 @@ class _ShiftBlock extends StatelessWidget {
                         fontSize: 13.5,
                         fontWeight: FontWeight.w800,
                         color: mark.has(shift)
-                            ? Colors.white
+                            ? AppColors.success
                             : (isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
                       ),
                     ),

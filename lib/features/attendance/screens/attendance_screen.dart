@@ -59,7 +59,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
 
   /// Changing the date drops unsaved marks, so ask first when there are any.
   Future<void> _goToDate(AttendanceDayState state, String date) async {
-    if (date.compareTo(state.day.today) > 0) return;
+    if (date.compareTo(state.day.currentDay) > 0) return;
     if (state.changes.isNotEmpty) {
       final count = state.changes.length;
       final discard = await showDialog<bool>(
@@ -100,7 +100,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
       context: context,
       initialDate: parseDateOnly(state.day.date),
       firstDate: DateTime.utc(2020),
-      lastDate: parseDateOnly(state.day.today),
+      lastDate: parseDateOnly(state.day.currentDay),
     );
     if (picked == null || !mounted) return;
     await _goToDate(state, formatDateOnly(picked));
@@ -396,12 +396,11 @@ class _Header extends StatelessWidget {
     final marked = state.total - state.unmarked;
 
     final canStepForward =
-        isDayView ? !day.isToday : month.compareTo(day.today.substring(0, 7)) < 0;
-    final label = isDayView
-        ? (day.isToday
-            ? 'Today, ${formatDayLabel(day.date).split(', ').last}'
-            : formatDayLabel(day.date))
-        : formatMonthLabel(month);
+        isDayView ? !day.isToday : month.compareTo(day.currentDay.substring(0, 7)) < 0;
+    // Day view: "11 Oct" over "Today" / "Sunday". Month view: one line.
+    final label =
+        isDayView ? formatDayLabel(day.date).split(', ').last : formatMonthShortLabel(month);
+    final sublabel = isDayView ? (day.isToday ? 'Today' : formatWeekdayLabel(day.date)) : null;
 
     final filters = <(String, String, int)>[
       ('all', 'All', state.total),
@@ -423,37 +422,65 @@ class _Header extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(4, 6, 12, 4),
             child: Row(
               children: [
-                IconButton(
-                  icon: Icon(AppIcons.chevronLeft, color: textPrimary),
-                  tooltip: isDayView ? 'Previous day' : 'Previous month',
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
-                  onPressed: () => isDayView ? onStepDay(-1) : onStepMonth(-1),
-                ),
-                Flexible(
-                  child: InkWell(
-                    onTap: isDayView ? onPickDate : null,
-                    borderRadius: BorderRadius.circular(8),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-                      child: Text(
-                        label,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontSize: 15.5, fontWeight: FontWeight.w700, color: textPrimary),
+                // The stepper takes whatever the search button and the
+                // Day / Month switch leave over; the label is two short lines
+                // so it never has to be cut on a narrow phone.
+                Expanded(
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: Icon(AppIcons.chevronLeft, color: textPrimary),
+                        tooltip: isDayView ? 'Previous day' : 'Previous month',
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                        onPressed: () => isDayView ? onStepDay(-1) : onStepMonth(-1),
                       ),
-                    ),
+                      Flexible(
+                        child: InkWell(
+                          onTap: isDayView ? onPickDate : null,
+                          borderRadius: BorderRadius.circular(8),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  label,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 14.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: textPrimary,
+                                  ),
+                                ),
+                                if (sublabel != null)
+                                  Text(
+                                    sublabel,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(fontSize: 11, color: secondary),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        icon: Icon(
+                          AppIcons.chevronRight,
+                          color: canStepForward ? textPrimary : secondary,
+                        ),
+                        tooltip: isDayView ? 'Next day' : 'Next month',
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                        onPressed: canStepForward
+                            ? () => isDayView ? onStepDay(1) : onStepMonth(1)
+                            : null,
+                      ),
+                    ],
                   ),
                 ),
-                IconButton(
-                  icon: Icon(AppIcons.chevronRight, color: canStepForward ? textPrimary : secondary),
-                  tooltip: isDayView ? 'Next day' : 'Next month',
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
-                  onPressed:
-                      canStepForward ? () => isDayView ? onStepDay(1) : onStepMonth(1) : null,
-                ),
-                const Spacer(),
                 IconButton(
                   icon: Icon(searchOpen ? AppIcons.x : Icons.search, color: textPrimary),
                   tooltip: searchOpen ? 'Close search' : 'Search drivers',
@@ -505,7 +532,7 @@ class _Header extends StatelessWidget {
                         value: state.total == 0 ? 0 : marked / state.total,
                         minHeight: 4,
                         backgroundColor: isDark ? AppColors.darkBorder : AppColors.border,
-                        color: AppColors.primary,
+                        color: AppColors.success,
                       ),
                     ),
                   ),
